@@ -1,36 +1,72 @@
 # ZenPlay
 
-ZenPlay is a calm, ad-free, nana-proof games suite focused on accessibility and trust.
+ZenPlay is a calm, privacy-first, tap-friendly games app for older adults and anyone who wants a simple, safe experience. MVP includes **Klondike Solitaire** as an installable **PWA**.
 
-- No ads, no tracking, no accounts
-- Big readable UI, tap-friendly controls
-- Offline-friendly (PWA)
-- Designed for cheap tablets
+## MVP Principles
 
-Current status:
+- No ads
+- No tracking
+- No accounts
+- No backend
+- No external APIs
+- Works offline after first load
+- Large readable controls and cards
 
-- MVP focus: **Klondike Solitaire** (tap-to-move first)
-
-## Why ZenPlay exists
-
-A lot of simple mobile games (Solitaire/Sudoku/Mahjong clones) are basically ad machines or worse — scammy popups and sketchy permissions. ZenPlay is the opposite: clean, calm, and safe.
-
-## Tech
+## Tech Stack
 
 - Vite + React + TypeScript
 - Tailwind CSS
-- PWA via `vite-plugin-pwa`
-- No backend
+- `vite-plugin-pwa`
 
-## Getting started
+## Project Structure
 
-### Requirements
+```text
+src/
+  app/
+  components/
+  games/solitaire/
+    model/
+    ui/
+  lib/
+  styles/
+```
 
-- Node.js (LTS recommended)
-- npm
+## Features Implemented
 
-### Install & run
+- Home screen with large **Solitaire** tile
+- Global settings with persistence (`localStorage`):
+  - Light/Dark theme
+  - High contrast
+  - Large cards
+  - Reduced motion
+  - Handedness toggle
+- Klondike solitaire engine with pure model logic:
+  - Shuffled 52-card deck
+  - Tableau + stock/waste + foundations
+  - Rule validation
+  - Undo stack
+- Tap-to-move interaction (no drag required)
+- Calm win modal: **“You did it.”**
+- PWA manifest + offline app shell caching
+- In-app install helper page for Android Chrome
+
+## Run Locally
 
 ```bash
 npm install
 npm run dev
+```
+
+## Build and Preview
+
+```bash
+npm run build
+npm run preview
+```
+
+## Quality Checks
+
+```bash
+npm run typecheck
+npm run lint
+```
