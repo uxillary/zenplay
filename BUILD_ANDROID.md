@@ -1,28 +1,22 @@
+# ZenPlay — Android build (planned)
 
-## `BUILD_ANDROID.md`
+ZenPlay is web-first. The current deliverable is a PWA. Android packaging with Capacitor is planned for a later phase.
 
-```md
-# ZenPlay — Android build (later)
+## Planned workflow
 
-ZenPlay is built as a web-first PWA. When ready, we can package it as an installable Android app using Capacitor (web app inside a native Android shell).
+1. Build the web app.
+2. Initialize Capacitor.
+3. Add Android platform.
+4. Open Android Studio and produce signed builds.
 
-This document is intentionally short and practical.
+## Commands (for later)
 
----
-
-## Prereqs
-
-- Android Studio installed
-- Android SDK installed (via Android Studio)
-- Java (Android Studio manages this)
-- Node.js + npm
-
----
-
-## Convert ZenPlay into an Android app (Capacitor)
-
-From the repo root:
-
-1) Build the web app (creates `dist/`)
 ```bash
 npm run build
+npx cap init zenplay com.zenplay.app
+npx cap add android
+npx cap copy
+npx cap open android
+```
+
+> Note: These steps are intentionally not applied yet in this repository.
