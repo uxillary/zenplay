@@ -47,13 +47,37 @@ export const SolitaireScreen = ({ settings }: Props) => {
 
   const canDrop = (target: Location): boolean => destinations.some((d) => JSON.stringify(d) === JSON.stringify(target))
 
+  const clearSelection = () => {
+    setSelected(null)
+    setInvalidMove(false)
+  }
+
+  const toggleWasteSelection = () => {
+    if (state.waste.length === 0) return
+    const card = state.waste[state.waste.length - 1]
+    if (selected?.location.type === 'waste' && selected.cardId === card.id) {
+      clearSelection()
+      return
+    }
+    setSelected({ location: { type: 'waste' }, cardId: card.id })
+    setInvalidMove(false)
+  }
+
+  const selectTableauCard = (index: number, cardId: string) => {
+    if (selected?.location.type === 'tableau' && selected.location.index === index && selected.cardId === cardId) {
+      clearSelection()
+      return
+    }
+    setSelected({ location: { type: 'tableau', index }, cardId })
+    setInvalidMove(false)
+  }
+
   const attemptMove = (to: Location) => {
     if (!selected) return
     const move: Move = { from: selected.location, to, cardId: selected.cardId }
     if (isValidMove(state, move)) {
       dispatch({ type: 'move', move })
-      setSelected(null)
-      setInvalidMove(false)
+      clearSelection()
       return
     }
     setInvalidMove(true)
@@ -78,12 +102,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (state.waste.length) {
-                const card = state.waste[state.waste.length - 1]
-                setSelected({ location: { type: 'waste' }, cardId: card.id })
-              }
-            }}
+            onClick={toggleWasteSelection}
             className="rounded-xl"
           >
             <CardView
@@ -118,13 +137,10 @@ export const SolitaireScreen = ({ settings }: Props) => {
             selectedCardId={selected?.cardId}
             canDrop={canDrop({ type: 'tableau', index })}
             onEmptyClick={() => attemptMove({ type: 'tableau', index })}
+            onPileClick={() => attemptMove({ type: 'tableau', index })}
             onCardClick={(card) => {
               if (!card.faceUp) return
-              if (selected) {
-                attemptMove({ type: 'tableau', index })
-                return
-              }
-              setSelected({ location: { type: 'tableau', index }, cardId: card.id })
+              selectTableauCard(index, card.id)
             }}
           />
         ))}
