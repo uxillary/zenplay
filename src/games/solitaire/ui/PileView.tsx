@@ -4,13 +4,14 @@ import { CardView } from './CardView'
 type Props = {
   cards: Card[]
   onCardClick: (card: Card) => void
+  onPileClick?: () => void
   selectedCardId?: string
   largeCards: boolean
   canDrop?: boolean
   onEmptyClick?: () => void
 }
 
-export const PileView = ({ cards, onCardClick, selectedCardId, largeCards, canDrop, onEmptyClick }: Props) => {
+export const PileView = ({ cards, onCardClick, onPileClick, selectedCardId, largeCards, canDrop, onEmptyClick }: Props) => {
   if (cards.length === 0) {
     return (
       <button type="button" onClick={onEmptyClick} className={`${canDrop ? 'ring-2 ring-sky-500 rounded-xl' : ''}`}>
@@ -20,7 +21,22 @@ export const PileView = ({ cards, onCardClick, selectedCardId, largeCards, canDr
   }
 
   return (
-    <div className={`relative min-h-28 ${canDrop ? 'rounded-xl ring-2 ring-sky-500' : ''}`}>
+    <div
+      className={`relative min-h-28 ${canDrop ? 'rounded-xl ring-2 ring-sky-500' : ''}`}
+      onClick={onPileClick}
+      role={onPileClick ? 'button' : undefined}
+      tabIndex={onPileClick ? 0 : undefined}
+      onKeyDown={
+        onPileClick
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onPileClick()
+              }
+            }
+          : undefined
+      }
+    >
       {cards.map((card, index) => (
         <div key={card.id} className="absolute" style={{ top: `${index * (largeCards ? 28 : 22)}px` }}>
           <CardView

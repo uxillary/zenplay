@@ -28,7 +28,17 @@ export const CardView = ({ card, selected, onClick, largeCards, placeholder }: P
     if (!onClick) {
       return <div className={`${size} rounded-xl border border-zinc-500 bg-zinc-700`} aria-hidden />
     }
-    return <button type="button" onClick={onClick} className={`${size} rounded-xl border border-zinc-500 bg-zinc-700`} aria-label="Face down card" />
+    return (
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          onClick()
+        }}
+        className={`${height} rounded-xl border border-zinc-500 bg-zinc-700`}
+        aria-label="Face down card"
+      />
+    )
   }
 
   const red = card.suit === 'hearts' || card.suit === 'diamonds'
@@ -60,8 +70,11 @@ export const CardView = ({ card, selected, onClick, largeCards, placeholder }: P
   return (
     <button
       type="button"
-      onClick={onClick}
-      className={`${size} rounded-xl border bg-white p-2 text-left text-zinc-900 ${selected ? 'border-sky-600 ring-2 ring-sky-500' : 'border-zinc-300'}`}
+      onClick={(event) => {
+        event.stopPropagation()
+        onClick()
+      }}
+      className={`${height} rounded-xl border bg-white p-2 text-left text-lg text-zinc-900 ${selected ? 'border-sky-600 ring-2 ring-sky-500' : 'border-zinc-300'}`}
       aria-label={`${card.rank} of ${card.suit}`}
     >
       {content}
