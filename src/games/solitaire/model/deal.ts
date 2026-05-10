@@ -1,4 +1,4 @@
-import { RANKS, SUITS, type Card, type SolitaireState } from './types'
+import { RANKS, SUITS, type Card, type SolitaireState } from './types.ts'
 
 const shuffle = <T,>(items: T[]): T[] => {
   const copy = [...items]

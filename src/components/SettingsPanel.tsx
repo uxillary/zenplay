@@ -56,6 +56,32 @@ export const SettingsPanel = ({ settings, onChange }: Props) => {
           value={settings.reducedMotion}
           onToggle={() => onChange('reducedMotion', !settings.reducedMotion)}
         />
+        <ToggleRow
+          label="Hide timer and moves"
+          value={settings.calmStats}
+          onToggle={() => onChange('calmStats', !settings.calmStats)}
+        />
+        <ToggleRow
+          label="Timer"
+          value={settings.timer}
+          onToggle={() => onChange('timer', !settings.timer)}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => onChange('drawMode', 'one')}
+            className={`rounded-xl border px-4 py-3 text-base ${settings.drawMode === 'one' ? 'border-sky-400 bg-sky-500/25' : 'border-zinc-500/60 bg-zinc-800/70'}`}
+          >
+            Draw one
+          </button>
+          <button
+            type="button"
+            disabled
+            className="rounded-xl border border-zinc-600/50 bg-zinc-800/30 px-4 py-3 text-base text-zinc-400"
+          >
+            Draw three later
+          </button>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           {(['left', 'right'] as const).map((side) => (
             <button

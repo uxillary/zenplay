@@ -67,6 +67,7 @@ npm run preview
 ## Quality Checks
 
 ```bash
+npm test
 npm run typecheck
 npm run lint
 ```

@@ -1,5 +1,5 @@
-import type { Card, Move, SolitaireState } from './types'
-import { isValidMove } from './rules'
+import type { Card, Move, SolitaireState } from './types.ts'
+import { isValidMove } from './rules.ts'
 
 const cloneWithoutHistory = (state: SolitaireState): Omit<SolitaireState, 'history'> => ({
   tableau: state.tableau.map((pile) => pile.map((card) => ({ ...card }))),

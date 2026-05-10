@@ -11,11 +11,12 @@ type Props = {
   card?: Card
   selected?: boolean
   onClick?: () => void
+  onDragStart?: () => void
   largeCards?: boolean
   placeholder?: boolean
 }
 
-export const CardView = ({ card, selected, onClick, largeCards, placeholder }: Props) => {
+export const CardView = ({ card, selected, onClick, onDragStart, largeCards, placeholder }: Props) => {
   const height = largeCards ? 'h-32 w-24' : 'h-28 w-20'
 
   if (placeholder) {
@@ -50,12 +51,30 @@ export const CardView = ({ card, selected, onClick, largeCards, placeholder }: P
   )
 
   if (!onClick) {
-    return <div className={`${height} rounded-xl border bg-white p-2 text-left text-lg text-zinc-900 ${selected ? 'border-sky-600 ring-2 ring-sky-500' : 'border-zinc-300'}`}>{content}</div>
+    return (
+      <div
+        draggable={Boolean(onDragStart)}
+        onDragStart={(event) => {
+          if (!onDragStart) return
+          event.dataTransfer.effectAllowed = 'move'
+          onDragStart()
+        }}
+        className={`${height} rounded-xl border bg-white p-2 text-left text-lg text-zinc-900 ${selected ? 'border-sky-600 ring-2 ring-sky-500' : 'border-zinc-300'}`}
+      >
+        {content}
+      </div>
+    )
   }
 
   return (
     <button
       type="button"
+      draggable={Boolean(onDragStart)}
+      onDragStart={(event) => {
+        if (!onDragStart) return
+        event.dataTransfer.effectAllowed = 'move'
+        onDragStart()
+      }}
       onClick={(event) => {
         event.stopPropagation()
         onClick()

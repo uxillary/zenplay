@@ -1,5 +1,6 @@
 export type ThemeMode = 'light' | 'dark'
 export type Handedness = 'left' | 'right'
+export type DrawMode = 'one' | 'three'
 
 export type AppSettings = {
   theme: ThemeMode
@@ -7,6 +8,9 @@ export type AppSettings = {
   largeCards: boolean
   reducedMotion: boolean
   handedness: Handedness
+  calmStats: boolean
+  timer: boolean
+  drawMode: DrawMode
 }
 
 const STORAGE_KEY = 'zenplay-settings'
@@ -17,6 +21,9 @@ export const defaultSettings: AppSettings = {
   largeCards: false,
   reducedMotion: false,
   handedness: 'right',
+  calmStats: false,
+  timer: true,
+  drawMode: 'one',
 }
 
 export const loadSettings = (): AppSettings => {
