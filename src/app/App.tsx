@@ -14,7 +14,7 @@ export const App = () => {
   }, [settings])
 
   const appClass = useMemo(() => {
-    const classes = ['h-screen overflow-hidden p-2 md:p-6']
+    const classes = ['min-h-[100dvh] overflow-x-hidden p-2 md:p-6']
     classes.push(settings.theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-100 text-zinc-900')
     if (settings.highContrast) {
       classes.push(settings.theme === 'dark' ? 'contrast-125' : 'contrast-150')
@@ -24,8 +24,8 @@ export const App = () => {
 
   return (
     <main className={appClass}>
-      <div className={`mx-auto grid h-full max-w-7xl grid-cols-1 gap-4 ${screen === 'solitaire' ? '' : 'lg:grid-cols-[1fr_360px]'}`}>
-        <section className={`relative h-full overflow-hidden border p-2 md:p-4 ${screen === 'solitaire' ? 'rounded-lg border-emerald-950 bg-emerald-900' : 'rounded-3xl border-zinc-600/60 bg-zinc-900/50'}`}>
+      <div className={`mx-auto grid min-h-[calc(100dvh-1rem)] max-w-7xl grid-cols-1 gap-4 md:min-h-[calc(100dvh-3rem)] ${screen === 'solitaire' ? '' : 'lg:grid-cols-[1fr_360px]'}`}>
+        <section className={`relative min-h-0 border p-2 md:p-4 ${screen === 'solitaire' ? 'overflow-visible rounded-lg border-emerald-950 bg-emerald-900' : 'overflow-hidden rounded-3xl border-zinc-600/60 bg-zinc-900/50'}`}>
           {screen === 'home' ? (
             <div className="flex h-full flex-col justify-between gap-4">
               <h1 className="text-3xl font-semibold">ZenPlay</h1>

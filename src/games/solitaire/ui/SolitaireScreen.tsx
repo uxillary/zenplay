@@ -199,7 +199,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
   }
 
   return (
-    <div className={`zen-solitaire-table flex h-full flex-col gap-4 ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
+    <div className={`zen-solitaire-table flex min-h-0 flex-col gap-4 ${settings.largeCards ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
       <div className={`flex flex-wrap items-center gap-2 ${settings.handedness === 'left' ? 'order-2' : ''}`}>
         <button type="button" onClick={startNewGame} className="zen-game-button">
           New Game
@@ -225,78 +225,82 @@ export const SolitaireScreen = ({ settings }: Props) => {
         ) : null}
       </div>
 
-      <div className="zen-card-row grid grid-cols-7 gap-1 md:gap-3">
-        <div className="col-span-2 flex gap-1 md:gap-3">
-          <button type="button" onClick={deal} className="zen-card-button" aria-label="Deal from stock">
-            <CardView card={getTopCard(state.stock)} placeholder={state.stock.length === 0} largeCards={settings.largeCards} animate={motionEnabled} />
-          </button>
-          <button
-            type="button"
-            onClick={toggleWasteSelection}
-            className="zen-card-button"
-          >
-            <CardView
-              card={getTopCard(state.waste)}
-              placeholder={state.waste.length === 0}
-              largeCards={settings.largeCards}
-              selected={selected?.location.type === 'waste'}
-              onDoubleClick={state.waste.length > 0 ? () => attemptFoundationMove({ type: 'waste' }, state.waste[state.waste.length - 1].id) : undefined}
-              onDragStart={state.waste.length > 0 ? startWasteDrag : undefined}
-              onDrag={updateDragPosition}
-              onDragEnd={stopDragging}
-              ghosted={dragging?.location.type === 'waste'}
-              animate={motionEnabled}
-            />
-          </button>
-        </div>
-
-        <div className="col-span-5 grid grid-cols-4 gap-1 md:gap-3">
-          {state.foundations.map((pile, index) => (
+      <div className="zen-card-row">
+        <div className="zen-top-card-row gap-4 md:gap-8">
+          <div className="flex gap-1 md:gap-3">
+            <button type="button" onClick={deal} className="zen-card-button" aria-label="Deal from stock">
+              <CardView card={getTopCard(state.stock)} placeholder={state.stock.length === 0} largeCards={settings.largeCards} animate={motionEnabled} />
+            </button>
             <button
-              key={`f-${index}`}
               type="button"
-              onClick={() => attemptMove({ type: 'foundation', index })}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => {
-                event.preventDefault()
-                attemptMove({ type: 'foundation', index })
-              }}
+              onClick={toggleWasteSelection}
               className="zen-card-button"
             >
-              <div className={canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''}>
-                <CardView card={getTopCard(pile)} placeholder={pile.length === 0} largeCards={settings.largeCards} animate={motionEnabled} />
-              </div>
+              <CardView
+                card={getTopCard(state.waste)}
+                placeholder={state.waste.length === 0}
+                largeCards={settings.largeCards}
+                selected={selected?.location.type === 'waste'}
+                onDoubleClick={state.waste.length > 0 ? () => attemptFoundationMove({ type: 'waste' }, state.waste[state.waste.length - 1].id) : undefined}
+                onDragStart={state.waste.length > 0 ? startWasteDrag : undefined}
+                onDrag={updateDragPosition}
+                onDragEnd={stopDragging}
+                ghosted={dragging?.location.type === 'waste'}
+                animate={motionEnabled}
+              />
             </button>
-          ))}
+          </div>
+
+          <div className="grid grid-cols-4 gap-1 md:gap-3">
+            {state.foundations.map((pile, index) => (
+              <button
+                key={`f-${index}`}
+                type="button"
+                onClick={() => attemptMove({ type: 'foundation', index })}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  attemptMove({ type: 'foundation', index })
+                }}
+                className="zen-card-button"
+              >
+                <div className={canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''}>
+                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} largeCards={settings.largeCards} animate={motionEnabled} />
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="zen-card-row grid grid-cols-7 gap-1 md:gap-3">
-        {state.tableau.map((pile, index) => (
-          <PileView
-            key={`t-${index}`}
-            cards={pile}
-            largeCards={settings.largeCards}
-            selectedCardId={selected?.cardId}
-            canDrop={canDrop({ type: 'tableau', index })}
-            onEmptyClick={() => attemptMove({ type: 'tableau', index })}
-            onPileClick={() => attemptMove({ type: 'tableau', index })}
-            onPileDrop={() => attemptMove({ type: 'tableau', index })}
-            onCardDragStart={(card, event) => startTableauDrag(index, card.id, event)}
-            onCardDrag={updateDragPosition}
-            onCardDragEnd={stopDragging}
-            onCardDoubleClick={(card) => {
-              if (!card.faceUp) return
-              attemptFoundationMove({ type: 'tableau', index }, card.id)
-            }}
-            draggingCardId={dragging?.location.type === 'tableau' && dragging.location.index === index ? dragging.cardId : undefined}
-            motionEnabled={motionEnabled}
-            onCardClick={(card) => {
-              if (!card.faceUp) return
-              selectTableauCard(index, card.id)
-            }}
-          />
-        ))}
+      <div className="zen-card-row">
+        <div className="zen-card-grid gap-1 md:gap-3">
+          {state.tableau.map((pile, index) => (
+            <PileView
+              key={`t-${index}`}
+              cards={pile}
+              largeCards={settings.largeCards}
+              selectedCardId={selected?.cardId}
+              canDrop={canDrop({ type: 'tableau', index })}
+              onEmptyClick={() => attemptMove({ type: 'tableau', index })}
+              onPileClick={() => attemptMove({ type: 'tableau', index })}
+              onPileDrop={() => attemptMove({ type: 'tableau', index })}
+              onCardDragStart={(card, event) => startTableauDrag(index, card.id, event)}
+              onCardDrag={updateDragPosition}
+              onCardDragEnd={stopDragging}
+              onCardDoubleClick={(card) => {
+                if (!card.faceUp) return
+                attemptFoundationMove({ type: 'tableau', index }, card.id)
+              }}
+              draggingCardId={dragging?.location.type === 'tableau' && dragging.location.index === index ? dragging.cardId : undefined}
+              motionEnabled={motionEnabled}
+              onCardClick={(card) => {
+                if (!card.faceUp) return
+                selectTableauCard(index, card.id)
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       <div

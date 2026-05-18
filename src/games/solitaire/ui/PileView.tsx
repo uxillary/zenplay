@@ -60,7 +60,7 @@ export const PileView = ({
 
   return (
     <div
-      className="relative min-h-28"
+      className="zen-pile-column relative min-h-28"
       onClick={onPileClick}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
