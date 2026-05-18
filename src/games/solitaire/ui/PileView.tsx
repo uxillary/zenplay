@@ -1,28 +1,39 @@
+import type { DragEvent } from 'react'
 import type { Card } from '../model/types'
 import { CardView } from './CardView'
 
 type Props = {
   cards: Card[]
   onCardClick: (card: Card) => void
-  onCardDragStart: (card: Card) => void
+  onCardDoubleClick: (card: Card) => void
+  onCardDragStart: (card: Card, event: DragEvent<HTMLElement>) => void
+  onCardDrag: (event: DragEvent<HTMLElement>) => void
+  onCardDragEnd: () => void
   onPileClick?: () => void
   onPileDrop?: () => void
   selectedCardId?: string
   largeCards: boolean
   canDrop?: boolean
   onEmptyClick?: () => void
+  draggingCardId?: string
+  motionEnabled: boolean
 }
 
 export const PileView = ({
   cards,
   onCardClick,
+  onCardDoubleClick,
   onCardDragStart,
+  onCardDrag,
+  onCardDragEnd,
   onPileClick,
   onPileDrop,
   selectedCardId,
   largeCards,
   canDrop,
   onEmptyClick,
+  draggingCardId,
+  motionEnabled,
 }: Props) => {
   const cardHeight = largeCards ? 128 : 112
   const faceDownGap = largeCards ? 28 : 22
@@ -40,7 +51,7 @@ export const PileView = ({
           event.preventDefault()
           onPileDrop?.()
         }}
-        className={`${canDrop ? 'ring-2 ring-sky-500 rounded-xl' : ''}`}
+        className={canDrop ? 'zen-drop-target' : ''}
       >
         <CardView placeholder largeCards={largeCards} />
       </button>
@@ -69,21 +80,31 @@ export const PileView = ({
           : undefined
       }
     >
-      {cards.map((card, index) => (
-        <div
-          key={card.id}
-          className={`absolute rounded-xl ${canDrop && index === cards.length - 1 ? 'ring-2 ring-sky-500' : ''}`}
-          style={{ top: `${topOffsetFor(index)}px` }}
-        >
+      {cards.map((card, index) => {
+        const draggingIndex = draggingCardId ? cards.findIndex((pileCard) => pileCard.id === draggingCardId) : -1
+        const ghosted = draggingIndex >= 0 && index >= draggingIndex
+
+        return (
+          <div
+            key={card.id}
+            className={`absolute ${motionEnabled ? 'zen-card-position' : ''} ${canDrop && index === cards.length - 1 ? 'zen-drop-target' : ''}`}
+            style={{ top: `${topOffsetFor(index)}px` }}
+          >
           <CardView
             card={card}
             selected={selectedCardId === card.id}
             largeCards={largeCards}
             onClick={() => onCardClick(card)}
-            onDragStart={card.faceUp ? () => onCardDragStart(card) : undefined}
+            onDoubleClick={() => onCardDoubleClick(card)}
+            onDragStart={card.faceUp ? (event) => onCardDragStart(card, event) : undefined}
+            onDrag={onCardDrag}
+            onDragEnd={onCardDragEnd}
+            ghosted={ghosted}
+            animate={motionEnabled}
           />
-        </div>
-      ))}
+          </div>
+        )
+      })}
       <div style={{ height: `${topOffsetFor(cards.length - 1) + cardHeight}px` }} />
     </div>
   )

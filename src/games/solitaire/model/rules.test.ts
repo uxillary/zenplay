@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { applyMove, dealFromStock } from './engine.ts'
-import { findObviousMoves, isValidMove, isWin, sameLocation } from './rules.ts'
+import { canAutoComplete, findAutoCompleteMove, findFoundationMove, findObviousMoves, isValidMove, isWin, sameLocation } from './rules.ts'
 import type { Card, SolitaireState } from './types.ts'
 
 const card = (rank: Card['rank'], suit: Card['suit'], faceUp = true): Card => ({
@@ -219,6 +219,65 @@ test('returns no obvious moves when no currently visible move is valid', () => {
   })
 
   assert.deepEqual(findObviousMoves(game), [])
+})
+
+test('finds a legal foundation move for double-click', () => {
+  const ace = card('A', 'hearts')
+  const game = state({
+    tableau: [[ace], [], [], [], [], [], []],
+  })
+
+  assert.deepEqual(findFoundationMove(game, { type: 'tableau', index: 0 }, ace.id), {
+    from: { type: 'tableau', index: 0 },
+    to: { type: 'foundation', index: 0 },
+    cardId: ace.id,
+  })
+})
+
+test('returns no double-click foundation move when illegal', () => {
+  const three = card('3', 'hearts')
+  const game = state({
+    tableau: [[three], [], [], [], [], [], []],
+    foundations: [[card('A', 'hearts')], [], [], []],
+  })
+
+  assert.equal(findFoundationMove(game, { type: 'tableau', index: 0 }, three.id), null)
+})
+
+test('allows auto-complete only when all tableau cards are face-up and stock/waste are empty', () => {
+  assert.equal(
+    canAutoComplete(
+      state({
+        tableau: [[card('A', 'hearts')], [card('2', 'hearts')], [], [], [], [], []],
+      }),
+    ),
+    true,
+  )
+})
+
+test('does not allow auto-complete while hidden tableau cards remain', () => {
+  assert.equal(
+    canAutoComplete(
+      state({
+        tableau: [[card('A', 'hearts', false), card('2', 'hearts')], [], [], [], [], [], []],
+      }),
+    ),
+    false,
+  )
+})
+
+test('auto-complete only returns legal foundation moves', () => {
+  const ace = card('A', 'hearts')
+  const illegalThree = card('3', 'clubs')
+  const game = state({
+    tableau: [[ace], [illegalThree], [], [], [], [], []],
+  })
+
+  assert.deepEqual(findAutoCompleteMove(game), {
+    from: { type: 'tableau', index: 0 },
+    to: { type: 'foundation', index: 0 },
+    cardId: ace.id,
+  })
 })
 
 test('rejects moves from face-down cards and non-top waste cards', () => {

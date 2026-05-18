@@ -53,6 +53,41 @@ export const isValidMove = (state: SolitaireState, move: Move): boolean => {
 
 export const isWin = (state: SolitaireState): boolean => state.foundations.every((pile) => pile.length === 13)
 
+export const findFoundationMove = (state: SolitaireState, from: Location, cardId: string): Move | null => {
+  const moves = state.foundations
+    .map((_, index) => ({ from, to: { type: 'foundation', index } as Location, cardId }))
+    .filter((move) => isValidMove(state, move))
+
+  if (moves.length > 0) {
+    const card =
+      from.type === 'tableau'
+        ? state.tableau[from.index].find((tableauCard) => tableauCard.id === cardId)
+        : from.type === 'waste'
+          ? getTopCard(state.waste)
+          : undefined
+
+    if (card?.rank === 'A') return moves[0]
+  }
+
+  return moves.length === 1 ? moves[0] : null
+}
+
+export const canAutoComplete = (state: SolitaireState): boolean =>
+  state.stock.length === 0 && state.waste.length === 0 && state.tableau.every((pile) => pile.every((card) => card.faceUp))
+
+export const findAutoCompleteMove = (state: SolitaireState): Move | null => {
+  if (!canAutoComplete(state)) return null
+
+  const moves = state.tableau.flatMap((pile, index) => {
+    const card = getTopCard(pile)
+    if (!card || !card.faceUp) return []
+    const move = findFoundationMove(state, { type: 'tableau', index }, card.id)
+    return move ? [move] : []
+  })
+
+  return moves.length > 0 ? moves[0] : null
+}
+
 export const findObviousMoves = (state: SolitaireState): Move[] => {
   const sources: Array<{ location: Location; cardId: string }> = []
   const destinations: Location[] = [

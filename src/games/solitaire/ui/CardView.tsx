@@ -1,3 +1,5 @@
+import type { DragEvent } from 'react'
+import { useRef } from 'react'
 import type { Card } from '../model/types'
 
 const suitSymbol = {
@@ -11,23 +13,62 @@ type Props = {
   card?: Card
   selected?: boolean
   onClick?: () => void
-  onDragStart?: () => void
+  onDoubleClick?: () => void
+  onDragStart?: (event: DragEvent<HTMLElement>) => void
+  onDrag?: (event: DragEvent<HTMLElement>) => void
+  onDragEnd?: () => void
   largeCards?: boolean
   placeholder?: boolean
+  ghosted?: boolean
+  animate?: boolean
 }
 
-export const CardView = ({ card, selected, onClick, onDragStart, largeCards, placeholder }: Props) => {
-  const height = largeCards ? 'h-32 w-24' : 'h-28 w-20'
+const hideNativeDragPreview = (event: DragEvent<HTMLElement>) => {
+  const preview = document.createElement('div')
+  preview.style.width = '1px'
+  preview.style.height = '1px'
+  preview.style.opacity = '0'
+  document.body.append(preview)
+  event.dataTransfer.setDragImage(preview, 0, 0)
+  window.setTimeout(() => preview.remove(), 0)
+}
+
+export const CardView = ({
+  card,
+  selected,
+  onClick,
+  onDoubleClick,
+  onDragStart,
+  onDrag,
+  onDragEnd,
+  largeCards,
+  placeholder,
+  ghosted,
+  animate,
+}: Props) => {
+  const lastTapAt = useRef(0)
+  const size = largeCards ? 'zen-playing-card--large' : 'zen-playing-card--standard'
+  const baseCardClass = `zen-playing-card ${size} transition-opacity duration-150 ${ghosted ? 'opacity-35' : 'opacity-100'} ${animate ? 'zen-card-enter' : ''}`
+  const handleTouchEnd = () => {
+    if (!onDoubleClick) return
+    const now = window.performance.now()
+    if (now - lastTapAt.current < 320) {
+      onDoubleClick()
+      lastTapAt.current = 0
+      return
+    }
+    lastTapAt.current = now
+  }
 
   if (placeholder) {
-    return <div className={`${height} rounded-xl border-2 border-dashed border-zinc-500/60 bg-zinc-900/35`} />
+    return <div className={`zen-card-placeholder ${size}`} aria-hidden />
   }
 
   if (!card) return null
 
   if (!card.faceUp) {
     if (!onClick) {
-      return <div className={`${height} rounded-xl border border-zinc-500 bg-zinc-700`} aria-hidden />
+      return <div className={`${baseCardClass} zen-card-back ${animate ? 'zen-card-flip' : ''}`} aria-hidden />
     }
     return (
       <button
@@ -36,7 +77,12 @@ export const CardView = ({ card, selected, onClick, onDragStart, largeCards, pla
           event.stopPropagation()
           onClick()
         }}
-        className={`${height} rounded-xl border border-zinc-500 bg-zinc-700`}
+        onDoubleClick={(event) => {
+          event.stopPropagation()
+          onDoubleClick?.()
+        }}
+        onTouchEnd={handleTouchEnd}
+        className={`${baseCardClass} zen-card-back ${animate ? 'zen-card-flip' : ''}`}
         aria-label="Face down card"
       />
     )
@@ -45,8 +91,11 @@ export const CardView = ({ card, selected, onClick, onDragStart, largeCards, pla
   const red = card.suit === 'hearts' || card.suit === 'diamonds'
   const content = (
     <>
-      <div className={`font-semibold ${red ? 'text-red-700' : 'text-zinc-900'}`}>{card.rank}</div>
-      <div className={`text-xl ${red ? 'text-red-700' : 'text-zinc-900'}`}>{suitSymbol[card.suit]}</div>
+      <div className={`font-bold leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`}>{card.rank}</div>
+      <div className={`text-3xl leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`}>{suitSymbol[card.suit]}</div>
+      <div className={`mt-auto self-center text-5xl leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`} aria-hidden>
+        {suitSymbol[card.suit]}
+      </div>
     </>
   )
 
@@ -57,9 +106,13 @@ export const CardView = ({ card, selected, onClick, onDragStart, largeCards, pla
         onDragStart={(event) => {
           if (!onDragStart) return
           event.dataTransfer.effectAllowed = 'move'
-          onDragStart()
+          hideNativeDragPreview(event)
+          onDragStart(event)
         }}
-        className={`${height} rounded-xl border bg-white p-2 text-left text-lg text-zinc-900 ${selected ? 'border-sky-600 ring-2 ring-sky-500' : 'border-zinc-300'}`}
+        onDrag={onDrag}
+        onDragEnd={onDragEnd}
+        onTouchEnd={handleTouchEnd}
+        className={`${baseCardClass} zen-card-face ${selected ? 'zen-card-selected' : ''}`}
       >
         {content}
       </div>
@@ -73,13 +126,21 @@ export const CardView = ({ card, selected, onClick, onDragStart, largeCards, pla
       onDragStart={(event) => {
         if (!onDragStart) return
         event.dataTransfer.effectAllowed = 'move'
-        onDragStart()
+        hideNativeDragPreview(event)
+        onDragStart(event)
       }}
+      onDrag={onDrag}
+      onDragEnd={onDragEnd}
       onClick={(event) => {
         event.stopPropagation()
         onClick()
       }}
-      className={`${height} rounded-xl border bg-white p-2 text-left text-lg text-zinc-900 ${selected ? 'border-sky-600 ring-2 ring-sky-500' : 'border-zinc-300'}`}
+      onDoubleClick={(event) => {
+        event.stopPropagation()
+        onDoubleClick?.()
+      }}
+      onTouchEnd={handleTouchEnd}
+      className={`${baseCardClass} zen-card-face ${selected ? 'zen-card-selected' : ''}`}
       aria-label={`${card.rank} of ${card.suit}`}
     >
       {content}
