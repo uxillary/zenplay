@@ -1,4 +1,4 @@
-import type { DragEvent } from 'react'
+import type { DragEvent, TouchEvent } from 'react'
 import { useRef } from 'react'
 import type { Card } from '../model/types'
 
@@ -9,9 +9,18 @@ const suitSymbol = {
   spades: '♠',
 }
 
+const rankLabel: Record<Card['rank'], string> = {
+  A: 'Ace', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10',
+  J: 'Jack', Q: 'Queen', K: 'King',
+}
+
+const accessibleCardName = (card: Card): string =>
+  `${rankLabel[card.rank]} of ${card.suit[0].toUpperCase()}${card.suit.slice(1)}`
+
 type Props = {
   card?: Card
   selected?: boolean
+  hinted?: boolean
   onClick?: () => void
   onDoubleClick?: () => void
   onDragStart?: (event: DragEvent<HTMLElement>) => void
@@ -36,6 +45,7 @@ const hideNativeDragPreview = (event: DragEvent<HTMLElement>) => {
 export const CardView = ({
   card,
   selected,
+  hinted,
   onClick,
   onDoubleClick,
   onDragStart,
@@ -48,11 +58,12 @@ export const CardView = ({
 }: Props) => {
   const lastTapAt = useRef(0)
   const size = largeCards ? 'zen-playing-card--large' : 'zen-playing-card--standard'
-  const baseCardClass = `zen-playing-card ${size} transition-opacity duration-150 ${ghosted ? 'opacity-35' : 'opacity-100'} ${animate ? 'zen-card-enter' : ''}`
-  const handleTouchEnd = () => {
+  const baseCardClass = `zen-playing-card ${size} transition-opacity duration-150 ${ghosted ? 'opacity-35' : 'opacity-100'} ${animate ? 'zen-card-enter' : ''} ${hinted ? 'zen-hint-source' : ''}`
+  const handleTouchEnd = (event: TouchEvent<HTMLElement>) => {
     if (!onDoubleClick) return
     const now = window.performance.now()
     if (now - lastTapAt.current < 320) {
+      event.preventDefault()
       onDoubleClick()
       lastTapAt.current = 0
       return
@@ -67,32 +78,14 @@ export const CardView = ({
   if (!card) return null
 
   if (!card.faceUp) {
-    if (!onClick) {
-      return <div className={`${baseCardClass} zen-card-back ${animate ? 'zen-card-flip' : ''}`} aria-hidden />
-    }
-    return (
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation()
-          onClick()
-        }}
-        onDoubleClick={(event) => {
-          event.stopPropagation()
-          onDoubleClick?.()
-        }}
-        onTouchEnd={handleTouchEnd}
-        className={`${baseCardClass} zen-card-back ${animate ? 'zen-card-flip' : ''}`}
-        aria-label="Face down card"
-      />
-    )
+    return <div className={`${baseCardClass} zen-card-back ${animate ? 'zen-card-flip' : ''}`} aria-hidden="true" />
   }
 
   const red = card.suit === 'hearts' || card.suit === 'diamonds'
   const content = (
     <>
-      <div className={`font-bold leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`}>{card.rank}</div>
-      <div className={`text-3xl leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`}>{suitSymbol[card.suit]}</div>
+      <div className={`font-bold leading-none ${largeCards ? 'text-xl' : 'text-lg'} ${red ? 'text-red-700' : 'text-zinc-950'}`}>{card.rank}</div>
+      <div className={`${largeCards ? 'text-4xl' : 'text-3xl'} leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`}>{suitSymbol[card.suit]}</div>
       <div className={`mt-auto self-center text-5xl leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`} aria-hidden>
         {suitSymbol[card.suit]}
       </div>
@@ -141,7 +134,8 @@ export const CardView = ({
       }}
       onTouchEnd={handleTouchEnd}
       className={`${baseCardClass} zen-card-face ${selected ? 'zen-card-selected' : ''}`}
-      aria-label={`${card.rank} of ${card.suit}`}
+      aria-label={`${accessibleCardName(card)}${selected ? ', selected' : ''}${hinted ? ', suggested move' : ''}`}
+      aria-pressed={Boolean(selected)}
     >
       {content}
     </button>

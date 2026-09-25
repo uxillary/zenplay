@@ -89,9 +89,9 @@ export const SettingsPanel = ({ settings, onChange }: Props) => (
         <p className="font-semibold">Cards drawn from stock</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button type="button" aria-pressed={settings.drawMode === 'one'} onClick={() => onChange('drawMode', 'one')} className={`zen-choice-button ${settings.drawMode === 'one' ? 'is-selected' : ''}`}>Draw one</button>
-          <button type="button" disabled className="zen-choice-button" aria-describedby="draw-three-help">Draw three</button>
+          <button type="button" aria-pressed={settings.drawMode === 'three'} onClick={() => onChange('drawMode', 'three')} className={`zen-choice-button ${settings.drawMode === 'three' ? 'is-selected' : ''}`}>Draw three</button>
         </div>
-        <p id="draw-three-help" className="text-sm">Draw three is not available yet.</p>
+        <p className="text-sm">The new setting applies to your next stock action.</p>
       </div>
     </section>
   </section>

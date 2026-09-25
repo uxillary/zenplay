@@ -3,6 +3,7 @@ import { AccessibilityProvider } from './AccessibilityProvider'
 import { useAccessibility } from './accessibilityContext'
 import { games } from './gameRegistry'
 import { GameCard } from '../components/GameCard'
+import { GameDialog } from '../components/GameDialog'
 import { GameShell } from '../components/GameShell'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
@@ -12,9 +13,20 @@ type Screen = 'home' | 'game' | 'settings' | 'install'
 const Application = () => {
   const [screen, setScreen] = useState<Screen>('home')
   const [gameId, setGameId] = useState<string | null>(null)
+  const [gameHasProgress, setGameHasProgress] = useState(false)
+  const [confirmLeaveGame, setConfirmLeaveGame] = useState(false)
   const { settings, effectiveSettings, setSetting } = useAccessibility()
 
   const selectedGame = games.find((game) => game.id === gameId)
+  const returnHome = () => {
+    setConfirmLeaveGame(false)
+    setGameHasProgress(false)
+    setScreen('home')
+  }
+  const requestGameBack = () => {
+    if (gameHasProgress) setConfirmLeaveGame(true)
+    else returnHome()
+  }
 
   return (
     <main className="min-h-[100dvh] overflow-x-hidden bg-[#f6f3e9] p-3 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 md:p-6">
@@ -40,8 +52,16 @@ const Application = () => {
         ) : null}
 
         {screen === 'game' && selectedGame ? (
-          <GameShell title={selectedGame.name} onBack={() => setScreen('home')}>
-            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} /> : null}
+          <GameShell title={selectedGame.name} onBack={requestGameBack}>
+            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onProgressChange={setGameHasProgress} /> : null}
+            {confirmLeaveGame ? (
+              <GameDialog alert title="Back to games?" description="Your current game will be lost." onDismiss={() => setConfirmLeaveGame(false)}>
+                <div className="flex flex-wrap gap-3">
+                  <button type="button" onClick={() => setConfirmLeaveGame(false)} className="zen-game-button">Keep playing</button>
+                  <button type="button" onClick={returnHome} className="zen-game-button">Back to Games</button>
+                </div>
+              </GameDialog>
+            ) : null}
           </GameShell>
         ) : null}
 

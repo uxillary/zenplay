@@ -4,6 +4,8 @@ import { CardView } from './CardView'
 
 type Props = {
   cards: Card[]
+  columnIndex: number
+  ariaLabel: string
   onCardClick: (card: Card) => void
   onCardDoubleClick: (card: Card) => void
   onCardDragStart: (card: Card, event: DragEvent<HTMLElement>) => void
@@ -16,11 +18,15 @@ type Props = {
   canDrop?: boolean
   onEmptyClick?: () => void
   draggingCardId?: string
+  hintedCardId?: string
+  hintedDestination?: boolean
   motionEnabled: boolean
 }
 
 export const PileView = ({
   cards,
+  columnIndex,
+  ariaLabel,
   onCardClick,
   onCardDoubleClick,
   onCardDragStart,
@@ -33,6 +39,8 @@ export const PileView = ({
   canDrop,
   onEmptyClick,
   draggingCardId,
+  hintedCardId,
+  hintedDestination,
   motionEnabled,
 }: Props) => {
   const cardHeight = largeCards ? 128 : 112
@@ -51,7 +59,8 @@ export const PileView = ({
           event.preventDefault()
           onPileDrop?.()
         }}
-        className={canDrop ? 'zen-drop-target' : ''}
+        className={`${canDrop ? 'zen-drop-target' : ''} ${hintedDestination ? 'zen-hint-destination' : ''}`}
+        aria-label={ariaLabel}
       >
         <CardView placeholder largeCards={largeCards} />
       </button>
@@ -60,25 +69,15 @@ export const PileView = ({
 
   return (
     <div
-      className="zen-pile-column relative min-h-28"
+      className={`zen-pile-column relative min-h-28 ${hintedDestination ? 'zen-hint-destination' : ''}`}
       onClick={onPileClick}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault()
         onPileDrop?.()
       }}
-      role={onPileClick ? 'button' : undefined}
-      tabIndex={onPileClick ? 0 : undefined}
-      onKeyDown={
-        onPileClick
-          ? (event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault()
-                onPileClick()
-              }
-            }
-          : undefined
-      }
+      role="group"
+      aria-label={ariaLabel || `Tableau column ${columnIndex + 1}`}
     >
       {cards.map((card, index) => {
         const draggingIndex = draggingCardId ? cards.findIndex((pileCard) => pileCard.id === draggingCardId) : -1
@@ -93,6 +92,7 @@ export const PileView = ({
           <CardView
             card={card}
             selected={selectedCardId === card.id}
+            hinted={hintedCardId === card.id}
             largeCards={largeCards}
             onClick={() => onCardClick(card)}
             onDoubleClick={() => onCardDoubleClick(card)}

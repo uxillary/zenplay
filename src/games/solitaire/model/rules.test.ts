@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { applyMove, dealFromStock } from './engine.ts'
-import { canAutoComplete, findAutoCompleteMove, findFoundationMove, findObviousMoves, isValidMove, isWin, sameLocation } from './rules.ts'
-import type { Card, SolitaireState } from './types.ts'
+import { applyMove, dealFromStock, undo } from './engine.ts'
+import { canAutoComplete, findAutoCompleteMove, findFoundationMove, findHint, findObviousMoves, getAutoFinishPlan, isValidMove, isWin, sameLocation } from './rules.ts'
+import { RANKS, type Card, type SolitaireState } from './types.ts'
 
 const card = (rank: Card['rank'], suit: Card['suit'], faceUp = true): Card => ({
   id: `${suit}-${rank}`,
@@ -103,6 +103,17 @@ test('moves aces to empty foundations', () => {
   )
 })
 
+test('does not start a duplicate foundation for a suit already in play', () => {
+  const duplicateAce = card('A', 'hearts')
+  const game = state({
+    tableau: [[duplicateAce], [], [], [], [], [], []],
+    foundations: [[card('A', 'hearts')], [], [], []],
+  })
+  assert.equal(isValidMove(game, {
+    from: { type: 'tableau', index: 0 }, to: { type: 'foundation', index: 1 }, cardId: duplicateAce.id,
+  }), false)
+})
+
 test('moves next-suit cards to foundations', () => {
   const two = card('2', 'hearts')
   const game = state({
@@ -170,25 +181,45 @@ test('draws one stock card face-up to waste and recycles waste when stock is emp
   )
 })
 
-test('detects completed foundation piles as a win', () => {
-  const completedFoundation = [
-    'A',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    '10',
-    'J',
-    'Q',
-    'K',
-  ].map((rank) => card(rank as Card['rank'], 'spades'))
+test('Draw 3 transfers up to three cards and undo restores stock and waste', () => {
+  const game = state({ stock: [card('8', 'spades', false), card('9', 'spades', false), card('10', 'spades', false), card('J', 'spades', false)] })
+  const drawn = dealFromStock(game, 3)
 
-  assert.equal(isWin(state({ foundations: [completedFoundation, completedFoundation, completedFoundation, completedFoundation] })), true)
-  assert.equal(isWin(state({ foundations: [completedFoundation, completedFoundation, completedFoundation, []] })), false)
+  assert.deepEqual(drawn.stock.map((item) => item.id), ['spades-8'])
+  assert.deepEqual(drawn.waste.map((item) => item.id), ['spades-J', 'spades-10', 'spades-9'])
+  assert.ok(drawn.waste.every((item) => item.faceUp))
+  assert.deepEqual(undo(drawn), game)
+})
+
+test('Draw 3 draws only the cards remaining in stock', () => {
+  const drawn = dealFromStock(state({ stock: [card('A', 'clubs', false), card('2', 'clubs', false)] }), 3)
+  assert.equal(drawn.stock.length, 0)
+  assert.equal(drawn.waste.length, 2)
+})
+
+test('Draw 3 keeps every card exactly once across stock and waste', () => {
+  const deck = RANKS.slice(0, 13).map((rank) => card(rank, 'clubs', false))
+  const firstDeal = dealFromStock(state({ stock: deck }), 3)
+  const recycled = dealFromStock(firstDeal, 3)
+  const allCards = [...recycled.stock, ...recycled.waste]
+  assert.equal(allCards.length, deck.length)
+  assert.equal(new Set(allCards.map((item) => item.id)).size, deck.length)
+})
+
+test('stock recycle preserves card order for the next Draw 3', () => {
+  const recycled = dealFromStock(state({ waste: [card('A', 'diamonds'), card('2', 'diamonds'), card('3', 'diamonds')] }), 3)
+  assert.deepEqual(recycled.stock.map(({ id, faceUp }) => [id, faceUp]), [
+    ['diamonds-3', false], ['diamonds-2', false], ['diamonds-A', false],
+  ])
+  const drawn = dealFromStock(recycled, 3)
+  assert.deepEqual(drawn.waste.map(({ id }) => id), ['diamonds-A', 'diamonds-2', 'diamonds-3'])
+})
+
+test('detects completed foundation piles as a win', () => {
+  const completed = (suit: Card['suit']) => RANKS.map((rank) => card(rank, suit))
+  assert.equal(isWin(state({ foundations: [completed('clubs'), completed('diamonds'), completed('hearts'), completed('spades')] })), true)
+  assert.equal(isWin(state({ foundations: [completed('spades'), completed('spades'), completed('hearts'), completed('clubs')] })), false)
+  assert.equal(isWin(state({ foundations: [completed('clubs'), completed('diamonds'), completed('hearts'), []] })), false)
 })
 
 test('compares locations without relying on object stringification', () => {
@@ -244,15 +275,15 @@ test('returns no double-click foundation move when illegal', () => {
   assert.equal(findFoundationMove(game, { type: 'tableau', index: 0 }, three.id), null)
 })
 
-test('allows auto-complete only when all tableau cards are face-up and stock/waste are empty', () => {
+test('auto-finish finds a complete deterministic foundation sequence', () => {
+  const game = state({
+    tableau: [[card('A', 'hearts')], [card('2', 'hearts')], [], [], [], [], []],
+  })
   assert.equal(
-    canAutoComplete(
-      state({
-        tableau: [[card('A', 'hearts')], [card('2', 'hearts')], [], [], [], [], []],
-      }),
-    ),
+    canAutoComplete(game),
     true,
   )
+  assert.equal(getAutoFinishPlan(game)?.length, 2)
 })
 
 test('does not allow auto-complete while hidden tableau cards remain', () => {
@@ -268,9 +299,9 @@ test('does not allow auto-complete while hidden tableau cards remain', () => {
 
 test('auto-complete only returns legal foundation moves', () => {
   const ace = card('A', 'hearts')
-  const illegalThree = card('3', 'clubs')
+  const two = card('2', 'hearts')
   const game = state({
-    tableau: [[ace], [illegalThree], [], [], [], [], []],
+    tableau: [[ace], [two], [], [], [], [], []],
   })
 
   assert.deepEqual(findAutoCompleteMove(game), {
@@ -278,6 +309,43 @@ test('auto-complete only returns legal foundation moves', () => {
     to: { type: 'foundation', index: 0 },
     cardId: ace.id,
   })
+})
+
+test('auto-finish is unavailable when a tableau choice remains', () => {
+  const game = state({ tableau: [[card('3', 'spades')], [card('4', 'hearts')], [], [], [], [], []] })
+  assert.equal(canAutoComplete(game), false)
+})
+
+test('hint prioritizes a legal move that exposes a hidden tableau card', () => {
+  const four = card('4', 'clubs')
+  const game = state({
+    tableau: [[card('9', 'spades', false), four], [card('5', 'hearts')], [], [], [], [], []],
+  })
+  assert.deepEqual(findHint(game), {
+    type: 'move',
+    move: { from: { type: 'tableau', index: 0 }, to: { type: 'tableau', index: 1 }, cardId: four.id },
+  })
+})
+
+test('hint suggests a foundation move before drawing from stock', () => {
+  const ace = card('A', 'hearts')
+  const game = state({ tableau: [[ace], [], [], [], [], [], []], stock: [card('2', 'clubs', false)] })
+  assert.deepEqual(findHint(game), {
+    type: 'move',
+    move: { from: { type: 'tableau', index: 0 }, to: { type: 'foundation', index: 0 }, cardId: ace.id },
+  })
+})
+
+test('hint suggests a stock action when no board move is available', () => {
+  const game = state({ tableau: [[card('3', 'spades')], [card('5', 'hearts')], [], [], [], [], []], stock: [card('A', 'clubs', false)] })
+  assert.deepEqual(findHint(game), { type: 'deal' })
+})
+
+test('invalid self and out-of-range moves are rejected safely', () => {
+  const four = card('4', 'clubs')
+  const game = state({ tableau: [[card('5', 'hearts'), four], [], [], [], [], [], []] })
+  assert.equal(isValidMove(game, { from: { type: 'tableau', index: 0 }, to: { type: 'tableau', index: 0 }, cardId: four.id }), false)
+  assert.equal(isValidMove(game, { from: { type: 'tableau', index: 8 }, to: { type: 'tableau', index: 1 }, cardId: four.id }), false)
 })
 
 test('rejects moves from face-down cards and non-top waste cards', () => {
@@ -329,4 +397,12 @@ test('applies valid moves through the engine without changing invalid moves', ()
   assert.equal(afterMove.tableau[1].at(-1)?.id, three.id)
   assert.equal(afterMove.history.length, 1)
   assert.equal(afterInvalidMove, game)
+})
+
+test('undo restores a legal tableau move and cannot go before the initial state', () => {
+  const three = card('3', 'spades')
+  const game = state({ tableau: [[three], [card('4', 'hearts')], [], [], [], [], []] })
+  const moved = applyMove(game, { from: { type: 'tableau', index: 0 }, to: { type: 'tableau', index: 1 }, cardId: three.id })
+  assert.deepEqual(undo(moved), game)
+  assert.equal(undo(game), game)
 })

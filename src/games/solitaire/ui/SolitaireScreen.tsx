@@ -2,14 +2,17 @@ import { useEffect, useMemo, useReducer, useState, type DragEvent } from 'react'
 import type { AppSettings } from '../../../lib/settings'
 import { applyMove, dealFromStock, undo } from '../model/engine'
 import { createInitialState } from '../model/deal'
-import { canAutoComplete, findAutoCompleteMove, findFoundationMove, findObviousMoves, getTopCard, isValidMove, isWin, sameLocation } from '../model/rules'
-import type { Card, Location, Move, SolitaireState } from '../model/types'
+import { findFoundationMove, findHint, getAutoFinishPlan, getTopCard, isValidMove, isWin, sameLocation, type SolitaireHint } from '../model/rules'
+import type { Card, Location, Move, SolitaireState, StockDrawCount } from '../model/types'
 import { CardView } from './CardView'
 import { PileView } from './PileView'
 import { GameToolbar } from '../../../components/GameToolbar'
+import { GameDialog } from '../../../components/GameDialog'
 
 type Props = {
   settings: AppSettings
+  onBack: () => void
+  onProgressChange: (hasProgress: boolean) => void
 }
 
 type DragState = {
@@ -22,34 +25,58 @@ type DragState = {
 
 type Action =
   | { type: 'move'; move: Move }
-  | { type: 'deal' }
+  | { type: 'deal'; drawCount: StockDrawCount }
   | { type: 'undo' }
   | { type: 'new' }
 
 const reducer = (state: SolitaireState, action: Action): SolitaireState => {
   if (action.type === 'move') return applyMove(state, action.move)
-  if (action.type === 'deal') return dealFromStock(state)
+  if (action.type === 'deal') return dealFromStock(state, action.drawCount)
   if (action.type === 'undo') return undo(state)
   if (action.type === 'new') return createInitialState()
   return state
 }
 
-export const SolitaireScreen = ({ settings }: Props) => {
+const rankNames: Record<Card['rank'], string> = {
+  A: 'Ace', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10',
+  J: 'Jack', Q: 'Queen', K: 'King',
+}
+
+const describeCard = (card?: Card): string => card
+  ? `${rankNames[card.rank]} of ${card.suit[0].toUpperCase()}${card.suit.slice(1)}`
+  : 'empty'
+
+const cardCount = (count: number): string => `${count} ${count === 1 ? 'card' : 'cards'}`
+
+export const SolitaireScreen = ({ settings, onBack, onProgressChange }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState)
   const [selected, setSelected] = useState<{ location: Location; cardId: string } | null>(null)
   const [invalidMove, setInvalidMove] = useState(false)
-  const [moves, setMoves] = useState(0)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const [showNoObviousMoves, setShowNoObviousMoves] = useState(false)
+  const [hint, setHint] = useState<SolitaireHint | null>(null)
+  const [hintMessage, setHintMessage] = useState('')
+  const [showRules, setShowRules] = useState(false)
+  const [pendingAction, setPendingAction] = useState(false)
+  const [pageVisible, setPageVisible] = useState(() => document.visibilityState === 'visible')
   const [dragging, setDragging] = useState<DragState>(null)
   const motionEnabled = !settings.reducedMotion
-  const autoCompleteMove = useMemo(() => findAutoCompleteMove(state), [state])
+  const autoFinishPlan = useMemo(() => getAutoFinishPlan(state), [state])
 
   useEffect(() => {
-    if (!settings.timer || settings.calmStats || isWin(state)) return undefined
+    const updateVisibility = () => setPageVisible(document.visibilityState === 'visible')
+    document.addEventListener('visibilitychange', updateVisibility)
+    return () => document.removeEventListener('visibilitychange', updateVisibility)
+  }, [])
+
+  useEffect(() => {
+    if (!settings.timer || settings.calmStats || isWin(state) || !pageVisible) return undefined
     const intervalId = window.setInterval(() => setElapsedSeconds((current) => current + 1), 1000)
     return () => window.clearInterval(intervalId)
-  }, [settings.calmStats, settings.timer, state])
+  }, [pageVisible, settings.calmStats, settings.timer, state])
+
+  useEffect(() => {
+    onProgressChange(state.history.length > 0 && !isWin(state))
+  }, [onProgressChange, state])
 
   const destinations = useMemo(() => {
     if (!selected) return [] as Location[]
@@ -74,24 +101,33 @@ export const SolitaireScreen = ({ settings }: Props) => {
     setDragging(null)
   }
 
-  const recordMove = () => {
-    setMoves((current) => current + 1)
-    setShowNoObviousMoves(false)
-  }
-
   const startNewGame = () => {
     dispatch({ type: 'new' })
-    setMoves(0)
     setElapsedSeconds(0)
-    setShowNoObviousMoves(false)
+    setHint(null)
+    setHintMessage('')
+    setPendingAction(false)
     clearSelection()
+  }
+
+  const requestNewGame = () => {
+    if (state.history.length > 0 && !isWin(state)) {
+      setPendingAction(true)
+      return
+    }
+    startNewGame()
   }
 
   const undoMove = () => {
     dispatch({ type: 'undo' })
-    setMoves((current) => Math.max(0, current - 1))
-    setShowNoObviousMoves(false)
+    setHint(null)
+    setHintMessage('')
     clearSelection()
+  }
+
+  const dismissHint = () => {
+    setHint(null)
+    setHintMessage('')
   }
 
   const formatTime = (seconds: number) => {
@@ -105,10 +141,12 @@ export const SolitaireScreen = ({ settings }: Props) => {
     const card = state.waste[state.waste.length - 1]
     if (selected?.location.type === 'waste' && selected.cardId === card.id) {
       clearSelection()
+      dismissHint()
       return
     }
     setSelected({ location: { type: 'waste' }, cardId: card.id })
     setInvalidMove(false)
+    dismissHint()
   }
 
   const selectTableauCard = (index: number, cardId: string) => {
@@ -118,6 +156,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
     }
     setSelected({ location: { type: 'tableau', index }, cardId })
     setInvalidMove(false)
+    dismissHint()
   }
 
   const updateDragPosition = (event: DragEvent<HTMLElement>) => {
@@ -146,6 +185,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
   }
 
   const attemptMove = (to: Location) => {
+    dismissHint()
     if (!selected) return
     const move: Move = { from: selected.location, to, cardId: selected.cardId }
     if (applyLegalMove(move)) {
@@ -159,66 +199,100 @@ export const SolitaireScreen = ({ settings }: Props) => {
   const applyLegalMove = (move: Move) => {
     if (!isValidMove(state, move)) return false
     dispatch({ type: 'move', move })
-    recordMove()
+    dismissHint()
+    setInvalidMove(false)
     clearSelection()
     return true
   }
 
   const attemptFoundationMove = (location: Location, cardId: string) => {
+    dismissHint()
     const move = findFoundationMove(state, location, cardId)
     if (move) {
       applyLegalMove(move)
     }
   }
 
-  const autoCompleteOnce = () => {
-    let nextState = state
-    let completedMoves = 0
-    let nextMove = findAutoCompleteMove(nextState)
-
-    while (nextMove) {
-      dispatch({ type: 'move', move: nextMove })
-      nextState = applyMove(nextState, nextMove)
-      completedMoves += 1
-      nextMove = findAutoCompleteMove(nextState)
-    }
-
-    if (completedMoves > 0) {
-      setMoves((current) => current + completedMoves)
-      setShowNoObviousMoves(false)
-      clearSelection()
-    }
+  const autoFinish = () => {
+    autoFinishPlan?.forEach((move) => dispatch({ type: 'move', move }))
+    dismissHint()
+    clearSelection()
   }
 
   const deal = () => {
-    dispatch({ type: 'deal' })
-    recordMove()
+    dispatch({ type: 'deal', drawCount: settings.drawMode === 'three' ? 3 : 1 })
+    dismissHint()
+    clearSelection()
   }
 
-  const checkObviousMoves = () => {
-    setShowNoObviousMoves(findObviousMoves(state).length === 0)
+  const showHint = () => {
+    const suggestion = findHint(state)
+    setHint(suggestion)
+    setHintMessage(suggestion ? '' : 'No move found.')
+  }
+
+  const handleTableauCardClick = (index: number, card: Card) => {
+    if (!card.faceUp) return
+    if (selected?.location.type === 'tableau' && selected.location.index === index && selected.cardId === card.id) {
+      clearSelection()
+      dismissHint()
+      return
+    }
+    if (selected) {
+      if (applyLegalMove({ from: selected.location, to: { type: 'tableau', index }, cardId: selected.cardId })) return
+      setInvalidMove(true)
+      setTimeout(() => setInvalidMove(false), 900)
+      return
+    }
+    selectTableauCard(index, card.id)
+  }
+
+  const hintSource = (location: Location, cardId: string): boolean =>
+    hint?.type === 'move' && sameLocation(hint.move.from, location) && hint.move.cardId === cardId
+
+  const hintDestination = (location: Location): boolean =>
+    hint?.type === 'move' && sameLocation(hint.move.to, location)
+
+  const hintDescription = (): string => {
+    if (hint?.type === 'deal') return 'Try drawing from the stock.'
+    if (hint?.type !== 'move') return hintMessage
+    const card = hint.move.from.type === 'waste'
+      ? getTopCard(state.waste)
+      : hint.move.from.type === 'tableau'
+        ? state.tableau[hint.move.from.index]?.find((item) => item.id === hint.move.cardId)
+        : undefined
+    const target = hint.move.to.type === 'tableau'
+      ? `tableau column ${hint.move.to.index + 1}`
+      : hint.move.to.type === 'foundation'
+        ? `foundation ${hint.move.to.index + 1}`
+        : 'waste pile'
+    return `Try moving ${describeCard(card)} to ${target}.`
   }
 
   return (
-    <div className={`zen-solitaire-table flex min-h-0 flex-col gap-4 ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
+    <div className={`zen-solitaire-table relative flex min-h-0 flex-col gap-4 ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
       <GameToolbar className={settings.handedness === 'left' ? 'order-2' : ''}>
-        <button type="button" onClick={startNewGame} className="zen-game-button">
+        <button type="button" onClick={requestNewGame} className="zen-game-button">
           New Game
         </button>
-        <button type="button" onClick={undoMove} className="zen-game-button">
+        <button type="button" onClick={undoMove} disabled={state.history.length === 0} className="zen-game-button">
           Undo
         </button>
-        <button type="button" onClick={checkObviousMoves} className="zen-game-button">
+        <button type="button" onClick={showHint} className="zen-game-button">
           Hint
         </button>
-        {canAutoComplete(state) && autoCompleteMove ? (
-          <button type="button" onClick={autoCompleteOnce} className="zen-game-button">
-            Auto-complete
+        <button type="button" onClick={() => setShowRules(true)} className="zen-game-button">
+          Rules
+        </button>
+        {selected ? <button type="button" onClick={clearSelection} className="zen-game-button">Cancel selection</button> : null}
+        {autoFinishPlan ? (
+          <button type="button" onClick={autoFinish} className="zen-game-button">
+            Auto-finish
           </button>
         ) : null}
         {!settings.calmStats ? (
           <div className="ml-auto flex w-full min-w-0 flex-wrap justify-between gap-x-4 gap-y-1 text-lg font-semibold text-white sm:w-auto sm:justify-end">
-            <span className="zen-game-stat">Moves {moves}</span>
+            <span className="zen-game-stat">Moves {state.history.length}</span>
             {settings.timer ? (
               <span className="zen-game-stat">Time {formatTime(elapsedSeconds)}</span>
             ) : null}
@@ -229,19 +303,31 @@ export const SolitaireScreen = ({ settings }: Props) => {
       <div className="zen-card-row">
         <div className="zen-top-card-row gap-4 md:gap-8">
           <div className="flex gap-1 md:gap-3">
-            <button type="button" onClick={deal} className="zen-card-button" aria-label="Deal from stock">
+            <button
+              type="button"
+              onClick={deal}
+              className={`zen-card-button ${hint?.type === 'deal' ? 'zen-hint-source' : ''}`}
+              aria-label={`Stock, ${cardCount(state.stock.length)} remaining${settings.drawMode === 'three' ? ', draw three' : ', draw one'}`}
+            >
               <CardView card={getTopCard(state.stock)} placeholder={state.stock.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
             </button>
             <button
               type="button"
               onClick={toggleWasteSelection}
+              onDoubleClick={() => {
+                const top = getTopCard(state.waste)
+                if (top) attemptFoundationMove({ type: 'waste' }, top.id)
+              }}
               className="zen-card-button"
+              aria-label={`Waste pile, ${describeCard(getTopCard(state.waste))}, ${cardCount(state.waste.length)}`}
+              aria-pressed={selected?.location.type === 'waste'}
             >
               <CardView
                 card={getTopCard(state.waste)}
                 placeholder={state.waste.length === 0}
                 largeCards={(settings.gamePieceScale === 'large')}
                 selected={selected?.location.type === 'waste'}
+                hinted={hintSource({ type: 'waste' }, getTopCard(state.waste)?.id ?? '')}
                 onDoubleClick={state.waste.length > 0 ? () => attemptFoundationMove({ type: 'waste' }, state.waste[state.waste.length - 1].id) : undefined}
                 onDragStart={state.waste.length > 0 ? startWasteDrag : undefined}
                 onDrag={updateDragPosition}
@@ -264,8 +350,9 @@ export const SolitaireScreen = ({ settings }: Props) => {
                   attemptMove({ type: 'foundation', index })
                 }}
                 className="zen-card-button"
+                aria-label={`Foundation ${getTopCard(pile)?.suit ?? `column ${index + 1}`}, ${describeCard(getTopCard(pile))}`}
               >
-                <div className={canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''}>
+                <div className={`${canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''} ${hintDestination({ type: 'foundation', index }) ? 'zen-hint-destination' : ''}`}>
                   <CardView card={getTopCard(pile)} placeholder={pile.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
                 </div>
               </button>
@@ -280,6 +367,8 @@ export const SolitaireScreen = ({ settings }: Props) => {
             <PileView
               key={`t-${index}`}
               cards={pile}
+              columnIndex={index}
+              ariaLabel={`Tableau column ${index + 1}, ${cardCount(pile.length)}, ${describeCard(getTopCard(pile))}`}
               largeCards={(settings.gamePieceScale === 'large')}
               selectedCardId={selected?.cardId}
               canDrop={canDrop({ type: 'tableau', index })}
@@ -294,20 +383,18 @@ export const SolitaireScreen = ({ settings }: Props) => {
                 attemptFoundationMove({ type: 'tableau', index }, card.id)
               }}
               draggingCardId={dragging?.location.type === 'tableau' && dragging.location.index === index ? dragging.cardId : undefined}
+              hintedCardId={hint?.type === 'move' && hint.move.from.type === 'tableau' && hint.move.from.index === index ? hint.move.cardId : undefined}
+              hintedDestination={hintDestination({ type: 'tableau', index })}
               motionEnabled={motionEnabled}
               onCardClick={(card) => {
-                if (!card.faceUp) return
-                selectTableauCard(index, card.id)
+                handleTableauCardClick(index, card)
               }}
             />
           ))}
         </div>
       </div>
 
-      <div
-        aria-hidden
-        className={`h-2 w-16 rounded-full bg-white/70 ${invalidMove && motionEnabled ? 'opacity-100' : 'opacity-0'}`}
-      />
+      {invalidMove ? <div role="status" aria-live="polite" className="zen-game-message">That card cannot go there.</div> : null}
 
       {dragging ? (
         <div
@@ -329,27 +416,47 @@ export const SolitaireScreen = ({ settings }: Props) => {
         </div>
       ) : null}
 
-      {showNoObviousMoves ? (
-        <div className="zen-game-message flex flex-wrap items-center gap-2">
-          <span>No more moves.</span>
-          <button type="button" onClick={undoMove} className="zen-game-button zen-game-button--small">
-            Undo
-          </button>
-          <button type="button" onClick={startNewGame} className="zen-game-button zen-game-button--small">
-            New Game
-          </button>
+      {hint || hintMessage ? (
+        <div role="status" aria-live="polite" className="zen-game-message flex flex-wrap items-center justify-between gap-3">
+          <span>{hintDescription()}</span>
+          {hint ? <button type="button" onClick={dismissHint} className="zen-game-button">Dismiss hint</button> : null}
         </div>
       ) : null}
 
       {isWin(state) ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-          <div className="w-72 rounded-lg bg-white p-6 text-center text-zinc-950 shadow-xl">
-            <p className="mb-4 text-2xl font-semibold">Well done</p>
-            <button type="button" onClick={startNewGame} className="zen-game-button">
-              New Game
-            </button>
+        <GameDialog title="You did it." description="All cards are safely in the foundations.">
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={startNewGame} className="zen-game-button">New Game</button>
+            <button type="button" onClick={onBack} className="zen-game-button">Back to Games</button>
           </div>
-        </div>
+        </GameDialog>
+      ) : null}
+
+      {pendingAction ? (
+        <GameDialog
+          alert
+          title="Start a new game?"
+          description="Your current game will be replaced."
+          onDismiss={() => setPendingAction(false)}
+        >
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={() => setPendingAction(false)} className="zen-game-button">Keep playing</button>
+            <button type="button" onClick={startNewGame} className="zen-game-button">New game</button>
+          </div>
+        </GameDialog>
+      ) : null}
+
+      {showRules ? (
+        <GameDialog title="How to play Solitaire" onDismiss={() => setShowRules(false)}>
+          <div className="max-h-[65vh] space-y-3 overflow-y-auto text-base leading-relaxed">
+            <section><h3 className="font-bold">Goal</h3><p>Move all 52 cards to the four foundations, building each suit from Ace to King.</p></section>
+            <section><h3 className="font-bold">Tableau</h3><p>Build columns down in alternating red and black. Move a face-up card or a correctly ordered face-up stack. Only a King may start an empty column.</p></section>
+            <section><h3 className="font-bold">Foundations</h3><p>Build each foundation up by suit, starting with an Ace.</p></section>
+            <section><h3 className="font-bold">Stock and waste</h3><p>Tap the stock to draw {settings.drawMode === 'three' ? 'up to three cards' : 'one card'}. When it is empty, tap it again to turn the waste back over.</p></section>
+            <section><h3 className="font-bold">Controls</h3><p>Tap a card or stack, then tap a destination. Tap it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
+          </div>
+          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
+        </GameDialog>
       ) : null}
     </div>
   )

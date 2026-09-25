@@ -32,6 +32,8 @@ export type Move = {
   cardId: string
 }
 
+export type StockDrawCount = 1 | 3
+
 export type TableauPile = Card[]
 export type FoundationPile = Card[]
 

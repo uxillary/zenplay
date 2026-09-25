@@ -358,3 +358,24 @@ button:focus-visible,
 .high-contrast .zen-game-button {
   border-color: currentColor;
 }
+
+.zen-hint-source {
+  outline: 4px dashed #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #14532d;
+}
+
+.zen-hint-destination {
+  outline: 5px dotted #facc15;
+  outline-offset: 2px;
+}
+
+.high-contrast .zen-hint-source {
+  outline: 5px dashed #ffffff;
+  box-shadow: 0 0 0 3px #000000;
+}
+
+.high-contrast .zen-hint-destination {
+  outline: 6px double #facc15;
+  outline-offset: 2px;
+}

@@ -1,4 +1,4 @@
-import type { Card, Move, SolitaireState } from './types.ts'
+import type { Card, Move, SolitaireState, StockDrawCount } from './types.ts'
 import { isValidMove } from './rules.ts'
 
 const cloneWithoutHistory = (state: SolitaireState): Omit<SolitaireState, 'history'> => ({
@@ -41,7 +41,8 @@ export const applyMove = (state: SolitaireState, move: Move): SolitaireState => 
   return { ...next, history: [...state.history, snapshot] }
 }
 
-export const dealFromStock = (state: SolitaireState): SolitaireState => {
+export const dealFromStock = (state: SolitaireState, drawCount: StockDrawCount = 1): SolitaireState => {
+  if (state.stock.length === 0 && state.waste.length === 0) return state
   const snapshot = cloneWithoutHistory(state)
   const next = cloneWithoutHistory(state)
 
@@ -49,8 +50,10 @@ export const dealFromStock = (state: SolitaireState): SolitaireState => {
     next.stock = next.waste.reverse().map((card) => ({ ...card, faceUp: false }))
     next.waste = []
   } else {
-    const card = next.stock.pop()
-    if (card) next.waste.push({ ...card, faceUp: true })
+    for (let count = 0; count < drawCount && next.stock.length > 0; count += 1) {
+      const card = next.stock.pop()
+      if (card) next.waste.push({ ...card, faceUp: true })
+    }
   }
 
   return { ...next, history: [...state.history, snapshot] }
