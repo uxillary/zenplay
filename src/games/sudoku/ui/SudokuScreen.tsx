@@ -212,7 +212,7 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pro
     && (conflicts.has(index) || state.values[index] !== puzzle.solution[index])
 
   return (
-    <div className={`flex flex-col gap-3 ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
+    <div className={`sudoku-screen -mx-4 flex flex-col gap-3 sm:mx-0 ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
       <GameToolbar>
         <button type="button" onClick={() => { setNewDifficulty(state.difficulty); setShowNewPuzzle(true) }} className="zen-game-button">New Puzzle</button>
         <button type="button" onClick={() => { dispatch({ type: 'undo' }); setHintCell(null); setMessage('Undid the last change.') }} disabled={state.history.length === 0} className="zen-game-button">Undo</button>
@@ -221,13 +221,13 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pro
         {!settings.calmStats ? <span className="ml-auto text-lg font-semibold">{difficultyName(state.difficulty)}</span> : null}
       </GameToolbar>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,40rem)_minmax(15rem,1fr)] lg:items-start">
+      <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-[minmax(0,40rem)_minmax(15rem,1fr)] lg:items-start">
         <div className={`min-w-0 order-1 ${settings.handedness === 'left' ? 'lg:order-2' : 'lg:order-1'}`}>
           <div
             role="grid"
             aria-label={`${difficultyName(state.difficulty)} Sudoku puzzle`}
             onKeyDown={onGridKeyDown}
-            className={`sudoku-board mx-auto flex aspect-square w-full max-w-[40rem] flex-col border-2 border-zinc-900 bg-[#fffdf7] text-zinc-950 dark:border-zinc-100 dark:bg-zinc-950 dark:text-zinc-50 ${settings.gamePieceScale === 'large' ? 'sudoku-board--large' : ''}`}
+            className={`sudoku-board mx-auto flex aspect-square w-full max-w-[40rem] flex-col ${settings.gamePieceScale === 'large' ? 'sudoku-board--large' : ''}`}
           >
             {Array.from({ length: 9 }, (_, row) => (
               <div role="row" key={`row-${row}`} className="grid min-h-0 flex-1 grid-cols-9">
@@ -240,11 +240,11 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pro
                     || Math.floor(row / 3) === Math.floor(selectedRow / 3) && Math.floor(column / 3) === Math.floor(selectedColumn / 3)
                   const matching = matchedValue !== 0 && value === matchedValue
                   const classes = [
-                    'sudoku-cell relative flex min-h-0 min-w-0 items-center justify-center border-b border-r border-zinc-400 p-0 text-[clamp(0.8rem,4.4vw,1.7rem)] leading-none focus-visible:z-10',
-                    column % 3 === 2 && column < 8 ? 'border-r-[3px] border-r-zinc-900 dark:border-r-zinc-100' : '',
-                    row % 3 === 2 && row < 8 ? 'border-b-[3px] border-b-zinc-900 dark:border-b-zinc-100' : '',
-                    given ? 'font-extrabold' : 'font-medium',
-                    related ? 'sudoku-related-cell' : 'bg-[#fffdf7] dark:bg-zinc-950',
+                    'sudoku-cell relative flex min-h-0 min-w-0 items-center justify-center border-b border-r p-0 text-[clamp(0.8rem,4.4vw,1.7rem)] leading-none focus-visible:z-10',
+                    column % 3 === 2 && column < 8 ? 'sudoku-box-right' : '',
+                    row % 3 === 2 && row < 8 ? 'sudoku-box-bottom' : '',
+                    given ? 'sudoku-given' : 'sudoku-entry',
+                    related ? 'sudoku-related-cell' : '',
                     matching ? 'sudoku-matching-value' : '',
                     onWrong(index) ? 'sudoku-mistake' : '',
                     selected ? 'sudoku-selected-cell z-[1]' : '',

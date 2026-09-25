@@ -45,14 +45,14 @@ export const GameDialog = ({ title, description, alert = false, onDismiss, child
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4" onKeyDown={handleKeyDown}>
+    <div className="zen-dialog-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" onKeyDown={handleKeyDown}>
       <section
         ref={dialogRef}
         role={alert ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-labelledby="game-dialog-title"
         aria-describedby={description ? 'game-dialog-description' : undefined}
-        className="w-full max-w-lg space-y-4 rounded-lg border-2 border-zinc-800 bg-[#fffdf7] p-6 text-zinc-950 shadow-xl dark:border-zinc-200 dark:bg-zinc-900 dark:text-zinc-50"
+        className="zen-dialog w-full max-w-lg space-y-4 p-6"
       >
         <h2 id="game-dialog-title" className="text-2xl font-semibold">{title}</h2>
         {description ? <p id="game-dialog-description" className="text-lg">{description}</p> : null}

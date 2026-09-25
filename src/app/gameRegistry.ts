@@ -1,7 +1,10 @@
 import { hasResumableSolitaireSave } from '../games/solitaire/save'
 import { hasResumableSudokuSave } from '../games/sudoku/save'
+import { hasResumablePairsSave } from '../games/pairs/save'
+import { hasResumableWordSearchSave } from '../games/wordSearch/save'
+import { hasResumableFifteenSave } from '../games/fifteen/save'
 
-export type GameId = 'solitaire' | 'sudoku'
+export type GameId = 'solitaire' | 'sudoku' | 'pairs' | 'word-search' | 'noughts-crosses' | 'fifteen'
 
 export type GameDefinition = {
   id: GameId
@@ -31,5 +34,39 @@ export const games: readonly GameDefinition[] = [
     target: '/games/sudoku',
     supportsContinue: true,
     getContinueAvailability: hasResumableSudokuSave,
+  },
+  {
+    id: 'pairs',
+    name: 'Pairs',
+    description: 'Find the matching cards by turning over two at a time.',
+    status: 'available',
+    target: '/games/pairs',
+    supportsContinue: true,
+    getContinueAvailability: hasResumablePairsSave,
+  },
+  {
+    id: 'word-search',
+    name: 'Word Search',
+    description: 'Find familiar words hidden in a letter grid.',
+    status: 'available',
+    target: '/games/word-search',
+    supportsContinue: true,
+    getContinueAvailability: hasResumableWordSearchSave,
+  },
+  {
+    id: 'noughts-crosses',
+    name: 'Noughts & Crosses',
+    description: 'Take turns placing noughts and crosses in a familiar 3 × 3 grid.',
+    status: 'available',
+    target: '/games/noughts-crosses',
+  },
+  {
+    id: 'fifteen',
+    name: 'Fifteen Puzzle',
+    description: 'Slide numbered tiles into the empty space to put them in order.',
+    status: 'available',
+    target: '/games/fifteen',
+    supportsContinue: true,
+    getContinueAvailability: hasResumableFifteenSave,
   },
 ]

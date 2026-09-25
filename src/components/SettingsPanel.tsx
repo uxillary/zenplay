@@ -50,7 +50,7 @@ const ToggleRow = ({
 )
 
 export const SettingsPanel = ({ settings, onChange }: Props) => (
-  <section className="space-y-6 rounded-lg border border-zinc-500/50 bg-[#f6f3e9] p-4 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 md:p-6">
+  <section className="zen-settings-panel space-y-6 p-4 md:p-6">
     <h1 className="text-2xl font-semibold">Settings</h1>
 
     <section aria-labelledby="display-heading" className="space-y-4">

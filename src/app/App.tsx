@@ -8,6 +8,10 @@ import { SettingsPanel } from '../components/SettingsPanel'
 import { SavedGamePanel } from '../components/SavedGamePanel'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
 import { SudokuScreen } from '../games/sudoku/ui/SudokuScreen'
+import { PairsScreen } from '../games/pairs/ui/PairsScreen'
+import { WordSearchScreen } from '../games/wordSearch/ui/WordSearchScreen'
+import { NoughtsCrossesScreen } from '../games/noughtsCrosses/ui/NoughtsCrossesScreen'
+import { FifteenScreen } from '../games/fifteen/ui/FifteenScreen'
 
 type Screen = 'home' | 'game' | 'settings' | 'install'
 
@@ -22,6 +26,15 @@ const Application = () => {
   }, [])
   const updateSudokuSaveAvailability = useCallback((hasSave: boolean) => {
     setContinueAvailability((current) => ({ ...current, sudoku: hasSave }))
+  }, [])
+  const updatePairsSaveAvailability = useCallback((hasSave: boolean) => {
+    setContinueAvailability((current) => ({ ...current, pairs: hasSave }))
+  }, [])
+  const updateWordSearchSaveAvailability = useCallback((hasSave: boolean) => {
+    setContinueAvailability((current) => ({ ...current, 'word-search': hasSave }))
+  }, [])
+  const updateFifteenSaveAvailability = useCallback((hasSave: boolean) => {
+    setContinueAvailability((current) => ({ ...current, fifteen: hasSave }))
   }, [])
 
   const selectedGame = games.find((game) => game.id === gameId)
@@ -38,21 +51,21 @@ const Application = () => {
   }, [screen])
 
   return (
-    <main className="min-h-[100dvh] overflow-x-hidden bg-[#f6f3e9] p-3 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 md:p-6">
-      <div className="mx-auto min-h-[calc(100dvh-1.5rem)] max-w-7xl rounded-xl border border-emerald-950/20 bg-white/70 p-4 shadow-sm dark:bg-zinc-900/60 md:min-h-[calc(100dvh-3rem)] md:p-8">
+    <main className="zen-app-frame min-h-[100dvh] overflow-x-hidden p-3 md:p-6">
+      <div className="zen-app-panel mx-auto min-h-[calc(100dvh-1.5rem)] max-w-7xl p-4 md:min-h-[calc(100dvh-3rem)] md:p-8">
         {screen === 'home' ? (
           <>
             <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.16em] text-emerald-900 dark:text-emerald-200">ZenPlay</p>
-                <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Choose a game</h1>
+                <p className="zen-wordmark">ZenPlay</p>
+                <h1 className="zen-home-title mt-2">Choose a game</h1>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => setScreen('settings')} className="zen-game-button">Settings</button>
                 <button type="button" onClick={() => setScreen('install')} className="zen-game-button">Install ZenPlay</button>
               </div>
             </header>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="zen-game-library grid grid-cols-1 gap-4 sm:grid-cols-2">
               {games.filter((game) => game.status === 'available').map((game) => (
                 <GameCard
                   key={game.id}
@@ -70,12 +83,16 @@ const Application = () => {
           <GameShell title={selectedGame.name} onBack={returnHome}>
             {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} /> : null}
             {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} /> : null}
+            {selectedGame.id === 'pairs' ? <PairsScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updatePairsSaveAvailability} /> : null}
+            {selectedGame.id === 'word-search' ? <WordSearchScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateWordSearchSaveAvailability} /> : null}
+            {selectedGame.id === 'noughts-crosses' ? <NoughtsCrossesScreen settings={effectiveSettings} onBack={returnHome} /> : null}
+            {selectedGame.id === 'fifteen' ? <FifteenScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateFifteenSaveAvailability} /> : null}
           </GameShell>
         ) : null}
 
         {screen === 'settings' ? (
           <section className="mx-auto max-w-2xl space-y-4">
-            <button type="button" onClick={() => setScreen('home')} className="zen-game-button">Back to games</button>
+            <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
             <SettingsPanel settings={settings} onChange={setSetting} />
             <SavedGamePanel hasSave={continueAvailability.solitaire ?? false} onSaveCleared={() => setContinueAvailability((current) => ({ ...current, solitaire: false }))} />
           </section>
@@ -83,7 +100,7 @@ const Application = () => {
 
         {screen === 'install' ? (
           <section className="max-w-2xl space-y-4 text-lg">
-            <button type="button" onClick={() => setScreen('home')} className="zen-game-button">Back to games</button>
+            <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
             <h1 className="text-2xl font-semibold">Install ZenPlay</h1>
             <ol className="list-decimal space-y-2 pl-6">
               <li>Open ZenPlay in Chrome on Android.</li><li>Tap the three dots menu.</li><li>Tap “Add to Home screen”.</li><li>Open ZenPlay from your new icon.</li>

@@ -82,13 +82,16 @@ export const CardView = ({
   }
 
   const red = card.suit === 'hearts' || card.suit === 'diamonds'
+  const suitColour = red ? 'zen-card-suit--red' : 'zen-card-suit--black'
   const content = (
     <>
-      <div className={`font-bold leading-none ${largeCards ? 'text-xl' : 'text-lg'} ${red ? 'text-red-700' : 'text-zinc-950'}`}>{card.rank}</div>
-      <div className={`${largeCards ? 'text-4xl' : 'text-3xl'} leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`}>{suitSymbol[card.suit]}</div>
-      <div className={`mt-auto self-center text-5xl leading-none ${red ? 'text-red-700' : 'text-zinc-950'}`} aria-hidden>
-        {suitSymbol[card.suit]}
-      </div>
+      <span className={`zen-card-corner zen-card-corner--top ${suitColour}`} aria-hidden="true">
+        <span>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
+      </span>
+      <span className={`zen-card-center-suit ${suitColour}`} aria-hidden="true">{suitSymbol[card.suit]}</span>
+      <span className={`zen-card-corner zen-card-corner--bottom ${suitColour}`} aria-hidden="true">
+        <span>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
+      </span>
     </>
   )
 
