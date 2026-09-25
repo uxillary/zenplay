@@ -6,6 +6,7 @@ import { canAutoComplete, findAutoCompleteMove, findFoundationMove, findObviousM
 import type { Card, Location, Move, SolitaireState } from '../model/types'
 import { CardView } from './CardView'
 import { PileView } from './PileView'
+import { GameToolbar } from '../../../components/GameToolbar'
 
 type Props = {
   settings: AppSettings
@@ -200,7 +201,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
 
   return (
     <div className={`zen-solitaire-table flex min-h-0 flex-col gap-4 ${settings.largeCards ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
-      <div className={`flex flex-wrap items-center gap-2 ${settings.handedness === 'left' ? 'order-2' : ''}`}>
+      <GameToolbar className={settings.handedness === 'left' ? 'order-2' : ''}>
         <button type="button" onClick={startNewGame} className="zen-game-button">
           New Game
         </button>
@@ -223,7 +224,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
             ) : null}
           </div>
         ) : null}
-      </div>
+      </GameToolbar>
 
       <div className="zen-card-row">
         <div className="zen-top-card-row gap-4 md:gap-8">

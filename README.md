@@ -1,6 +1,6 @@
 # ZenPlay
 
-ZenPlay is a calm, privacy-first, tap-friendly games app for older adults and anyone who wants a simple, safe experience. MVP includes **Klondike Solitaire** as an installable **PWA**.
+ZenPlay is a calm, privacy-first collection of familiar, tap-friendly games. The shared app shell currently includes **Klondike Solitaire** as an installable **PWA**.
 
 ## MVP Principles
 
@@ -33,7 +33,9 @@ src/
 
 ## Features Implemented
 
-- Home screen with large **Solitaire** tile
+- Registry-driven game library with **Solitaire**
+- Shared game screen shell and toolbar pattern
+- Home, settings, and install/help screens
 - Global settings with persistence (`localStorage`):
   - Light/Dark theme
   - High contrast

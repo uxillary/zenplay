@@ -1,83 +1,74 @@
 import { useEffect, useMemo, useState } from 'react'
+import { games } from './gameRegistry'
+import { GameCard } from '../components/GameCard'
+import { GameShell } from '../components/GameShell'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
 import { loadSettings, saveSettings, type AppSettings } from '../lib/settings'
 
-type Screen = 'home' | 'solitaire' | 'install'
+type Screen = 'home' | 'game' | 'settings' | 'install'
 
 export const App = () => {
   const [screen, setScreen] = useState<Screen>('home')
+  const [gameId, setGameId] = useState<string | null>(null)
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
 
-  useEffect(() => {
-    saveSettings(settings)
-  }, [settings])
+  useEffect(() => { saveSettings(settings) }, [settings])
 
   const appClass = useMemo(() => {
-    const classes = ['min-h-[100dvh] overflow-x-hidden p-2 md:p-6']
-    classes.push(settings.theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-100 text-zinc-900')
-    if (settings.highContrast) {
-      classes.push(settings.theme === 'dark' ? 'contrast-125' : 'contrast-150')
-    }
+    const classes = ['min-h-[100dvh] overflow-x-hidden p-3 md:p-6']
+    classes.push(settings.theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-[#f6f3e9] text-zinc-900')
+    if (settings.highContrast) classes.push(settings.theme === 'dark' ? 'contrast-125' : 'contrast-150')
     return classes.join(' ')
   }, [settings])
 
+  const selectedGame = games.find((game) => game.id === gameId)
+
   return (
     <main className={appClass}>
-      <div className={`mx-auto grid min-h-[calc(100dvh-1rem)] max-w-7xl grid-cols-1 gap-4 md:min-h-[calc(100dvh-3rem)] ${screen === 'solitaire' ? '' : 'lg:grid-cols-[1fr_360px]'}`}>
-        <section className={`relative min-h-0 border p-2 md:p-4 ${screen === 'solitaire' ? 'overflow-visible rounded-lg border-emerald-950 bg-emerald-900' : 'overflow-hidden rounded-3xl border-zinc-600/60 bg-zinc-900/50'}`}>
-          {screen === 'home' ? (
-            <div className="flex h-full flex-col justify-between gap-4">
-              <h1 className="text-3xl font-semibold">ZenPlay</h1>
-              <button
-                type="button"
-                onClick={() => setScreen('solitaire')}
-                className="flex h-48 items-center justify-center rounded-3xl border border-zinc-500 bg-zinc-800 text-4xl font-semibold"
-              >
-                Solitaire
-              </button>
-              <button type="button" onClick={() => setScreen('install')} className="min-h-12 self-start rounded-xl bg-zinc-700 px-4 text-lg">
-                Install ZenPlay
-              </button>
+      <div className="mx-auto min-h-[calc(100dvh-1.5rem)] max-w-7xl rounded-xl border border-emerald-950/20 bg-white/70 p-4 shadow-sm dark:bg-zinc-900/60 md:min-h-[calc(100dvh-3rem)] md:p-8">
+        {screen === 'home' ? (
+          <>
+            <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.16em] text-emerald-900 dark:text-emerald-200">ZenPlay</p>
+                <h1 className="mt-2 text-3xl font-semibold md:text-4xl">Choose a game</h1>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => setScreen('settings')} className="zen-game-button">Settings</button>
+                <button type="button" onClick={() => setScreen('install')} className="zen-game-button">Install ZenPlay</button>
+              </div>
+            </header>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {games.filter((game) => game.status === 'available').map((game) => (
+                <GameCard key={game.id} game={game} onSelect={() => { setGameId(game.id); setScreen('game') }} />
+              ))}
             </div>
-          ) : null}
+          </>
+        ) : null}
 
-          {screen === 'solitaire' ? (
-            <>
-              <button type="button" onClick={() => setScreen('home')} className="zen-game-button mb-3">
-                Back
-              </button>
-              <SolitaireScreen settings={settings} />
-            </>
-          ) : null}
+        {screen === 'game' && selectedGame ? (
+          <GameShell title={selectedGame.name} onBack={() => setScreen('home')}>
+            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={settings} /> : null}
+          </GameShell>
+        ) : null}
 
-          {screen === 'install' ? (
-            <div className="space-y-4 text-lg">
-              <button type="button" onClick={() => setScreen('home')} className="min-h-12 rounded-xl bg-zinc-700 px-4 text-lg">
-                Back
-              </button>
-              <h2 className="text-2xl font-semibold">Install ZenPlay</h2>
-              <ol className="list-decimal space-y-2 pl-6">
-                <li>Open ZenPlay in Chrome on Android.</li>
-                <li>Tap the three dots menu.</li>
-                <li>Tap “Add to Home screen”.</li>
-                <li>Open ZenPlay from your new icon.</li>
-              </ol>
-            </div>
-          ) : null}
-        </section>
+        {screen === 'settings' ? (
+          <section className="mx-auto max-w-2xl space-y-4">
+            <button type="button" onClick={() => setScreen('home')} className="zen-game-button">Back to games</button>
+            <SettingsPanel settings={settings} onChange={(key, value) => setSettings((current) => ({ ...current, [key]: value }))} />
+          </section>
+        ) : null}
 
-        {screen === 'solitaire' ? null : (
-          <SettingsPanel
-            settings={settings}
-            onChange={(key, value) =>
-              setSettings((current) => ({
-                ...current,
-                [key]: value,
-              }))
-            }
-          />
-        )}
+        {screen === 'install' ? (
+          <section className="max-w-2xl space-y-4 text-lg">
+            <button type="button" onClick={() => setScreen('home')} className="zen-game-button">Back to games</button>
+            <h1 className="text-2xl font-semibold">Install ZenPlay</h1>
+            <ol className="list-decimal space-y-2 pl-6">
+              <li>Open ZenPlay in Chrome on Android.</li><li>Tap the three dots menu.</li><li>Tap “Add to Home screen”.</li><li>Open ZenPlay from your new icon.</li>
+            </ol>
+          </section>
+        ) : null}
       </div>
     </main>
   )
