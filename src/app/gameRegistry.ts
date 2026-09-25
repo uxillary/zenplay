@@ -1,3 +1,5 @@
+import { hasResumableSolitaireSave } from '../games/solitaire/save'
+
 export type GameId = 'solitaire'
 
 export type GameDefinition = {
@@ -7,6 +9,7 @@ export type GameDefinition = {
   status: 'available' | 'coming-soon'
   target: `/${string}`
   supportsContinue?: boolean
+  getContinueAvailability?: () => Promise<boolean>
 }
 
 export const games: readonly GameDefinition[] = [
@@ -16,5 +19,7 @@ export const games: readonly GameDefinition[] = [
     description: 'A familiar game of patience with a standard deck of cards.',
     status: 'available',
     target: '/games/solitaire',
+    supportsContinue: true,
+    getContinueAvailability: hasResumableSolitaireSave,
   },
 ]

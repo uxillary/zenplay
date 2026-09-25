@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AccessibilityProvider } from './AccessibilityProvider'
 import { useAccessibility } from './accessibilityContext'
 import { games } from './gameRegistry'
 import { GameCard } from '../components/GameCard'
-import { GameDialog } from '../components/GameDialog'
 import { GameShell } from '../components/GameShell'
 import { SettingsPanel } from '../components/SettingsPanel'
+import { SavedGamePanel } from '../components/SavedGamePanel'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
 
 type Screen = 'home' | 'game' | 'settings' | 'install'
@@ -13,20 +13,25 @@ type Screen = 'home' | 'game' | 'settings' | 'install'
 const Application = () => {
   const [screen, setScreen] = useState<Screen>('home')
   const [gameId, setGameId] = useState<string | null>(null)
-  const [gameHasProgress, setGameHasProgress] = useState(false)
-  const [confirmLeaveGame, setConfirmLeaveGame] = useState(false)
+  const [continueAvailability, setContinueAvailability] = useState<Record<string, boolean>>({})
   const { settings, effectiveSettings, setSetting } = useAccessibility()
 
+  const updateSolitaireSaveAvailability = useCallback((hasSave: boolean) => {
+    setContinueAvailability((current) => ({ ...current, solitaire: hasSave }))
+  }, [])
+
   const selectedGame = games.find((game) => game.id === gameId)
-  const returnHome = () => {
-    setConfirmLeaveGame(false)
-    setGameHasProgress(false)
-    setScreen('home')
-  }
-  const requestGameBack = () => {
-    if (gameHasProgress) setConfirmLeaveGame(true)
-    else returnHome()
-  }
+  const returnHome = () => setScreen('home')
+
+  useEffect(() => {
+    if (screen !== 'home' && screen !== 'settings') return
+    let mounted = true
+    void Promise.all(games.filter((game) => game.getContinueAvailability).map(async (game) => [game.id, await game.getContinueAvailability?.() ?? false] as const))
+      .then((availability) => {
+        if (mounted) setContinueAvailability(Object.fromEntries(availability))
+      })
+    return () => { mounted = false }
+  }, [screen])
 
   return (
     <main className="min-h-[100dvh] overflow-x-hidden bg-[#f6f3e9] p-3 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 md:p-6">
@@ -45,23 +50,21 @@ const Application = () => {
             </header>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {games.filter((game) => game.status === 'available').map((game) => (
-                <GameCard key={game.id} game={game} onSelect={() => { setGameId(game.id); setScreen('game') }} />
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  canContinue={continueAvailability[game.id] ?? false}
+                  onSelect={() => { setGameId(game.id); setScreen('game') }}
+                  onContinue={() => { setGameId(game.id); setScreen('game') }}
+                />
               ))}
             </div>
           </>
         ) : null}
 
         {screen === 'game' && selectedGame ? (
-          <GameShell title={selectedGame.name} onBack={requestGameBack}>
-            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onProgressChange={setGameHasProgress} /> : null}
-            {confirmLeaveGame ? (
-              <GameDialog alert title="Back to games?" description="Your current game will be lost." onDismiss={() => setConfirmLeaveGame(false)}>
-                <div className="flex flex-wrap gap-3">
-                  <button type="button" onClick={() => setConfirmLeaveGame(false)} className="zen-game-button">Keep playing</button>
-                  <button type="button" onClick={returnHome} className="zen-game-button">Back to Games</button>
-                </div>
-              </GameDialog>
-            ) : null}
+          <GameShell title={selectedGame.name} onBack={returnHome}>
+            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} /> : null}
           </GameShell>
         ) : null}
 
@@ -69,6 +72,7 @@ const Application = () => {
           <section className="mx-auto max-w-2xl space-y-4">
             <button type="button" onClick={() => setScreen('home')} className="zen-game-button">Back to games</button>
             <SettingsPanel settings={settings} onChange={setSetting} />
+            <SavedGamePanel hasSave={continueAvailability.solitaire ?? false} onSaveCleared={() => setContinueAvailability((current) => ({ ...current, solitaire: false }))} />
           </section>
         ) : null}
 

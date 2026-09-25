@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useReducer, useState, type DragEvent } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState, type DragEvent } from 'react'
 import type { AppSettings } from '../../../lib/settings'
+import { deleteActiveSave, saveActiveGame, createSessionId } from '../../../persistence/gameSave'
+import { readStatistics, recordGameCompleted, recordGameStarted } from '../../../persistence/statistics'
+import type { GameStatistics } from '../../../persistence/types'
 import { applyMove, dealFromStock, undo } from '../model/engine'
 import { createInitialState } from '../model/deal'
+import { serializeSolitaireState } from '../model/persistence'
+import { loadSolitaireSave, type SolitaireSaveState } from '../save'
 import { findFoundationMove, findHint, getAutoFinishPlan, getTopCard, isValidMove, isWin, sameLocation, type SolitaireHint } from '../model/rules'
 import type { Card, Location, Move, SolitaireState, StockDrawCount } from '../model/types'
 import { CardView } from './CardView'
@@ -12,7 +17,7 @@ import { GameDialog } from '../../../components/GameDialog'
 type Props = {
   settings: AppSettings
   onBack: () => void
-  onProgressChange: (hasProgress: boolean) => void
+  onSaveAvailabilityChange: (hasSave: boolean) => void
 }
 
 type DragState = {
@@ -28,12 +33,14 @@ type Action =
   | { type: 'deal'; drawCount: StockDrawCount }
   | { type: 'undo' }
   | { type: 'new' }
+  | { type: 'restore'; state: SolitaireState }
 
 const reducer = (state: SolitaireState, action: Action): SolitaireState => {
   if (action.type === 'move') return applyMove(state, action.move)
   if (action.type === 'deal') return dealFromStock(state, action.drawCount)
   if (action.type === 'undo') return undo(state)
   if (action.type === 'new') return createInitialState()
+  if (action.type === 'restore') return action.state
   return state
 }
 
@@ -48,19 +55,66 @@ const describeCard = (card?: Card): string => card
 
 const cardCount = (count: number): string => `${count} ${count === 1 ? 'card' : 'cards'}`
 
-export const SolitaireScreen = ({ settings, onBack, onProgressChange }: Props) => {
+export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState)
+  const [ready, setReady] = useState(false)
+  const [gameDrawMode, setGameDrawMode] = useState(settings.drawMode)
+  const session = useRef<{ sessionId: string; createdAt: string } | null>(null)
+  const persistenceQueue = useRef<Promise<void>>(Promise.resolve())
   const [selected, setSelected] = useState<{ location: Location; cardId: string } | null>(null)
   const [invalidMove, setInvalidMove] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [hint, setHint] = useState<SolitaireHint | null>(null)
   const [hintMessage, setHintMessage] = useState('')
   const [showRules, setShowRules] = useState(false)
+  const [statistics, setStatistics] = useState<GameStatistics | null>(null)
   const [pendingAction, setPendingAction] = useState(false)
   const [pageVisible, setPageVisible] = useState(() => document.visibilityState === 'visible')
   const [dragging, setDragging] = useState<DragState>(null)
   const motionEnabled = !settings.reducedMotion
   const autoFinishPlan = useMemo(() => getAutoFinishPlan(state), [state])
+
+  useEffect(() => {
+    let mounted = true
+    void (async () => {
+      const save = await loadSolitaireSave()
+      if (!mounted) return
+      if (save) {
+        session.current = { sessionId: save.sessionId, createdAt: save.createdAt }
+        setGameDrawMode(save.state.drawMode)
+        dispatch({ type: 'restore', state: save.state.gameState })
+      } else {
+        const nextSession = { sessionId: createSessionId(), createdAt: new Date().toISOString() }
+        session.current = nextSession
+        await recordGameStarted('solitaire')
+      }
+      if (mounted) setReady(true)
+    })()
+    return () => { mounted = false }
+  }, [onSaveAvailabilityChange])
+
+  useEffect(() => {
+    if (!ready || !session.current) return
+    const snapshot = serializeSolitaireState(state)
+    const currentSession = session.current
+    persistenceQueue.current = persistenceQueue.current.then(async () => {
+      if (isWin(snapshot)) {
+        const recorded = await recordGameCompleted('solitaire', currentSession.sessionId, snapshot.history.length)
+        if (recorded) {
+          await deleteActiveSave('solitaire')
+          onSaveAvailabilityChange(false)
+        }
+        return
+      }
+      const savedState: SolitaireSaveState = { gameState: snapshot, drawMode: gameDrawMode }
+      if (await saveActiveGame('solitaire', savedState, currentSession)) onSaveAvailabilityChange(true)
+    })
+  }, [gameDrawMode, onSaveAvailabilityChange, ready, state])
+
+  useEffect(() => {
+    if (!showRules) return
+    void readStatistics('solitaire').then(setStatistics)
+  }, [showRules])
 
   useEffect(() => {
     const updateVisibility = () => setPageVisible(document.visibilityState === 'visible')
@@ -69,14 +123,10 @@ export const SolitaireScreen = ({ settings, onBack, onProgressChange }: Props) =
   }, [])
 
   useEffect(() => {
-    if (!settings.timer || settings.calmStats || isWin(state) || !pageVisible) return undefined
+    if (!ready || !settings.timer || settings.calmStats || isWin(state) || !pageVisible) return undefined
     const intervalId = window.setInterval(() => setElapsedSeconds((current) => current + 1), 1000)
     return () => window.clearInterval(intervalId)
-  }, [pageVisible, settings.calmStats, settings.timer, state])
-
-  useEffect(() => {
-    onProgressChange(state.history.length > 0 && !isWin(state))
-  }, [onProgressChange, state])
+  }, [pageVisible, ready, settings.calmStats, settings.timer, state])
 
   const destinations = useMemo(() => {
     if (!selected) return [] as Location[]
@@ -102,6 +152,10 @@ export const SolitaireScreen = ({ settings, onBack, onProgressChange }: Props) =
   }
 
   const startNewGame = () => {
+    const nextSession = { sessionId: createSessionId(), createdAt: new Date().toISOString() }
+    session.current = nextSession
+    setGameDrawMode(settings.drawMode)
+    persistenceQueue.current = persistenceQueue.current.then(async () => { await recordGameStarted('solitaire') })
     dispatch({ type: 'new' })
     setElapsedSeconds(0)
     setHint(null)
@@ -220,7 +274,7 @@ export const SolitaireScreen = ({ settings, onBack, onProgressChange }: Props) =
   }
 
   const deal = () => {
-    dispatch({ type: 'deal', drawCount: settings.drawMode === 'three' ? 3 : 1 })
+    dispatch({ type: 'deal', drawCount: gameDrawMode === 'three' ? 3 : 1 })
     dismissHint()
     clearSelection()
   }
@@ -229,6 +283,10 @@ export const SolitaireScreen = ({ settings, onBack, onProgressChange }: Props) =
     const suggestion = findHint(state)
     setHint(suggestion)
     setHintMessage(suggestion ? '' : 'No move found.')
+  }
+
+  if (!ready) {
+    return <div role="status" aria-live="polite" className="zen-game-message">Checking for your saved game…</div>
   }
 
   const handleTableauCardClick = (index: number, card: Card) => {
@@ -307,7 +365,7 @@ export const SolitaireScreen = ({ settings, onBack, onProgressChange }: Props) =
               type="button"
               onClick={deal}
               className={`zen-card-button ${hint?.type === 'deal' ? 'zen-hint-source' : ''}`}
-              aria-label={`Stock, ${cardCount(state.stock.length)} remaining${settings.drawMode === 'three' ? ', draw three' : ', draw one'}`}
+              aria-label={`Stock, ${cardCount(state.stock.length)} remaining${gameDrawMode === 'three' ? ', draw three' : ', draw one'}`}
             >
               <CardView card={getTopCard(state.stock)} placeholder={state.stock.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
             </button>
@@ -452,8 +510,12 @@ export const SolitaireScreen = ({ settings, onBack, onProgressChange }: Props) =
             <section><h3 className="font-bold">Goal</h3><p>Move all 52 cards to the four foundations, building each suit from Ace to King.</p></section>
             <section><h3 className="font-bold">Tableau</h3><p>Build columns down in alternating red and black. Move a face-up card or a correctly ordered face-up stack. Only a King may start an empty column.</p></section>
             <section><h3 className="font-bold">Foundations</h3><p>Build each foundation up by suit, starting with an Ace.</p></section>
-            <section><h3 className="font-bold">Stock and waste</h3><p>Tap the stock to draw {settings.drawMode === 'three' ? 'up to three cards' : 'one card'}. When it is empty, tap it again to turn the waste back over.</p></section>
+            <section><h3 className="font-bold">Stock and waste</h3><p>Tap the stock to draw {gameDrawMode === 'three' ? 'up to three cards' : 'one card'}. When it is empty, tap it again to turn the waste back over.</p></section>
             <section><h3 className="font-bold">Controls</h3><p>Tap a card or stack, then tap a destination. Tap it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
+            <section aria-labelledby="solitaire-statistics-title">
+              <h3 id="solitaire-statistics-title" className="font-bold">Statistics</h3>
+              {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · {statistics.totalMoves} moves in completed games{statistics.bestMoves === null ? '' : ` · best ${statistics.bestMoves} moves`}</p> : <p>Statistics are stored on this device.</p>}
+            </section>
           </div>
           <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
         </GameDialog>
