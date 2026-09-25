@@ -200,7 +200,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
   }
 
   return (
-    <div className={`zen-solitaire-table flex min-h-0 flex-col gap-4 ${settings.largeCards ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
+    <div className={`zen-solitaire-table flex min-h-0 flex-col gap-4 ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
       <GameToolbar className={settings.handedness === 'left' ? 'order-2' : ''}>
         <button type="button" onClick={startNewGame} className="zen-game-button">
           New Game
@@ -217,7 +217,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
           </button>
         ) : null}
         {!settings.calmStats ? (
-          <div className="ml-auto flex flex-wrap gap-x-4 gap-y-1 text-lg font-semibold text-white">
+          <div className="ml-auto flex w-full min-w-0 flex-wrap justify-between gap-x-4 gap-y-1 text-lg font-semibold text-white sm:w-auto sm:justify-end">
             <span className="zen-game-stat">Moves {moves}</span>
             {settings.timer ? (
               <span className="zen-game-stat">Time {formatTime(elapsedSeconds)}</span>
@@ -230,7 +230,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
         <div className="zen-top-card-row gap-4 md:gap-8">
           <div className="flex gap-1 md:gap-3">
             <button type="button" onClick={deal} className="zen-card-button" aria-label="Deal from stock">
-              <CardView card={getTopCard(state.stock)} placeholder={state.stock.length === 0} largeCards={settings.largeCards} animate={motionEnabled} />
+              <CardView card={getTopCard(state.stock)} placeholder={state.stock.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
             </button>
             <button
               type="button"
@@ -240,7 +240,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
               <CardView
                 card={getTopCard(state.waste)}
                 placeholder={state.waste.length === 0}
-                largeCards={settings.largeCards}
+                largeCards={(settings.gamePieceScale === 'large')}
                 selected={selected?.location.type === 'waste'}
                 onDoubleClick={state.waste.length > 0 ? () => attemptFoundationMove({ type: 'waste' }, state.waste[state.waste.length - 1].id) : undefined}
                 onDragStart={state.waste.length > 0 ? startWasteDrag : undefined}
@@ -266,7 +266,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
                 className="zen-card-button"
               >
                 <div className={canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''}>
-                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} largeCards={settings.largeCards} animate={motionEnabled} />
+                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
                 </div>
               </button>
             ))}
@@ -280,7 +280,7 @@ export const SolitaireScreen = ({ settings }: Props) => {
             <PileView
               key={`t-${index}`}
               cards={pile}
-              largeCards={settings.largeCards}
+              largeCards={(settings.gamePieceScale === 'large')}
               selectedCardId={selected?.cardId}
               canDrop={canDrop({ type: 'tableau', index })}
               onEmptyClick={() => attemptMove({ type: 'tableau', index })}
@@ -320,11 +320,11 @@ export const SolitaireScreen = ({ settings }: Props) => {
         >
           <div className="relative drop-shadow-xl">
             {dragging.cards.map((card, index) => (
-              <div key={card.id} className="absolute" style={{ top: `${index * (settings.largeCards ? 56 : 48)}px` }}>
-                <CardView card={card} largeCards={settings.largeCards} />
+              <div key={card.id} className="absolute" style={{ top: `${index * ((settings.gamePieceScale === 'large') ? 56 : 48)}px` }}>
+                <CardView card={card} largeCards={(settings.gamePieceScale === 'large')} />
               </div>
             ))}
-            <div style={{ height: `${(dragging.cards.length - 1) * (settings.largeCards ? 56 : 48) + (settings.largeCards ? 128 : 112)}px` }} />
+            <div style={{ height: `${(dragging.cards.length - 1) * ((settings.gamePieceScale === 'large') ? 56 : 48) + ((settings.gamePieceScale === 'large') ? 128 : 112)}px` }} />
           </div>
         </div>
       ) : null}

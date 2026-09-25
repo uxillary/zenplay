@@ -1,31 +1,23 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
+import { AccessibilityProvider } from './AccessibilityProvider'
+import { useAccessibility } from './accessibilityContext'
 import { games } from './gameRegistry'
 import { GameCard } from '../components/GameCard'
 import { GameShell } from '../components/GameShell'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
-import { loadSettings, saveSettings, type AppSettings } from '../lib/settings'
 
 type Screen = 'home' | 'game' | 'settings' | 'install'
 
-export const App = () => {
+const Application = () => {
   const [screen, setScreen] = useState<Screen>('home')
   const [gameId, setGameId] = useState<string | null>(null)
-  const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
-
-  useEffect(() => { saveSettings(settings) }, [settings])
-
-  const appClass = useMemo(() => {
-    const classes = ['min-h-[100dvh] overflow-x-hidden p-3 md:p-6']
-    classes.push(settings.theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-[#f6f3e9] text-zinc-900')
-    if (settings.highContrast) classes.push(settings.theme === 'dark' ? 'contrast-125' : 'contrast-150')
-    return classes.join(' ')
-  }, [settings])
+  const { settings, effectiveSettings, setSetting } = useAccessibility()
 
   const selectedGame = games.find((game) => game.id === gameId)
 
   return (
-    <main className={appClass}>
+    <main className="min-h-[100dvh] overflow-x-hidden bg-[#f6f3e9] p-3 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 md:p-6">
       <div className="mx-auto min-h-[calc(100dvh-1.5rem)] max-w-7xl rounded-xl border border-emerald-950/20 bg-white/70 p-4 shadow-sm dark:bg-zinc-900/60 md:min-h-[calc(100dvh-3rem)] md:p-8">
         {screen === 'home' ? (
           <>
@@ -49,14 +41,14 @@ export const App = () => {
 
         {screen === 'game' && selectedGame ? (
           <GameShell title={selectedGame.name} onBack={() => setScreen('home')}>
-            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={settings} /> : null}
+            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} /> : null}
           </GameShell>
         ) : null}
 
         {screen === 'settings' ? (
           <section className="mx-auto max-w-2xl space-y-4">
             <button type="button" onClick={() => setScreen('home')} className="zen-game-button">Back to games</button>
-            <SettingsPanel settings={settings} onChange={(key, value) => setSettings((current) => ({ ...current, [key]: value }))} />
+            <SettingsPanel settings={settings} onChange={setSetting} />
           </section>
         ) : null}
 
@@ -73,3 +65,5 @@ export const App = () => {
     </main>
   )
 }
+
+export const App = () => <AccessibilityProvider><Application /></AccessibilityProvider>
