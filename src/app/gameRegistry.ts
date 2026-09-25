@@ -1,6 +1,7 @@
 import { hasResumableSolitaireSave } from '../games/solitaire/save'
+import { hasResumableSudokuSave } from '../games/sudoku/save'
 
-export type GameId = 'solitaire'
+export type GameId = 'solitaire' | 'sudoku'
 
 export type GameDefinition = {
   id: GameId
@@ -21,5 +22,14 @@ export const games: readonly GameDefinition[] = [
     target: '/games/solitaire',
     supportsContinue: true,
     getContinueAvailability: hasResumableSolitaireSave,
+  },
+  {
+    id: 'sudoku',
+    name: 'Sudoku',
+    description: 'A familiar number puzzle with clear, readable controls.',
+    status: 'available',
+    target: '/games/sudoku',
+    supportsContinue: true,
+    getContinueAvailability: hasResumableSudokuSave,
   },
 ]

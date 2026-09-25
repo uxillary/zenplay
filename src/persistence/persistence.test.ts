@@ -75,7 +75,16 @@ test('completed statistics update once per session and retain best move count', 
     totalMoves: 40,
     bestMoves: 17,
     lastCompletedSessionId: 'game-b',
+    completionBreakdown: {},
   })
+})
+
+test('completed statistics can count completions by category once per session', async () => {
+  const database = new MemoryDatabase()
+  await recordGameCompleted('sudoku', 'easy-session', 40, database, 'easy')
+  await recordGameCompleted('sudoku', 'easy-session', 40, database, 'easy')
+  await recordGameCompleted('sudoku', 'hard-session', 60, database, 'hard')
+  assert.deepEqual((await readStatistics('sudoku', database)).completionBreakdown, { easy: 1, hard: 1 })
 })
 
 test('storage failures return safe defaults without preventing play', async () => {

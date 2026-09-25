@@ -9,6 +9,7 @@ const emptyStatistics = (gameId: string): GameStatistics => ({
   totalMoves: 0,
   bestMoves: null,
   lastCompletedSessionId: null,
+  completionBreakdown: {},
 })
 
 const isNonNegativeInteger = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0
@@ -24,6 +25,9 @@ const parseStatistics = (value: unknown, gameId: string): GameStatistics => {
     totalMoves: isNonNegativeInteger(source.totalMoves) ? source.totalMoves : 0,
     bestMoves: source.bestMoves === null || isNonNegativeInteger(source.bestMoves) ? source.bestMoves as number | null : null,
     lastCompletedSessionId: typeof source.lastCompletedSessionId === 'string' ? source.lastCompletedSessionId : null,
+    completionBreakdown: typeof source.completionBreakdown === 'object' && source.completionBreakdown !== null && !Array.isArray(source.completionBreakdown)
+      ? Object.fromEntries(Object.entries(source.completionBreakdown).filter((entry): entry is [string, number] => isNonNegativeInteger(entry[1])))
+      : {},
   }
 }
 
@@ -64,6 +68,7 @@ export const recordGameCompleted = (
   sessionId: string,
   moves: number,
   database: PersistenceDatabase = localDatabase,
+  category?: string,
 ): Promise<GameStatistics | null> => updateStatistics(
   gameId,
   (current) => current.lastCompletedSessionId === sessionId
@@ -74,6 +79,9 @@ export const recordGameCompleted = (
         totalMoves: current.totalMoves + moves,
         bestMoves: current.bestMoves === null ? moves : Math.min(current.bestMoves, moves),
         lastCompletedSessionId: sessionId,
+        completionBreakdown: category
+          ? { ...current.completionBreakdown, [category]: (current.completionBreakdown[category] ?? 0) + 1 }
+          : current.completionBreakdown,
       },
   database,
 )

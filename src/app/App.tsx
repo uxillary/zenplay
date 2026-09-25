@@ -7,6 +7,7 @@ import { GameShell } from '../components/GameShell'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { SavedGamePanel } from '../components/SavedGamePanel'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
+import { SudokuScreen } from '../games/sudoku/ui/SudokuScreen'
 
 type Screen = 'home' | 'game' | 'settings' | 'install'
 
@@ -18,6 +19,9 @@ const Application = () => {
 
   const updateSolitaireSaveAvailability = useCallback((hasSave: boolean) => {
     setContinueAvailability((current) => ({ ...current, solitaire: hasSave }))
+  }, [])
+  const updateSudokuSaveAvailability = useCallback((hasSave: boolean) => {
+    setContinueAvailability((current) => ({ ...current, sudoku: hasSave }))
   }, [])
 
   const selectedGame = games.find((game) => game.id === gameId)
@@ -65,6 +69,7 @@ const Application = () => {
         {screen === 'game' && selectedGame ? (
           <GameShell title={selectedGame.name} onBack={returnHome}>
             {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} /> : null}
+            {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} /> : null}
           </GameShell>
         ) : null}
 

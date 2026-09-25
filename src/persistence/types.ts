@@ -18,6 +18,7 @@ export type GameStatistics = {
   totalMoves: number
   bestMoves: number | null
   lastCompletedSessionId: string | null
+  completionBreakdown: Record<string, number>
 }
 
 export type StatisticsInput = Omit<GameStatistics, 'schemaVersion' | 'gameId'>
