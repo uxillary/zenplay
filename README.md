@@ -1,75 +1,29 @@
 # ZenPlay
 
-ZenPlay is a calm, privacy-first collection of familiar, tap-friendly games. The shared app shell currently includes **Klondike Solitaire** as an installable **PWA**.
+ZenPlay is a calm, privacy-first collection of familiar games. Play Solitaire, Sudoku, Pairs, Word Search, Noughts & Crosses, and Fifteen Puzzle without accounts, adverts, or network services.
 
-## MVP Principles
+## Install and offline play
 
-- No ads
-- No tracking
-- No accounts
-- No backend
-- No external APIs
-- Works offline after first load
-- Large readable controls and cards
+Use **Install ZenPlay** when your browser offers it, or follow the browser-specific instructions in the app. On iPhone and iPad, open ZenPlay in Safari, tap **Share**, then **Add to Home Screen**.
 
-## Tech Stack
+After the app has loaded successfully and its offline copy is ready, the app and all six games work without a network connection. Saved games, statistics, and accessibility settings stay on the device in IndexedDB and local storage. A new version waits for you to choose **Update now**; it does not refresh an active game automatically.
 
-- Vite + React + TypeScript
-- Tailwind CSS
-- `vite-plugin-pwa`
+## Development
 
-## Project Structure
-
-```text
-src/
-  app/
-  components/
-  games/solitaire/
-    model/
-    ui/
-  lib/
-  styles/
-```
-
-## Features Implemented
-
-- Registry-driven game library with **Solitaire**
-- Shared game screen shell and toolbar pattern
-- Home, settings, and install/help screens
-- Global settings with persistence (`localStorage`):
-  - Light/Dark theme
-  - High contrast
-  - Large cards
-  - Reduced motion
-  - Handedness toggle
-- Klondike solitaire engine with pure model logic:
-  - Shuffled 52-card deck
-  - Tableau + stock/waste + foundations
-  - Rule validation
-  - Undo stack
-- Tap-to-move interaction (no drag required)
-- Calm win modal: **“You did it.”**
-- PWA manifest + offline app shell caching
-- In-app install helper page for Android Chrome
-
-## Run Locally
+Use Node.js **20.19+** or **22.12+** (Node.js 24 is also supported). Install dependencies, then run:
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Build and Preview
+Build and preview the production app with `npm run build` and `npm run preview`. Service workers are enabled for the production build; use `localhost` or HTTPS to test installation and offline behaviour.
 
-```bash
-npm run build
-npm run preview
-```
-
-## Quality Checks
+## Checks
 
 ```bash
 npm test
 npm run typecheck
 npm run lint
+npm run build
 ```

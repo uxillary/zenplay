@@ -419,7 +419,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
         </div>
       </div>
 
-      <div className="zen-card-row">
+      <p className="text-sm text-stone-700 dark:text-stone-200">If all seven columns do not fit, swipe or scroll sideways to see the rest.</p>
+      <div className="zen-card-row" role="region" aria-label="Solitaire tableau" tabIndex={0}>
         <div className="zen-card-grid gap-1 md:gap-3">
           {state.tableau.map((pile, index) => (
             <PileView

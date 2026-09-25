@@ -63,6 +63,22 @@ body {
   color: var(--zp-text);
 }
 
+main.zen-app-frame {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+}
+
+@media (min-width: 768px) {
+  main.zen-app-frame {
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+  }
+}
+
 .zen-app-panel {
   border: 1px solid var(--zp-border);
   border-radius: 1.15rem;
@@ -943,6 +959,36 @@ button:focus-visible,
   border-width: 3px;
   outline: 2px solid currentColor;
   text-decoration: underline;
+}
+
+.zen-pwa-notice {
+  position: fixed;
+  z-index: 40;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  left: max(0.75rem, env(safe-area-inset-left));
+  display: flex;
+  width: max-content;
+  max-width: min(38rem, calc(100vw - 1.5rem));
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-inline: auto;
+  border: 1px solid var(--zp-border-strong);
+  border-radius: 0.75rem;
+  background: var(--zp-panel);
+  padding: 0.8rem 1rem;
+  color: var(--zp-text);
+  box-shadow: var(--zp-shadow);
+  font-size: 1rem;
+}
+
+.high-contrast .zen-pwa-notice {
+  border: 3px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  box-shadow: none;
 }
 
 .pairs-table-surface {
