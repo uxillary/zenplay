@@ -8,6 +8,7 @@ import { GameShell } from '../components/GameShell'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { SavedGamePanel } from '../components/SavedGamePanel'
 import { ProfilePanel } from '../components/ProfilePanel'
+import { SupporterSpotlight, SupportZenPlayPanel } from '../components/SupporterExperience'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
 import { SudokuScreen } from '../games/sudoku/ui/SudokuScreen'
 import { PairsScreen } from '../games/pairs/ui/PairsScreen'
@@ -17,7 +18,7 @@ import { FifteenScreen } from '../games/fifteen/ui/FifteenScreen'
 import { MahjongScreen } from '../games/mahjong/ui/MahjongScreen'
 import { getInstallExperience, isStandaloneMode } from '../lib/pwa'
 
-type Screen = 'home' | 'game' | 'settings' | 'profile' | 'install'
+type Screen = 'home' | 'game' | 'settings' | 'profile' | 'support' | 'install'
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
@@ -30,6 +31,8 @@ const detectStandaloneMode = () => isStandaloneMode(
 
 const detectIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent)
   || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
+
+const availableGames = games.filter((game) => game.status === 'available')
 
 const Application = () => {
   const [screen, setScreen] = useState<Screen>('home')
@@ -152,7 +155,7 @@ const Application = () => {
               <div>
                 <p className="zen-wordmark">ZenPlay</p>
                 <h1 data-screen-heading tabIndex={-1} className="zen-home-title mt-2">Choose a game</h1>
-                <p className="mt-2 text-lg">Classic games. Easy to see. Easy to understand. No adverts or accounts.</p>
+                <p className="mt-2 text-lg">Classic games. Easy to see. Easy to understand. No adverts. No online account needed.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => setScreen('profile')} className="zen-game-button">Profile</button>
@@ -161,7 +164,7 @@ const Application = () => {
               </div>
             </header>
             <div className="zen-game-library grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {games.filter((game) => game.status === 'available').map((game) => (
+              {availableGames.map((game) => (
                 <GameCard
                   key={game.id}
                   game={game}
@@ -171,6 +174,7 @@ const Application = () => {
                 />
               ))}
             </div>
+            <SupporterSpotlight />
           </>
         ) : null}
 
@@ -198,8 +202,12 @@ const Application = () => {
         {screen === 'profile' ? (
           <section className="mx-auto max-w-2xl space-y-4">
             <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
-            <ProfilePanel games={games.filter((game) => game.status === 'available')} />
+            <ProfilePanel games={availableGames} onOpenSupport={() => setScreen('support')} />
           </section>
+        ) : null}
+
+        {screen === 'support' ? (
+          <SupportZenPlayPanel onBack={() => setScreen('profile')} />
         ) : null}
 
         {screen === 'install' ? (

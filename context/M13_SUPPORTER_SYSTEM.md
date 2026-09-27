@@ -1,6 +1,6 @@
 # M13 — Supporter System
 
-**Status:** M13B local profile foundation implemented; remote identity, support, and public features remain unimplemented.
+**Status:** M13C supporter UX prototype and content review complete; remote identity, payments, entitlements, cosmetics, and public supporter profiles remain unimplemented.
 **Scope:** optional profiles, lifetime support recognition, cosmetic entitlements, and a privacy-first supporter spotlight.
 **Working name:** ZenPlay Stars. The name and all example thresholds are provisional.
 
@@ -102,6 +102,44 @@ Threat controls are release gates for their associated remote features, not work
 - Cosmetics may not reduce contrast, obscure game pieces, alter semantics, or be required for a readable board. Every visual reward needs an accessible text equivalent and must remain optional.
 - Profile and payment errors need calm, actionable text. Network/auth failures must not steal focus or strand gameplay.
 
+## M13C content review
+
+### Confirmed
+
+- “Stars” remains the working term for **lifetime support recognition**, never spendable currency. Use “14 lifetime Stars” or “support level”; do not say balance, wallet, spend, or “buy an item for X Stars.”
+- Keep the free profile useful on its own. Profile creation stays optional, local, and private by default; supporter information must not make the free profile feel deliberately incomplete.
+- Supporter status always has visible text as well as any decorative star or badge. Do not use repeated star icons to represent a count.
+- M13C supporter profiles, milestone descriptions, and spotlight entries are static fictional fixtures only. They are not local-profile data, are not saved, and do not imply that support or public profiles exist today. This copy is explicit in the Home spotlight and Support ZenPlay prototype.
+- M13C offers no payment controls or fake purchase-success flow. Amount examples carry no GBP prices and are explicitly labelled as discussion concepts.
+- Support never changes gameplay or accessibility. Public visibility is a later, separate opt-in; private supporters receive the same eligible benefits.
+
+### Proposed
+
+- Show available local game-completion statistics read-only on a free profile. Label them as recorded on this device, show only statistics the existing system actually records, and do not describe them as verified, global, or necessarily “wins.” These counters are informational and not a condition of support.
+- Present the Home spotlight as a small, static set of example cards under “Made possible by players like these,” with a prominent preview notice. Do not sort by Stars. The implemented sample set deliberately places 14, 1, and 1,247 Stars in a non-ranked sequence and labels the records fictional; this does not select the eventual live rotation design.
+- Use a restrained supporter-profile hierarchy: display name and favourite game first, a single star glyph plus readable “N lifetime Stars” text, then optional selected statistic, supporter-since year, and a quiet flair label. Group large counts in text; never draw one icon per Star.
+- Use plain language on the future support page: ZenPlay is free and ad-free; support is optional; Stars recognise lifetime support; extras are cosmetic; accessibility and gameplay remain free. Example 1, 5, 10, and 25 Star amounts are concepts only, not bundles, conversion rates, or prices.
+- Treat milestones as quiet thank-you acknowledgements, not a progress track. Current examples pair 1/5/10/25 Stars with a badge, profile accent, card back, and table appearance. Avoid “only X away,” progress pressure, timers, popularity labels, or urgency.
+- Keep the future public-visibility explanation separate from support: private by default; opt in separately; supporting never publishes a profile; visibility can later be turned off; private supporters keep their benefits. M13C explains this but does not offer a visibility switch.
+- Recommended first M13H cosmetic categories: **profile accent/flair** (outside gameplay) and **Solitaire card backs** (the card faces and suit/rank recognition remain unchanged). Add table/felt or board appearance only after contrast and focus-state checks. Defer Sudoku palettes, Pairs faces, Mahjong tile faces, and app-wide themes because they can alter recognition, state, or accessibility presentation more directly.
+- The prototype is static and uses no automatic rotation or decorative animation. Any eventual spotlight rotation must get a separate reduced-motion/static alternative and must not move content under keyboard focus.
+- Free-profile statistics use the existing per-game `gamesCompleted` values. They are labelled as recorded on this device, shown as completions rather than wins, omitted when zero, and never treated as verified.
+
+### Open
+
+- Is “ZenPlay Stars” the final public name, and how will future wording explain the link between financial support and a lifetime Star total without implying virtual currency?
+- Are the proposed 1/5/10/25 milestone examples useful and affordable to operate? What support-to-Star mapping and price, if any, will be approved? No economic decision is made here.
+- Should a live spotlight exist, which eligible profile fields should be shown, and which fair rotation model, appearance cap, time window, and withdrawal latency should it use? Stars should not create a spending leaderboard.
+- Which local game statistics are sufficiently understandable and safe to show on a future public profile, and should any be omitted to reduce identifiability?
+- What moderation, age, retention, and public-profile operations can ZenPlay support before public visibility ships?
+
+### Deferred
+
+- Real account-backed supporter state, Stars totals, supporter-since calculation, cosmetic entitlements, and their presentation from verified server data.
+- Real checkout, bundle selection, prices, provider, refunds, restore, or any purchase-completion state.
+- Persisting supporter data in the local profile, publishing fixture records, network requests, spotlight selection/rotation, or public visibility controls.
+- Implementing game/application cosmetics or changing game rendering and save schemas.
+
 ## Explicit M13 non-goals
 
 - Chat, comments, followers, private messaging, social feeds, or a general user directory.
@@ -120,7 +158,7 @@ All milestones remain on the existing M13 branch; no M13 sub-branches.
 | --- | --- | --- |
 | **M13A — Product and architecture specification** | This specification, context update, principles, threat/accessibility/privacy review, open questions, and next prompt. | Complete |
 | **M13B — Local profile foundation** | Optional local-only profile model and storage isolated from game saves/settings; create/edit/delete locally; no account, network, support claims, or public fields. | Complete |
-| **M13C — Supporter UX prototype and content review** | Review the shipped profile flow and prototype clearly-labelled, non-production supporter/supporter-benefit screens, including privacy and offline/error states; no payment or public service. | M13B; content/privacy copy review |
+| **M13C — Supporter UX prototype and content review** | Review the shipped profile flow and prototype clearly-labelled, non-production supporter/supporter-benefit screens, including privacy and offline/error states; no payment or public service. | Complete |
 | **M13D — Remote identity and service design** | Choose and document account, API, deployment, data separation, security, recovery, moderation operations, and provider evaluation criteria; validate legal/privacy ownership. A design gate before building services. | M13C findings; open decisions below |
 | **M13E — Account/profile service foundation** | Minimal optional identity and profile claim/sync, server-side authorization, deletion and recovery foundations, private-by-default profile API; no purchases. | M13D approval |
 | **M13F — Purchase verification and support ledger** | Evaluate/select provider; implement one-off checkout, server verification, idempotent ledger, restore, refunds/chargebacks, receipts/support handling, and guest/account-link rules. | M13E; legal, tax/VAT, and provider decisions |
@@ -155,4 +193,4 @@ The order may be adjusted after M13D, but remote accounts must not be started be
 
 ## Recommended next bounded prompt
 
-**M13C — Prototype the supporter experience without real support infrastructure.** Review the implemented profile flow. Build only a clearly-labelled, non-production UI prototype for explaining voluntary support and potential cosmetic recognition, including privacy choices and offline/error states. Use no real prices, checkout, account, backend, Stars balance, public profiles, analytics, or production entitlements. Test the copy and accessible flow, update this document, and stop after M13C.
+**M13D — Remote identity and service design.** Before implementing any backend or authentication, resolve the architecture and product questions listed above: account/profile claim and recovery, data separation, authorization, deletion, moderation ownership, age/privacy/legal review, service operations, and criteria for evaluating payment providers. Compare options and record a decision and remaining risks. Do not implement accounts, payments, or a provider in M13D. Stop after the design gate.

@@ -1,5 +1,6 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { GameDefinition } from '../app/gameRegistry'
+import { readStatistics } from '../persistence/statistics'
 import {
   createLocalProfile,
   deleteLocalProfile,
@@ -10,10 +11,11 @@ import {
 } from '../lib/localProfile'
 import { GameDialog } from './GameDialog'
 
-type Props = { games: readonly GameDefinition[] }
+type Props = { games: readonly GameDefinition[]; onOpenSupport: () => void }
 
-export const ProfilePanel = ({ games }: Props) => {
+export const ProfilePanel = ({ games, onOpenSupport }: Props) => {
   const [profile, setProfile] = useState<LocalProfile | null>(() => loadLocalProfile())
+  const [gameCompletions, setGameCompletions] = useState<Record<string, number> | null>(null)
   const [editing, setEditing] = useState(false)
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '')
   const [favouriteGameId, setFavouriteGameId] = useState(profile?.favouriteGameId ?? '')
@@ -22,6 +24,13 @@ export const ProfilePanel = ({ games }: Props) => {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const createButtonRef = useRef<HTMLButtonElement>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let active = true
+    void Promise.all(games.map(async (game) => [game.id, (await readStatistics(game.id)).gamesCompleted] as const))
+      .then((entries) => { if (active) setGameCompletions(Object.fromEntries(entries)) })
+    return () => { active = false }
+  }, [games])
 
   const focusWhenReady = (target: 'create' | 'summary') => {
     window.requestAnimationFrame(() => (target === 'create' ? createButtonRef.current : summaryRef.current)?.focus())
@@ -100,7 +109,7 @@ export const ProfilePanel = ({ games }: Props) => {
           <dl className="space-y-2">
             <div><dt className="font-semibold">Favourite game</dt><dd>{profile.favouriteGameId ? favouriteGame?.name ?? 'A game that is no longer available' : 'Not set'}</dd></div>
             <div><dt className="font-semibold">Profile visibility</dt><dd>Private on this device</dd></div>
-            <div><dt className="font-semibold">Created</dt><dd><time dateTime={profile.createdAt}>{new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(profile.createdAt))}</time></dd></div>
+            <div><dt className="font-semibold">Profile created on this device</dt><dd><time dateTime={profile.createdAt}>{new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(profile.createdAt))}</time></dd></div>
           </dl>
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={startEditing} className="zen-game-button">Edit profile</button>
@@ -108,6 +117,31 @@ export const ProfilePanel = ({ games }: Props) => {
           </div>
         </div>
       ) : null}
+
+      {profile && !editing ? (
+        <section className="space-y-3 rounded-xl border border-[var(--zp-border)] p-4" aria-labelledby="local-statistics-title">
+          <h2 id="local-statistics-title" className="text-xl font-semibold">Local game statistics</h2>
+          <p>These are completions recorded in this device’s game statistics.</p>
+          {gameCompletions === null ? <p role="status">Loading local statistics…</p> : (() => {
+            const completedGames = games.filter((game) => (gameCompletions[game.id] ?? 0) > 0)
+            const total = Object.values(gameCompletions).reduce((sum, count) => sum + count, 0)
+            return total > 0 ? (
+              <>
+                <p className="font-semibold">{total.toLocaleString()} game {total === 1 ? 'completion' : 'completions'} recorded on this device</p>
+                <ul className="list-disc space-y-1 pl-6">
+                  {completedGames.map((game) => <li key={game.id}>{gameCompletions[game.id].toLocaleString()} {game.name} {gameCompletions[game.id] === 1 ? 'completion' : 'completions'}</li>)}
+                </ul>
+              </>
+            ) : <p>No local completions recorded yet.</p>
+          })()}
+        </section>
+      ) : null}
+
+      {!editing ? <section className="space-y-3 border-t border-[var(--zp-border)] pt-4">
+        <h2 className="text-xl font-semibold">Optional support</h2>
+        <p>ZenPlay is free and ad-free. Read about a future supporter experience; nothing can be purchased here.</p>
+        <button type="button" onClick={onOpenSupport} className="zen-game-button">See the support experience preview</button>
+      </section> : null}
 
       {editing ? (
         <form className="space-y-4" onSubmit={saveProfile} aria-describedby={error ? 'profile-error' : undefined}>

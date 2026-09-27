@@ -1,6 +1,6 @@
 # ZenPlay
 
-ZenPlay is a calm collection of familiar games designed to be clear and easy to use. Play Solitaire, Sudoku, Pairs, Word Search, Noughts & Crosses, and Fifteen Puzzle. There are no adverts, accounts, or tracking. Accessibility settings include larger text and game pieces, high contrast, reduced motion, and Simple Mode.
+ZenPlay is a calm collection of familiar games designed to be clear and easy to use. Play Solitaire, Sudoku, Pairs, Word Search, Noughts & Crosses, and Fifteen Puzzle. There are no adverts or tracking, and you do not need an online account. An optional profile stays on this device. Accessibility settings include larger text and game pieces, high contrast, reduced motion, and Simple Mode.
 
 ## Install and offline play
 
