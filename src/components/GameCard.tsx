@@ -7,6 +7,7 @@ const gameMotif: Record<GameDefinition['id'], string> = {
   'word-search': 'A  B  C',
   'noughts-crosses': '×  ○  ×',
   fifteen: '1  2  3  4',
+  mahjong: '🀙  🀐  🀀',
 }
 
 type Props = {

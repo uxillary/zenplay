@@ -52,7 +52,7 @@ export const GameDialog = ({ title, description, alert = false, onDismiss, child
         aria-modal="true"
         aria-labelledby="game-dialog-title"
         aria-describedby={description ? 'game-dialog-description' : undefined}
-        className="zen-dialog w-full max-w-lg space-y-4 p-6"
+        className="zen-dialog max-h-[calc(100dvh-2rem)] w-full max-w-lg space-y-4 overflow-y-auto p-6"
       >
         <h2 id="game-dialog-title" className="text-2xl font-semibold">{title}</h2>
         {description ? <p id="game-dialog-description" className="text-lg">{description}</p> : null}

@@ -1475,7 +1475,27 @@ Work:
 
 ---
 
-## M12 — Optional Purchases / Support
+## M12 — Mahjong Solitaire
+
+Goal:
+
+Add a single-player Mahjong Solitaire game to the ZenPlay game catalogue.
+
+Work:
+
+- Add the Classic Turtle as a declarative 144-position layout across four layers.
+- Store each tile's identity, matching key, grid coordinates, layer, and removed state.
+- A tile is free when no higher tile overlaps it and at least one horizontal side is open.
+- Numbered suited tiles, winds, and dragons match identical identities. Any flower matches any flower, and any season matches any season.
+- Generate deals by assigning matching pairs to positions in a reverse-removal sequence, ensuring each new board has a valid solution path.
+- Add selection, pair removal, repeated undo, temporary hints, new games, win/no-moves handling, and keyboard arrow navigation.
+- Describe tile identity, free/blocked state, and selection to assistive technology. Offer optional concise in-tile labels.
+- Save the board, removed-pair history, move count, and tile-label setting through the existing versioned game-save store.
+- Cover layout, blocking, matching, removal, available moves, completion, undo, deal generation, and state restoration with engine tests.
+
+---
+
+## M13 — Optional Purchases / Support
 
 Goal:
 

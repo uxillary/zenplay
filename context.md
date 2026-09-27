@@ -1,5 +1,7 @@
 # ZenPlay — context for Codex
 
+> Historical MVP notes. This document is superseded by [`context/ZENPLAY_PROJECT_CONTEXT.md`](context/ZENPLAY_PROJECT_CONTEXT.md) and the current [README](README.md); use those for current product scope and requirements.
+
 ZenPlay is a calm, ad-free, nana-proof games suite focused on accessibility and trust. The first game is Klondike Solitaire.
 
 Primary audience:

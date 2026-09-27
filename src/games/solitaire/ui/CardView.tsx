@@ -1,6 +1,7 @@
 import type { DragEvent, TouchEvent } from 'react'
 import { useRef } from 'react'
 import type { Card } from '../model/types'
+import { describeSolitaireCard } from './cardAccessibility'
 
 const suitSymbol = {
   clubs: '♣',
@@ -8,14 +9,6 @@ const suitSymbol = {
   hearts: '♥',
   spades: '♠',
 }
-
-const rankLabel: Record<Card['rank'], string> = {
-  A: 'Ace', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10',
-  J: 'Jack', Q: 'Queen', K: 'King',
-}
-
-const accessibleCardName = (card: Card): string =>
-  `${rankLabel[card.rank]} of ${card.suit[0].toUpperCase()}${card.suit.slice(1)}`
 
 type Props = {
   card?: Card
@@ -137,7 +130,7 @@ export const CardView = ({
       }}
       onTouchEnd={handleTouchEnd}
       className={`${baseCardClass} zen-card-face ${selected ? 'zen-card-selected' : ''}`}
-      aria-label={`${accessibleCardName(card)}${selected ? ', selected' : ''}${hinted ? ', suggested move' : ''}`}
+      aria-label={`${describeSolitaireCard(card)}${selected ? ', selected' : ''}${hinted ? ', suggested move' : ''}`}
       aria-pressed={Boolean(selected)}
     >
       {content}

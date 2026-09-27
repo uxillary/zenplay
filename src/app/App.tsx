@@ -13,6 +13,7 @@ import { PairsScreen } from '../games/pairs/ui/PairsScreen'
 import { WordSearchScreen } from '../games/wordSearch/ui/WordSearchScreen'
 import { NoughtsCrossesScreen } from '../games/noughtsCrosses/ui/NoughtsCrossesScreen'
 import { FifteenScreen } from '../games/fifteen/ui/FifteenScreen'
+import { MahjongScreen } from '../games/mahjong/ui/MahjongScreen'
 import { getInstallExperience, isStandaloneMode } from '../lib/pwa'
 
 type Screen = 'home' | 'game' | 'settings' | 'install'
@@ -32,6 +33,7 @@ const detectIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent)
 const Application = () => {
   const [screen, setScreen] = useState<Screen>('home')
   const [gameId, setGameId] = useState<string | null>(null)
+  const previousScreen = useRef(screen)
   const [continueAvailability, setContinueAvailability] = useState<Record<string, boolean>>({})
   const [standalone, setStandalone] = useState(detectStandaloneMode)
   const [installed, setInstalled] = useState(false)
@@ -39,10 +41,17 @@ const Application = () => {
   const [installMessage, setInstallMessage] = useState('')
   const [updateReady, setUpdateReady] = useState(false)
   const [offlineReady, setOfflineReady] = useState(false)
+  const [saveWarning, setSaveWarning] = useState(false)
   const updateServiceWorker = useRef<((reloadPage?: boolean) => Promise<void>) | null>(null)
   const { settings, effectiveSettings, setSetting } = useAccessibility()
   const ios = detectIos()
   const installExperience = getInstallExperience(standalone || installed, Boolean(installPrompt), ios)
+
+  useEffect(() => {
+    if (previousScreen.current === screen) return
+    previousScreen.current = screen
+    window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-screen-heading]')?.focus())
+  }, [screen])
 
   const updateSolitaireSaveAvailability = useCallback((hasSave: boolean) => {
     setContinueAvailability((current) => ({ ...current, solitaire: hasSave }))
@@ -59,6 +68,10 @@ const Application = () => {
   const updateFifteenSaveAvailability = useCallback((hasSave: boolean) => {
     setContinueAvailability((current) => ({ ...current, fifteen: hasSave }))
   }, [])
+  const updateMahjongSaveAvailability = useCallback((hasSave: boolean) => {
+    setContinueAvailability((current) => ({ ...current, mahjong: hasSave }))
+  }, [])
+  const reportSaveFailure = useCallback(() => setSaveWarning(true), [])
 
   const selectedGame = games.find((game) => game.id === gameId)
   const returnHome = () => setScreen('home')
@@ -124,12 +137,21 @@ const Application = () => {
   return (
     <main className="zen-app-frame min-h-[100dvh] overflow-x-hidden p-3 md:p-6">
       <div className="zen-app-panel mx-auto min-h-[calc(100dvh-1.5rem)] max-w-7xl p-4 md:min-h-[calc(100dvh-3rem)] md:p-8">
+        {updateReady && screen !== 'game' ? <div className="zen-pwa-notice" role="region" aria-label="ZenPlay update">
+          <span role="status" aria-live="polite">A ZenPlay update is ready.</span>
+          <button type="button" onClick={() => void updateServiceWorker.current?.(true)} className="zen-game-button zen-game-button--small">Update now</button>
+          <button type="button" onClick={() => setUpdateReady(false)} className="zen-game-button zen-game-button--small">Later</button>
+        </div> : offlineReady && screen !== 'game' ? <div className="zen-pwa-notice" role="region" aria-label="Offline availability">
+          <span role="status" aria-live="polite">ZenPlay is ready to play offline.</span>
+          <button type="button" onClick={() => setOfflineReady(false)} className="zen-game-button zen-game-button--small">Dismiss</button>
+        </div> : null}
         {screen === 'home' ? (
           <>
             <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="zen-wordmark">ZenPlay</p>
-                <h1 className="zen-home-title mt-2">Choose a game</h1>
+                <h1 data-screen-heading tabIndex={-1} className="zen-home-title mt-2">Choose a game</h1>
+                <p className="mt-2 text-lg">Classic games. Easy to see. Easy to understand. No adverts or accounts.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => setScreen('settings')} className="zen-game-button">Settings</button>
@@ -142,8 +164,8 @@ const Application = () => {
                   key={game.id}
                   game={game}
                   canContinue={continueAvailability[game.id] ?? false}
-                  onSelect={() => { setGameId(game.id); setScreen('game') }}
-                  onContinue={() => { setGameId(game.id); setScreen('game') }}
+                  onSelect={() => { setSaveWarning(false); setGameId(game.id); setScreen('game') }}
+                  onContinue={() => { setSaveWarning(false); setGameId(game.id); setScreen('game') }}
                 />
               ))}
             </div>
@@ -152,12 +174,14 @@ const Application = () => {
 
         {screen === 'game' && selectedGame ? (
           <GameShell title={selectedGame.name} onBack={returnHome}>
-            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} /> : null}
-            {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} /> : null}
-            {selectedGame.id === 'pairs' ? <PairsScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updatePairsSaveAvailability} /> : null}
-            {selectedGame.id === 'word-search' ? <WordSearchScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateWordSearchSaveAvailability} /> : null}
+            {saveWarning ? <p role="alert" className="my-3 rounded-lg border border-amber-700 p-3 text-base">Your progress could not be saved on this device. Keep this page open to avoid losing it. <button type="button" className="underline" onClick={() => setSaveWarning(false)}>Dismiss</button></p> : null}
+            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
+            {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
+            {selectedGame.id === 'pairs' ? <PairsScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updatePairsSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
+            {selectedGame.id === 'word-search' ? <WordSearchScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateWordSearchSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
             {selectedGame.id === 'noughts-crosses' ? <NoughtsCrossesScreen settings={effectiveSettings} onBack={returnHome} /> : null}
-            {selectedGame.id === 'fifteen' ? <FifteenScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateFifteenSaveAvailability} /> : null}
+            {selectedGame.id === 'fifteen' ? <FifteenScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateFifteenSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
+            {selectedGame.id === 'mahjong' ? <MahjongScreen settings={effectiveSettings} onSaveAvailabilityChange={updateMahjongSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
           </GameShell>
         ) : null}
 
@@ -165,14 +189,14 @@ const Application = () => {
           <section className="mx-auto max-w-2xl space-y-4">
             <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
             <SettingsPanel settings={settings} onChange={setSetting} />
-            <SavedGamePanel hasSave={continueAvailability.solitaire ?? false} onSaveCleared={() => setContinueAvailability((current) => ({ ...current, solitaire: false }))} />
+            {continueAvailability.solitaire ? <SavedGamePanel hasSave onSaveCleared={() => setContinueAvailability((current) => ({ ...current, solitaire: false }))} /> : null}
           </section>
         ) : null}
 
         {screen === 'install' ? (
           <section className="mx-auto max-w-2xl space-y-4 text-lg" aria-labelledby="install-title">
             <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
-            <h1 id="install-title" className="text-2xl font-semibold">Install ZenPlay</h1>
+            <h1 id="install-title" data-screen-heading tabIndex={-1} className="text-2xl font-semibold">Install ZenPlay</h1>
             <p>Keep ZenPlay with your other apps and play offline after it has loaded once.</p>
             {installExperience === 'installed' ? <p role="status">ZenPlay is already installed and ready to use.</p> : null}
             {installExperience === 'prompt' ? <button type="button" onClick={() => void installZenPlay()} className="zen-game-button zen-game-button--primary">Install ZenPlay</button> : null}
@@ -182,14 +206,6 @@ const Application = () => {
           </section>
         ) : null}
       </div>
-      {updateReady ? <div className="zen-pwa-notice" role="region" aria-label="ZenPlay update">
-        <span role="status" aria-live="polite">A ZenPlay update is ready.</span>
-        <button type="button" onClick={() => void updateServiceWorker.current?.(true)} className="zen-game-button zen-game-button--small">Update now</button>
-        <button type="button" onClick={() => setUpdateReady(false)} className="zen-game-button zen-game-button--small">Later</button>
-      </div> : offlineReady ? <div className="zen-pwa-notice" role="region" aria-label="Offline availability">
-        <span role="status" aria-live="polite">ZenPlay is ready to play offline.</span>
-        <button type="button" onClick={() => setOfflineReady(false)} className="zen-game-button zen-game-button--small">Dismiss</button>
-      </div> : null}
     </main>
   )
 }

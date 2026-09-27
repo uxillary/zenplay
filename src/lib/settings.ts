@@ -78,7 +78,7 @@ export const getEffectiveSettings = (
   settings: AppSettings,
   systemReducedMotion = false,
 ): AppSettings => settings.simpleMode
-  ? { ...settings, uiScale: 'extra-large', gamePieceScale: 'large', highContrast: true, reducedMotion: true }
+  ? { ...settings, uiScale: 'extra-large', gamePieceScale: 'large', highContrast: true, reducedMotion: true, calmStats: true }
   : { ...settings, reducedMotion: settings.reducedMotion || systemReducedMotion }
 
 export const loadSettings = (): AppSettings => {

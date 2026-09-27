@@ -3,8 +3,9 @@ import { hasResumableSudokuSave } from '../games/sudoku/save'
 import { hasResumablePairsSave } from '../games/pairs/save'
 import { hasResumableWordSearchSave } from '../games/wordSearch/save'
 import { hasResumableFifteenSave } from '../games/fifteen/save'
+import { hasResumableMahjongSave } from '../games/mahjong/save'
 
-export type GameId = 'solitaire' | 'sudoku' | 'pairs' | 'word-search' | 'noughts-crosses' | 'fifteen'
+export type GameId = 'solitaire' | 'sudoku' | 'pairs' | 'word-search' | 'noughts-crosses' | 'fifteen' | 'mahjong'
 
 export type GameDefinition = {
   id: GameId
@@ -68,5 +69,14 @@ export const games: readonly GameDefinition[] = [
     target: '/games/fifteen',
     supportsContinue: true,
     getContinueAvailability: hasResumableFifteenSave,
+  },
+  {
+    id: 'mahjong',
+    name: 'Mahjong',
+    description: 'Match free tiles and clear the board.',
+    status: 'available',
+    target: '/games/mahjong',
+    supportsContinue: true,
+    getContinueAvailability: hasResumableMahjongSave,
   },
 ]

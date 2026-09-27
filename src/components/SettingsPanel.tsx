@@ -51,10 +51,10 @@ const ToggleRow = ({
 
 export const SettingsPanel = ({ settings, onChange }: Props) => (
   <section className="zen-settings-panel space-y-6 p-4 md:p-6">
-    <h1 className="text-2xl font-semibold">Settings</h1>
+    <h1 data-screen-heading tabIndex={-1} className="text-2xl font-semibold">Settings</h1>
 
     <section aria-labelledby="display-heading" className="space-y-4">
-      <h3 id="display-heading" className="text-xl font-semibold">Display</h3>
+      <h2 id="display-heading" className="text-xl font-semibold">Display</h2>
       <ChoiceGroup label="Text and interface size" value={settings.uiScale} onSelect={(value) => onChange('uiScale', value)} options={[
         { value: 'normal', label: 'Normal' }, { value: 'large', label: 'Large' }, { value: 'extra-large', label: 'Extra Large' },
       ]} />
@@ -68,7 +68,7 @@ export const SettingsPanel = ({ settings, onChange }: Props) => (
     </section>
 
     <section aria-labelledby="interaction-heading" className="space-y-3 border-t border-zinc-400/70 pt-4">
-      <h3 id="interaction-heading" className="text-xl font-semibold">Interaction</h3>
+      <h2 id="interaction-heading" className="text-xl font-semibold">Interaction</h2>
       <ToggleRow label="Reduce movement and animation" checked={settings.reducedMotion} onChange={(value) => onChange('reducedMotion', value)} />
       <ChoiceGroup label="Control position" value={settings.handedness} onSelect={(value) => onChange('handedness', value)} options={[
         { value: 'left', label: 'Left handed' }, { value: 'right', label: 'Right handed' },
@@ -76,23 +76,28 @@ export const SettingsPanel = ({ settings, onChange }: Props) => (
     </section>
 
     <section aria-labelledby="simplicity-heading" className="space-y-3 border-t border-zinc-400/70 pt-4">
-      <h3 id="simplicity-heading" className="text-xl font-semibold">Simplicity</h3>
+      <h2 id="simplicity-heading" className="text-xl font-semibold">Simplicity</h2>
       <ToggleRow label="Simple Mode" checked={settings.simpleMode} onChange={(value) => onChange('simpleMode', value)} />
-      <p className="text-base leading-relaxed">Simple Mode uses Extra Large text, Large game pieces, high contrast and reduced motion. Your individual display choices return when you turn it off.</p>
+      <p className="text-base leading-relaxed">Simple Mode uses Extra Large text, Large game pieces, high contrast and reduced motion, and hides move counts and game statistics in Rules. Your individual choices return when you turn it off.</p>
     </section>
 
     <section aria-labelledby="solitaire-heading" className="space-y-3 border-t border-zinc-400/70 pt-4">
-      <h3 id="solitaire-heading" className="text-xl font-semibold">Solitaire</h3>
+      <h2 id="solitaire-heading" className="text-xl font-semibold">Solitaire</h2>
       <ToggleRow label="Show timer" checked={settings.timer} onChange={(value) => onChange('timer', value)} />
       <ToggleRow label="Hide move and time counts" checked={settings.calmStats} onChange={(value) => onChange('calmStats', value)} />
       <div className="space-y-2">
         <p className="font-semibold">Cards drawn from stock</p>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="group" aria-label="Cards drawn from stock">
           <button type="button" aria-pressed={settings.drawMode === 'one'} onClick={() => onChange('drawMode', 'one')} className={`zen-choice-button ${settings.drawMode === 'one' ? 'is-selected' : ''}`}>Draw one</button>
           <button type="button" aria-pressed={settings.drawMode === 'three'} onClick={() => onChange('drawMode', 'three')} className={`zen-choice-button ${settings.drawMode === 'three' ? 'is-selected' : ''}`}>Draw three</button>
         </div>
         <p className="text-sm">The new setting applies to your next stock action.</p>
       </div>
+    </section>
+
+    <section aria-labelledby="about-heading" className="space-y-2 border-t border-zinc-400/70 pt-4">
+      <h2 id="about-heading" className="text-xl font-semibold">About ZenPlay</h2>
+      <p className="text-base leading-relaxed">ZenPlay is a collection of familiar games designed to be clear and easy to use. There are no adverts, accounts or tracking. Your game progress, statistics and settings stay on this device.</p>
     </section>
   </section>
 )

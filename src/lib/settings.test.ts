@@ -45,6 +45,8 @@ test('Simple Mode derives larger, higher contrast, reduced motion preferences', 
   assert.equal(effective.gamePieceScale, 'large')
   assert.equal(effective.highContrast, true)
   assert.equal(effective.reducedMotion, true)
+  assert.equal(effective.calmStats, true)
+  assert.equal(getEffectiveSettings(defaultSettings).calmStats, false)
   assert.equal(getEffectiveSettings(defaultSettings, true).reducedMotion, true)
 })
 

@@ -17,6 +17,7 @@ export const NoughtsCrossesScreen = ({ settings, onBack }: Props) => {
   const [mode, setMode] = useState<GameMode>('two-players')
   const [difficulty, setDifficulty] = useState<Difficulty>('standard')
   const [showRules, setShowRules] = useState(false)
+  const [showNewRound, setShowNewRound] = useState(false)
   const [statistics, setStatistics] = useState<GameStatistics | null>(null)
   const computerPending = mode === 'computer' && state.status === 'playing' && state.currentPlayer === 'O'
   const [announcement, setAnnouncement] = useState('Crosses’ turn.')
@@ -65,6 +66,11 @@ export const NoughtsCrossesScreen = ({ settings, onBack }: Props) => {
     session.current = createSessionId()
     completedSession.current = null
     void recordGameStarted('noughts-crosses')
+  }
+
+  const requestNewRound = () => {
+    if (state.status === 'playing' && state.board.some((mark) => mark !== null)) setShowNewRound(true)
+    else startAgain()
   }
 
   const chooseMode = (nextMode: GameMode) => {
@@ -122,7 +128,7 @@ export const NoughtsCrossesScreen = ({ settings, onBack }: Props) => {
           key={index}
           type="button"
           className={`noughts-cell ${winning ? 'noughts-cell--winning' : ''}`}
-          aria-label={`Row ${row}, column ${column}, ${label}`}
+          aria-label={`Row ${row}, column ${column}, ${label}${winning ? ', winning line' : ''}`}
           aria-disabled={mark !== null || state.status !== 'playing' || computerPending || mode === 'computer' && state.currentPlayer === 'O'}
           onClick={() => play(index)}
         >
@@ -130,10 +136,14 @@ export const NoughtsCrossesScreen = ({ settings, onBack }: Props) => {
         </button>
       })}
     </div>
-    <div className="noughts-bottom-row"><span>{state.board.filter(Boolean).length} moves</span><button type="button" onClick={startAgain} className="zen-game-button">New Round</button></div>
+    <div className="noughts-bottom-row">{!settings.calmStats ? <span>{state.board.filter(Boolean).length} moves</span> : null}<button type="button" onClick={requestNewRound} className="zen-game-button">New Round</button></div>
+
+    {showNewRound ? <GameDialog title="Start a new round?" description="Starting a new round replaces the current board." onDismiss={() => setShowNewRound(false)}>
+      <div className="flex flex-wrap gap-3"><button type="button" onClick={() => setShowNewRound(false)} className="zen-game-button">Keep current round</button><button type="button" onClick={() => { setShowNewRound(false); startAgain() }} className="zen-game-button">New Round</button></div>
+    </GameDialog> : null}
 
     {showRules ? <GameDialog title="How to play Noughts & Crosses" description="Players take turns placing a nought or a cross in an empty square. The first to make three in a row wins: across, down, or diagonally. The round is a draw when all nine squares are filled without a winner. Choose Two Players to share the device, or Play Computer for a local game. It is also known as Tic-Tac-Toe." onDismiss={() => setShowRules(false)}>
-      <div className="space-y-2 text-lg"><p>{statistics ? `${statistics.gamesStarted} rounds played · ${statistics.gamesCompleted} completed.` : 'Statistics are stored on this device.'}</p><p>{statistics ? `Crosses wins: ${statistics.completionBreakdown['crosses-win'] ?? 0} · Noughts wins: ${statistics.completionBreakdown['noughts-win'] ?? 0} · Player wins: ${statistics.completionBreakdown['player-win'] ?? 0} · Computer wins: ${statistics.completionBreakdown['computer-win'] ?? 0} · Draws: ${statistics.completionBreakdown.draw ?? 0}.` : null}</p></div>
+      <div className="space-y-2 text-lg"><p>Use Tab to reach a square, then press Enter or Space to place your mark.</p>{!settings.simpleMode ? <><p>{statistics ? `${statistics.gamesStarted} rounds played · ${statistics.gamesCompleted} completed.` : 'Statistics are stored on this device.'}</p><p>{statistics ? `Crosses wins: ${statistics.completionBreakdown['crosses-win'] ?? 0} · Noughts wins: ${statistics.completionBreakdown['noughts-win'] ?? 0} · Player wins: ${statistics.completionBreakdown['player-win'] ?? 0} · Computer wins: ${statistics.completionBreakdown['computer-win'] ?? 0} · Draws: ${statistics.completionBreakdown.draw ?? 0}.` : null}</p></> : null}</div>
       <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
     </GameDialog> : null}
     {state.status !== 'playing' ? <GameDialog title={completeMessage} description={mode === 'computer' && state.winner === 'X' ? 'A well played round.' : 'The round is complete.'}>

@@ -17,6 +17,7 @@ type Props = {
   settings: AppSettings
   onBack: () => void
   onSaveAvailabilityChange: (hasSave: boolean) => void
+  onSaveFailure: () => void
 }
 
 type Action =
@@ -61,7 +62,7 @@ const cellDescription = (
   return parts.join(', ')
 }
 
-export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange }: Props) => {
+export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, () => createSudokuState('easy-1'))
   const [ready, setReady] = useState(false)
   const [selectedCell, setSelectedCell] = useState(() => Math.max(0, findSudokuPuzzle('easy-1')?.givens.findIndex((value) => value === 0) ?? 0))
@@ -114,8 +115,9 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pro
         return
       }
       if (await saveActiveGame('sudoku', snapshot, currentSession)) onSaveAvailabilityChange(true)
+      else onSaveFailure()
     })
-  }, [onSaveAvailabilityChange, puzzle, ready, state])
+  }, [onSaveAvailabilityChange, onSaveFailure, puzzle, ready, state])
 
   useEffect(() => {
     if (!moveFocusAfterSelection.current) return
@@ -319,10 +321,10 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pro
             <p>Select an empty square, then tap a number or press its number key. Arrow keys move the selection. Given numbers are fixed.</p>
             <p>Turn on Notes to toggle small candidate numbers in a square. Erase clears your entry or notes. Undo reverses your last change.</p>
             <p>Hint fills one unsolved square. Show mistakes is optional and can highlight incorrect entries.</p>
-            <section aria-label="Sudoku statistics">
+            {!settings.simpleMode ? <section aria-label="Sudoku statistics">
               <h3 className="font-bold">Statistics</h3>
               {statistics ? <p>{statistics.gamesStarted} puzzles started · {statistics.gamesCompleted} completed · Easy {statistics.completionBreakdown.easy ?? 0}, Medium {statistics.completionBreakdown.medium ?? 0}, Hard {statistics.completionBreakdown.hard ?? 0}</p> : <p>Statistics are stored on this device.</p>}
-            </section>
+            </section> : null}
           </div>
           <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
         </GameDialog>

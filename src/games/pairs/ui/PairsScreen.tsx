@@ -10,11 +10,13 @@ import { restorePairsState, serializePairsState } from '../model/persistence'
 import { PAIR_FACES, PAIRS_PER_BOARD_SIZE, type PairFaceId, type PairsBoardSize, type PairsState } from '../model/types'
 import { loadPairsSave } from '../save'
 import { PairFaceIcon } from './PairFaceIcon'
+import { describePairsCard } from './cardAccessibility'
 
 type Props = {
   settings: AppSettings
   onBack: () => void
   onSaveAvailabilityChange: (hasSave: boolean) => void
+  onSaveFailure: () => void
 }
 
 type Action =
@@ -35,7 +37,7 @@ const boardSizeLabel: Record<PairsBoardSize, string> = {
 
 const faceLabel = (faceId: PairFaceId): string => PAIR_FACES.find(({ id }) => id === faceId)?.label ?? 'symbol'
 
-export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange }: Props) => {
+export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, () => createPairsState('easy'))
   const [ready, setReady] = useState(false)
   const [selectedBoardSize, setSelectedBoardSize] = useState<PairsBoardSize>('easy')
@@ -88,8 +90,9 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange }: Prop
         return
       }
       if (await saveActiveGame('pairs', snapshot, currentSession)) onSaveAvailabilityChange(true)
+      else onSaveFailure()
     })
-  }, [onSaveAvailabilityChange, ready, state])
+  }, [onSaveAvailabilityChange, onSaveFailure, ready, state])
 
   useEffect(() => {
     if (showRules) void readStatistics('pairs').then(setStatistics)
@@ -158,7 +161,7 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange }: Prop
         setMismatchPending(false)
         mismatchTimer.current = null
         setMessage('The cards are face down again. Choose a card to continue.')
-      }, 1200)
+      }, 2200)
     }
   }
 
@@ -178,7 +181,7 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange }: Prop
       setHintCardId(null)
       activeHint.current = null
       hintTimer.current = null
-    }, 1800)
+    }, 3000)
   }
 
   if (!ready) return <div role="status" aria-live="polite" className="zen-game-message">Loading Pairs…</div>
@@ -214,7 +217,7 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange }: Prop
               matched ? 'pairs-card--matched' : '',
               hinted ? 'pairs-card--hinted' : '',
             ].filter(Boolean).join(' ')
-            const description = `Card ${index + 1}, ${revealed ? `${faceLabel(card.pairId)}${matched ? ', matched' : hinted ? ', shown by hint' : ''}` : 'hidden'}.`
+            const description = describePairsCard(index, card, revealed, matched, hinted)
             return (
               <button
                 key={card.id}
@@ -260,17 +263,17 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange }: Prop
           <div className="max-h-[60vh] space-y-3 overflow-y-auto">
             <p>Choose Easy for 6 pairs, Standard for 8, or More for 12 pairs. A turn is two cards.</p>
             <p>Hint briefly shows one unmatched card. It turns face down again shortly, so take a moment to look.</p>
-            <section aria-label="Pairs statistics">
+            {!settings.simpleMode ? <section aria-label="Pairs statistics">
               <h3 className="font-bold">Statistics</h3>
               {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · 6 pairs: {statistics.completionBreakdown.easy ?? 0}, 8 pairs: {statistics.completionBreakdown.standard ?? 0}, 12 pairs: {statistics.completionBreakdown.more ?? 0}</p> : <p>Statistics are stored on this device.</p>}
-            </section>
+            </section> : null}
           </div>
           <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
         </GameDialog>
       ) : null}
 
       {complete && showCompletion ? (
-        <GameDialog title="You did it." description={`Every pair is found in ${state.turns} ${state.turns === 1 ? 'turn' : 'turns'}.`}>
+        <GameDialog title="You did it." description={settings.calmStats ? 'Every pair is found.' : `Every pair is found in ${state.turns} ${state.turns === 1 ? 'turn' : 'turns'}.`}>
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={() => { setSelectedBoardSize(state.boardSize); setShowCompletion(false); setShowNewGame(true) }} className="zen-game-button">New Game</button>
             <button type="button" onClick={onBack} className="zen-game-button">Back to Games</button>

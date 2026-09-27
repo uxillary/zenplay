@@ -11,6 +11,7 @@ import { findFoundationMove, findHint, getAutoFinishPlan, getTopCard, isValidMov
 import type { Card, Location, Move, SolitaireState, StockDrawCount } from '../model/types'
 import { CardView } from './CardView'
 import { PileView } from './PileView'
+import { describeSolitaireCard } from './cardAccessibility'
 import { GameToolbar } from '../../../components/GameToolbar'
 import { GameDialog } from '../../../components/GameDialog'
 
@@ -18,6 +19,7 @@ type Props = {
   settings: AppSettings
   onBack: () => void
   onSaveAvailabilityChange: (hasSave: boolean) => void
+  onSaveFailure: () => void
 }
 
 type DragState = {
@@ -44,18 +46,9 @@ const reducer = (state: SolitaireState, action: Action): SolitaireState => {
   return state
 }
 
-const rankNames: Record<Card['rank'], string> = {
-  A: 'Ace', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10',
-  J: 'Jack', Q: 'Queen', K: 'King',
-}
-
-const describeCard = (card?: Card): string => card
-  ? `${rankNames[card.rank]} of ${card.suit[0].toUpperCase()}${card.suit.slice(1)}`
-  : 'empty'
-
 const cardCount = (count: number): string => `${count} ${count === 1 ? 'card' : 'cards'}`
 
-export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: Props) => {
+export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState)
   const [ready, setReady] = useState(false)
   const [gameDrawMode, setGameDrawMode] = useState(settings.drawMode)
@@ -108,8 +101,9 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
       }
       const savedState: SolitaireSaveState = { gameState: snapshot, drawMode: gameDrawMode }
       if (await saveActiveGame('solitaire', savedState, currentSession)) onSaveAvailabilityChange(true)
+      else onSaveFailure()
     })
-  }, [gameDrawMode, onSaveAvailabilityChange, ready, state])
+  }, [gameDrawMode, onSaveAvailabilityChange, onSaveFailure, ready, state])
 
   useEffect(() => {
     if (!showRules) return
@@ -247,7 +241,6 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
     }
     stopDragging()
     setInvalidMove(true)
-    setTimeout(() => setInvalidMove(false), 600)
   }
 
   const applyLegalMove = (move: Move) => {
@@ -299,7 +292,6 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
     if (selected) {
       if (applyLegalMove({ from: selected.location, to: { type: 'tableau', index }, cardId: selected.cardId })) return
       setInvalidMove(true)
-      setTimeout(() => setInvalidMove(false), 900)
       return
     }
     selectTableauCard(index, card.id)
@@ -324,7 +316,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
       : hint.move.to.type === 'foundation'
         ? `foundation ${hint.move.to.index + 1}`
         : 'waste pile'
-    return `Try moving ${describeCard(card)} to ${target}.`
+    return `Try moving ${describeSolitaireCard(card)} to ${target}.`
   }
 
   return (
@@ -377,7 +369,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
                 if (top) attemptFoundationMove({ type: 'waste' }, top.id)
               }}
               className="zen-card-button"
-              aria-label={`Waste pile, ${describeCard(getTopCard(state.waste))}, ${cardCount(state.waste.length)}`}
+              aria-label={`Waste pile, ${describeSolitaireCard(getTopCard(state.waste))}, ${cardCount(state.waste.length)}`}
               aria-pressed={selected?.location.type === 'waste'}
             >
               <CardView
@@ -408,7 +400,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
                   attemptMove({ type: 'foundation', index })
                 }}
                 className="zen-card-button"
-                aria-label={`Foundation ${getTopCard(pile)?.suit ?? `column ${index + 1}`}, ${describeCard(getTopCard(pile))}`}
+                aria-label={`Foundation ${getTopCard(pile)?.suit ?? `column ${index + 1}`}, ${describeSolitaireCard(getTopCard(pile))}`}
               >
                 <div className={`${canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''} ${hintDestination({ type: 'foundation', index }) ? 'zen-hint-destination' : ''}`}>
                   <CardView card={getTopCard(pile)} placeholder={pile.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
@@ -419,15 +411,15 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
         </div>
       </div>
 
-      <p className="text-sm text-stone-700 dark:text-stone-200">If all seven columns do not fit, swipe or scroll sideways to see the rest.</p>
-      <div className="zen-card-row" role="region" aria-label="Solitaire tableau" tabIndex={0}>
+      <p id="solitaire-tableau-scroll-tip" className="text-sm text-stone-700 dark:text-stone-200">If all seven columns do not fit, swipe or scroll sideways to see the rest. Use Tab to reach each face-up card or empty column.</p>
+      <div className="zen-card-row" role="region" aria-label="Solitaire tableau" aria-describedby="solitaire-tableau-scroll-tip" tabIndex={0}>
         <div className="zen-card-grid gap-1 md:gap-3">
           {state.tableau.map((pile, index) => (
             <PileView
               key={`t-${index}`}
               cards={pile}
               columnIndex={index}
-              ariaLabel={`Tableau column ${index + 1}, ${cardCount(pile.length)}, ${describeCard(getTopCard(pile))}`}
+              ariaLabel={`Tableau column ${index + 1}, ${cardCount(pile.length)}, ${describeSolitaireCard(getTopCard(pile))}`}
               largeCards={(settings.gamePieceScale === 'large')}
               selectedCardId={selected?.cardId}
               canDrop={canDrop({ type: 'tableau', index })}
@@ -476,8 +468,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
       ) : null}
 
       {hint || hintMessage ? (
-        <div role="status" aria-live="polite" className="zen-game-message flex flex-wrap items-center justify-between gap-3">
-          <span>{hintDescription()}</span>
+        <div className="zen-game-message flex flex-wrap items-center justify-between gap-3">
+          <span role="status" aria-live="polite">{hintDescription()}</span>
           {hint ? <button type="button" onClick={dismissHint} className="zen-game-button">Dismiss hint</button> : null}
         </div>
       ) : null}
@@ -512,11 +504,11 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange }: 
             <section><h3 className="font-bold">Tableau</h3><p>Build columns down in alternating red and black. Move a face-up card or a correctly ordered face-up stack. Only a King may start an empty column.</p></section>
             <section><h3 className="font-bold">Foundations</h3><p>Build each foundation up by suit, starting with an Ace.</p></section>
             <section><h3 className="font-bold">Stock and waste</h3><p>Tap the stock to draw {gameDrawMode === 'three' ? 'up to three cards' : 'one card'}. When it is empty, tap it again to turn the waste back over.</p></section>
-            <section><h3 className="font-bold">Controls</h3><p>Tap a card or stack, then tap a destination. Tap it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
-            <section aria-labelledby="solitaire-statistics-title">
+            <section><h3 className="font-bold">Controls</h3><p>Tap a card or stack, then tap a destination. With a keyboard, use Tab to reach a card or pile and Enter or Space to select it and a destination. Select it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
+            {!settings.simpleMode ? <section aria-labelledby="solitaire-statistics-title">
               <h3 id="solitaire-statistics-title" className="font-bold">Statistics</h3>
               {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · {statistics.totalMoves} moves in completed games{statistics.bestMoves === null ? '' : ` · best ${statistics.bestMoves} moves`}</p> : <p>Statistics are stored on this device.</p>}
-            </section>
+            </section> : null}
           </div>
           <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
         </GameDialog>

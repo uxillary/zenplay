@@ -10,9 +10,9 @@ import { restoreFifteenState, serializeFifteenState } from '../model/persistence
 import type { FifteenState } from '../model/types'
 import { loadFifteenSave } from '../save'
 
-type Props = { settings: AppSettings; onBack: () => void; onSaveAvailabilityChange: (hasSave: boolean) => void }
+type Props = { settings: AppSettings; onBack: () => void; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void }
 
-export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange }: Props) => {
+export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
   const [state, setState] = useState<FifteenState>(createShuffledFifteenState)
   const [ready, setReady] = useState(false)
   const [showNewPuzzle, setShowNewPuzzle] = useState(false)
@@ -60,8 +60,9 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pr
         return
       }
       if (await saveActiveGame('fifteen', snapshot, currentSession)) onSaveAvailabilityChange(true)
+      else onSaveFailure()
     })
-  }, [onSaveAvailabilityChange, ready, state])
+  }, [onSaveAvailabilityChange, onSaveFailure, ready, state])
 
   useEffect(() => {
     if (showRules) void readStatistics('fifteen').then(setStatistics)
@@ -87,7 +88,7 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pr
     if (isFifteenSolved(next)) {
       setAnnouncement('Puzzle solved. You did it.')
       setShowCompletion(true)
-    } else setAnnouncement(`Move ${next.moves}.`)
+    } else setAnnouncement(settings.calmStats ? 'Tile moved.' : `Move ${next.moves}.`)
   }
 
   const requestNewPuzzle = () => {
@@ -100,7 +101,7 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pr
     <GameToolbar>
       <button type="button" onClick={requestNewPuzzle} className="zen-game-button">New Puzzle</button>
       <button type="button" onClick={() => setShowRules(true)} className="zen-game-button">Rules</button>
-      <span className="ml-auto text-lg font-semibold">Moves: {state.moves}</span>
+      {!settings.calmStats ? <span className="ml-auto text-lg font-semibold">Moves: {state.moves}</span> : null}
     </GameToolbar>
     <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
     <div className={`fifteen-board ${piecesLarge ? 'fifteen-board--large' : ''}`} role="group" aria-label="Fifteen Puzzle. Use Tab to focus a tile, then Enter or Space to slide it into the empty space.">
@@ -124,10 +125,11 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange }: Pr
       <div className="flex flex-wrap gap-3"><button type="button" onClick={startNewPuzzle} className="zen-game-button zen-game-button--primary">New Puzzle</button><button type="button" onClick={() => setShowNewPuzzle(false)} className="zen-game-button">Keep Current Puzzle</button></div>
     </GameDialog> : null}
     {showRules ? <GameDialog title="How to play Fifteen Puzzle" description="Slide a numbered tile into the empty space. Only a tile next to the empty space can move. Arrange tiles from 1 to 15, with the empty space in the bottom-right corner. Every new puzzle can be solved." onDismiss={() => setShowRules(false)}>
-      <p className="text-lg">Use Tab to focus tiles and Enter or Space to move a focused tile. The empty space is labelled but cannot be moved. {statistics ? `${statistics.gamesStarted} puzzles started · ${statistics.gamesCompleted} completed · best: ${statistics.bestMoves ?? 'not yet set'} moves.` : 'Statistics are stored on this device.'}</p>
+      <p className="text-lg">Use Tab to focus tiles and Enter or Space to move a focused tile. The empty space is labelled but cannot be moved.</p>
+      {!settings.simpleMode ? <p className="text-lg">{statistics ? `${statistics.gamesStarted} puzzles started · ${statistics.gamesCompleted} completed · best: ${statistics.bestMoves ?? 'not yet set'} moves.` : 'Statistics are stored on this device.'}</p> : null}
       <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
     </GameDialog> : null}
-    {complete && showCompletion ? <GameDialog title="You did it." description={`Puzzle solved in ${state.moves} moves.`}>
+    {complete && showCompletion ? <GameDialog title="You did it." description={settings.calmStats ? 'Puzzle solved.' : `Puzzle solved in ${state.moves} moves.`}>
       <div className="flex flex-wrap gap-3"><button type="button" onClick={startNewPuzzle} className="zen-game-button zen-game-button--primary">New Puzzle</button><button type="button" onClick={onBack} className="zen-game-button">Back to Games</button></div>
     </GameDialog> : null}
   </div>
