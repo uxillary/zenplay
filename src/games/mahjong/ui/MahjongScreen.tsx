@@ -87,8 +87,11 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
 
   const startNew = () => {
     session.current = { sessionId: createSessionId(), createdAt: new Date().toISOString() }
-    const next = createMahjongState()
-    setState(next); setSelected(null); setHinted([]); setShowWin(false); setShowNew(false); setFocusId(null)
+    const next = { ...createMahjongState(), accessibleLabels: state.accessibleLabels }
+    setState(next); setSelected(null); setHinted([]); setShowWin(false); setShowNew(false)
+    const firstFreeTile = next.tiles.find((tile) => isMahjongTileFree(tile, next.tiles))
+    setFocusId(firstFreeTile?.id ?? null)
+    if (firstFreeTile) window.requestAnimationFrame(() => document.getElementById(`mahjong-${firstFreeTile.id}`)?.focus())
     setAnnouncement('New Turtle board. Select any free tile to begin.')
     queue.current = queue.current.then(async () => { await recordGameStarted('mahjong') })
   }
