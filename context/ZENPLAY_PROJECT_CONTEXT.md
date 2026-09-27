@@ -1495,23 +1495,15 @@ Work:
 
 ---
 
-## M13 — Optional Purchases / Support
+## M13 — Optional Supporter System
 
 Goal:
 
-Add monetisation only after the core product is excellent.
+Offer optional, privacy-first support and lifetime recognition while keeping games free, ad-free, accessible, and local/offline-first. Stars are a proposed lifetime support measure, not consumable currency. Profiles and public visibility are optional; core identity/community features should not be paywalled.
 
-Possible work:
+Confirmed guardrails, proposed architecture, conceptual data model, threat/accessibility review, open questions, and milestone scope are maintained in [`M13_SUPPORTER_SYSTEM.md`](M13_SUPPORTER_SYSTEM.md).
 
-- Support ZenPlay
-- Theme purchases
-- Card packs
-- Puzzle packs
-- Restore purchases
-- Clear purchase explanation
-- Offline entitlement handling
-
-Core gameplay and accessibility must remain free.
+Status: **M13A — Product and architecture specification complete.** No accounts, payments, backend, public profiles, or cosmetics have been implemented. The next bounded milestone is **M13B — Local profile foundation**; see the specification for its scope and exclusions.
 
 ---
 
