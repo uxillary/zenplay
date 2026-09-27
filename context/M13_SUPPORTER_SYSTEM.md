@@ -1,6 +1,6 @@
 # M13 — Supporter System
 
-**Status:** M13A specification complete; no implementation is authorized by this document.
+**Status:** M13B local profile foundation implemented; remote identity, support, and public features remain unimplemented.
 **Scope:** optional profiles, lifetime support recognition, cosmetic entitlements, and a privacy-first supporter spotlight.
 **Working name:** ZenPlay Stars. The name and all example thresholds are provisional.
 
@@ -8,7 +8,7 @@
 
 ZenPlay's project context already supports voluntary contributions and optional cosmetic purchases, while prohibiting gameplay paywalls, ads, pressure mechanics, and paid accessibility. M13 refines that broad idea into an optional supporter system. Recognition should communicate lifetime support; Stars are not a spendable balance.
 
-At the time of this specification ZenPlay is a React/TypeScript Vite PWA. The game library works locally; IndexedDB stores versioned game saves and per-game statistics, and localStorage stores accessibility and game preferences. The production service worker caches the app shell and static assets. There is no server, account, authentication, payment, remote profile, or purchase verification infrastructure. Home is a game library; Settings currently says there are no accounts or tracking. Public supporter features would therefore require deliberate product-copy and privacy updates before release. Existing game save and statistics schemas are out of scope for M13A.
+ZenPlay is a React/TypeScript Vite PWA. The game library works locally; IndexedDB stores versioned game saves and per-game statistics, while localStorage stores accessibility/game preferences and now the optional local profile. The production service worker caches the app shell and static assets. There is no server, authentication, payment, remote profile, or purchase verification infrastructure. Home remains a game library with a Profile entry point. Existing game save and statistics schemas remain out of scope for M13.
 
 ## Confirmed product principles
 
@@ -53,7 +53,9 @@ For exploration, use a bounded pool of eligible consenting profiles and a determ
 - **Visibility preference:** private by default; explicit public opt-in timestamp, consent/version, chosen public fields, and withdrawal timestamp. Consent must be independently reversible.
 - **Supporter-since:** derived from the first successfully verified, non-reversed support event under a documented policy. Do not use profile creation time. Whether a refund/chargeback changes this date needs a policy decision.
 
-No code-level schema is approved in M13A. In particular, do not extend `GameSave`, `GameStatistics`, settings, or IndexedDB versioning to prepare for this concept.
+M13B implements only the local profile portion. Its version 1 record contains `schemaVersion`, stable `profileId`, trimmed `displayName`, ISO `createdAt`, optional stable `favouriteGameId`, and `visibility: 'private'`. It is stored as a versioned envelope under its own `zenplay-local-profile` localStorage key. Unknown favourite game IDs are retained safely and displayed as unavailable; visibility is always normalized to private. Invalid/unsupported records read as no profile, and unavailable/throwing storage fails without blocking app use. Display names are 2–32 Unicode code points after trimming and reject C0/C1 control characters. Profile removal deletes only this key. This deliberately avoids changing IndexedDB versions, settings, or existing save/statistics schemas.
+
+No remote identity, support, payment, Stars, or public schema is implemented. Do not extend `GameSave`, `GameStatistics`, settings, or IndexedDB to prepare for those concepts.
 
 ### Privacy, moderation, and community boundaries
 
@@ -117,8 +119,8 @@ All milestones remain on the existing M13 branch; no M13 sub-branches.
 | Milestone | Bounded outcome | Depends on |
 | --- | --- | --- |
 | **M13A — Product and architecture specification** | This specification, context update, principles, threat/accessibility/privacy review, open questions, and next prompt. | Complete |
-| **M13B — Local profile foundation** | Optional local-only profile model and storage isolated from game saves/settings; create/edit/delete locally; no account, network, support claims, or public fields. | M13A; settle local profile fields and storage lifecycle |
-| **M13C — Profile/support UX prototype** | Accessible Home/Settings/profile flows using clearly labelled non-production placeholders; test privacy defaults and offline/error states; no payment or public service. | M13B; content/privacy copy review |
+| **M13B — Local profile foundation** | Optional local-only profile model and storage isolated from game saves/settings; create/edit/delete locally; no account, network, support claims, or public fields. | Complete |
+| **M13C — Supporter UX prototype and content review** | Review the shipped profile flow and prototype clearly-labelled, non-production supporter/supporter-benefit screens, including privacy and offline/error states; no payment or public service. | M13B; content/privacy copy review |
 | **M13D — Remote identity and service design** | Choose and document account, API, deployment, data separation, security, recovery, moderation operations, and provider evaluation criteria; validate legal/privacy ownership. A design gate before building services. | M13C findings; open decisions below |
 | **M13E — Account/profile service foundation** | Minimal optional identity and profile claim/sync, server-side authorization, deletion and recovery foundations, private-by-default profile API; no purchases. | M13D approval |
 | **M13F — Purchase verification and support ledger** | Evaluate/select provider; implement one-off checkout, server verification, idempotent ledger, restore, refunds/chargebacks, receipts/support handling, and guest/account-link rules. | M13E; legal, tax/VAT, and provider decisions |
@@ -153,4 +155,4 @@ The order may be adjusted after M13D, but remote accounts must not be started be
 
 ## Recommended next bounded prompt
 
-**M13B — Implement an optional local-only profile foundation.** First inspect the current architecture and preserve all game and statistics schemas. Add only a versioned, validated, independently stored local profile with create/edit/delete behavior and tests if needed by the implementation. Keep it private and offline, do not add remote identity, payment, Stars, cosmetics, public visibility, dependencies, or monetisation prompts. Update user-facing “no accounts” language only if the local profile meaningfully changes that claim, explaining that no account or network is required. Stop after M13B.
+**M13C — Prototype the supporter experience without real support infrastructure.** Review the implemented profile flow. Build only a clearly-labelled, non-production UI prototype for explaining voluntary support and potential cosmetic recognition, including privacy choices and offline/error states. Use no real prices, checkout, account, backend, Stars balance, public profiles, analytics, or production entitlements. Test the copy and accessible flow, update this document, and stop after M13C.

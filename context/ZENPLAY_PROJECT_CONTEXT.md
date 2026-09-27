@@ -114,6 +114,8 @@ The current MVP contains **Klondike Solitaire** and includes:
 - Calm win modal:
   - **"You did it."**
 
+The current product also has an optional private local profile. It stores a display name and optional favourite game on this device only. A profile is not an account and is not required for play, saves, settings, or accessibility.
+
 The existing codebase should be evolved rather than rewritten unnecessarily.
 
 ---
@@ -909,7 +911,7 @@ Current direction:
 - No backend required for core gameplay
 - No gameplay tracking
 - No advertising tracking
-- Local game state
+- Local game state and optional private local profile
 - Offline capability
 
 If analytics are added to a public marketing website, they should remain separate from gameplay where possible.
@@ -1503,7 +1505,7 @@ Offer optional, privacy-first support and lifetime recognition while keeping gam
 
 Confirmed guardrails, proposed architecture, conceptual data model, threat/accessibility review, open questions, and milestone scope are maintained in [`M13_SUPPORTER_SYSTEM.md`](M13_SUPPORTER_SYSTEM.md).
 
-Status: **M13A — Product and architecture specification complete.** No accounts, payments, backend, public profiles, or cosmetics have been implemented. The next bounded milestone is **M13B — Local profile foundation**; see the specification for its scope and exclusions.
+Status: **M13B — Local profile foundation complete.** Profiles are optional, private, offline, and stored separately from game saves/settings. No authentication, remote storage, payments, Stars, public profiles, or cosmetics have been implemented. The next bounded milestone is **M13C — Supporter UX prototype and content review**; see the specification for its scope and exclusions.
 
 ---
 

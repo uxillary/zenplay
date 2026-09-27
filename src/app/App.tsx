@@ -7,6 +7,7 @@ import { GameCard } from '../components/GameCard'
 import { GameShell } from '../components/GameShell'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { SavedGamePanel } from '../components/SavedGamePanel'
+import { ProfilePanel } from '../components/ProfilePanel'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
 import { SudokuScreen } from '../games/sudoku/ui/SudokuScreen'
 import { PairsScreen } from '../games/pairs/ui/PairsScreen'
@@ -16,7 +17,7 @@ import { FifteenScreen } from '../games/fifteen/ui/FifteenScreen'
 import { MahjongScreen } from '../games/mahjong/ui/MahjongScreen'
 import { getInstallExperience, isStandaloneMode } from '../lib/pwa'
 
-type Screen = 'home' | 'game' | 'settings' | 'install'
+type Screen = 'home' | 'game' | 'settings' | 'profile' | 'install'
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
@@ -154,6 +155,7 @@ const Application = () => {
                 <p className="mt-2 text-lg">Classic games. Easy to see. Easy to understand. No adverts or accounts.</p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => setScreen('profile')} className="zen-game-button">Profile</button>
                 <button type="button" onClick={() => setScreen('settings')} className="zen-game-button">Settings</button>
                 {installExperience !== 'installed' ? <button type="button" onClick={() => setScreen('install')} className="zen-game-button">Install ZenPlay</button> : null}
               </div>
@@ -190,6 +192,13 @@ const Application = () => {
             <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
             <SettingsPanel settings={settings} onChange={setSetting} />
             {continueAvailability.solitaire ? <SavedGamePanel hasSave onSaveCleared={() => setContinueAvailability((current) => ({ ...current, solitaire: false }))} /> : null}
+          </section>
+        ) : null}
+
+        {screen === 'profile' ? (
+          <section className="mx-auto max-w-2xl space-y-4">
+            <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
+            <ProfilePanel games={games.filter((game) => game.status === 'available')} />
           </section>
         ) : null}
 
