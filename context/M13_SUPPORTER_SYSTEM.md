@@ -1,6 +1,6 @@
 # M13 — Supporter System
 
-**Status:** M13D remote identity and service design complete; remote identity, payments, entitlements, cosmetics, and public supporter profiles remain unimplemented.
+**Status:** M13E repository implementation complete; Supabase production configuration remains owner action required. Payments, Stars, entitlements, cosmetics, public supporter profiles, and account deletion remain unimplemented.
 **Scope:** optional profiles, lifetime support recognition, cosmetic entitlements, and a privacy-first supporter spotlight.
 **Working name:** ZenPlay Stars. The name and all example thresholds are provisional.
 
@@ -8,7 +8,7 @@
 
 ZenPlay's project context already supports voluntary contributions and optional cosmetic purchases, while prohibiting gameplay paywalls, ads, pressure mechanics, and paid accessibility. M13 refines that broad idea into an optional supporter system. Recognition should communicate lifetime support; Stars are not a spendable balance.
 
-ZenPlay is a React/TypeScript Vite PWA. The game library works locally; IndexedDB stores versioned game saves and per-game statistics, while localStorage stores accessibility/game preferences and now the optional local profile. The production service worker caches the app shell and static assets. There is no server, authentication, payment, remote profile, or purchase verification infrastructure. Home remains a game library with a Profile entry point. Existing game save and statistics schemas remain out of scope for M13.
+ZenPlay is a React/TypeScript Vite PWA. The game library works locally; IndexedDB stores versioned game saves and per-game statistics, while localStorage stores accessibility/game preferences and the optional local profile. The production service worker caches the app shell and static assets. M13E adds an optional Supabase Auth/private-profile path inside Profile, disabled when configuration is missing; no live Supabase project is configured or verified in this repository. There are still no payments, Stars, purchase verification, entitlements, or public supporter profiles. Home remains a game library with a Profile entry point. Existing game save and statistics schemas remain out of scope for M13.
 
 ## Confirmed product principles
 
@@ -216,7 +216,27 @@ Severity is the security priority for the relevant feature, not a judgement abou
 - **CONFIRMED:** normal play/local data remain local and account-free; Stars are server-authoritative lifetime recognition; support, public recognition, and gameplay remain separate; public is private by default; no cloud saves, public directory, or M13D code.
 - **RECOMMENDED:** Cloudflare static host plus Supabase Auth/Postgres/Edge Functions for first remote phases; managed email OTP with magic-link alternative; append-only verified ledger plus derived/cached aggregate; distinct public projection; no Worker/D1/KV/Durable Object/Turnstile until a measured need.
 - **OPEN before relevant launch:** production region and data-processing terms; auth email delivery/cost and session-storage spike; age/minor policy; named privacy/support/moderation operator; UK legal advice for consent, access/export, retention/deletion, payments, refunds, VAT/tax, and consumer disclosures; exact Stars/refund/entitlement policy; exact public fields/count display, withdrawal service level, and fair rotation; payment provider and prices.
-- **DEFERRED:** authentication/payment integration, account UI, remote schema, service deployment, sync, Stars/cosmetics, public profile/spotlight, and policy/terms publication.
+- **DEFERRED after M13D:** payment integration, Stars/cosmetics, public profile/spotlight, cloud sync, and policy/terms publication. M13E has since added only optional identity and a private profile; production service configuration remains outstanding.
+
+## M13E — account/profile foundation
+
+**Repository implementation: COMPLETE. Supabase production configuration: OWNER ACTION REQUIRED.** The app includes a single optional email-code flow and a private remote profile path. Configuration is read from `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`; missing/invalid values disable the account section without initializing a network client or affecting application startup. The exact setup and migration commands are in the repository README.
+
+**Authentication:** the Profile screen asks for an email, sends one-time email OTP, then verifies the six-digit code. No password, OAuth, passkey, or username authentication is added. Supabase JS owns session persistence/refresh in browser storage; sign-out explicitly uses local-session scope so other devices stay signed in. Email is sent to/held by Supabase Auth, may appear in the Profile sign-in form while signing in, and is never stored in the local profile or remote profile table. The client does not log credentials or raw provider errors. Hosted Supabase must be configured to send the OTP template's `{{ .Token }}`.
+
+**Remote profile:** `public.private_profiles` contains only the Auth user UUID (`id`), `display_name`, optional `favourite_game_id`, `created_at`, and server-updated `updated_at`. There is no email column. RLS permits authenticated users to read, insert, and update only their row; row ownership defaults to `auth.uid()`, and clients cannot write the ID or timestamps, delete the row, or access it anonymously. The migration also validates name length/control characters and restricts favourite game IDs. A pgTAP policy test covers owner access, cross-account denial, reassignment, deletion deferral, and anonymous denial.
+
+Connecting is a separate checked action. It sends only the chosen display name and a current supported favourite game; an unsupported old favourite is omitted. It never sends local profile ID, local created date, visibility placeholder, local statistics, saves, settings, or accessibility choices. The local profile remains authoritative for that device; edits do not silently sync. Remote profile edits require an explicit save. The Auth session is SDK-managed in browser storage; remote profile details exist only in app memory and are not cached for offline use. Local profile/game behavior continues if Auth or the profile request fails. The M13C fictional supporter fixtures remain unchanged and have no service connection.
+
+Remote account deletion, account data export, purchase-linked retention, and complete recovery/lifecycle support remain deferred to **M13J**. M13E provides no fake account deletion control. No live Supabase project was available for connectivity or hosted RLS verification; the migration and local pgTAP test are committed for reproducible verification when the owner sets up the project.
+
+### Owner action required
+
+- Create a Supabase project and choose its region after the required privacy/data-location review.
+- Put the project URL and publishable key in local `.env.local` and the Cloudflare Pages build environment. The publishable key is expected to be public; never use a secret/service-role key or database password in the browser.
+- Set the Auth Site URL to ZenPlay's canonical origin; allowlist required local and production origins. Enable email OTP, use a six-digit code and `{{ .Token }}` email template, configure resend/expiry limits, and set up verified production SMTP.
+- Install/run the Supabase CLI and local Docker stack if available; run `supabase start` and `supabase test db`. To apply remotely, `supabase login`, `supabase link --project-ref …`, `supabase db push --dry-run`, review the plan, then `supabase db push`.
+- Confirm the deployed project and migration before exposing account access to users. No credentials, Dashboard configuration, migration application, or live connectivity are claimed complete here.
 
 ### Eventual payments requirements (not implementation or provider selection)
 
@@ -295,7 +315,7 @@ All milestones remain on the existing M13 branch; no M13 sub-branches.
 | **M13B — Local profile foundation** | Optional local-only profile model and storage isolated from game saves/settings; create/edit/delete locally; no account, network, support claims, or public fields. | Complete |
 | **M13C — Supporter UX prototype and content review** | Review the shipped profile flow and prototype clearly-labelled, non-production supporter/supporter-benefit screens, including privacy and offline/error states; no payment or public service. | Complete |
 | **M13D — Remote identity and service design** | Documented recommended service/auth design, data separation, trust boundaries, lifecycle, security, failure behavior, and remaining legal/provider gates. No infrastructure or app behavior. | Complete |
-| **M13E — Account/profile service foundation** | Minimal optional identity and explicit profile-field claim, server-side authorization, export/deletion and recovery foundations, private-by-default profile API; no purchases. | M13D design; confirm deployment/region, email/session behavior, privacy/support operator, and applicable legal gates before user exposure |
+| **M13E — Account/profile service foundation** | Optional email OTP identity, explicit local-field connection, private remote profile and RLS; no purchases or remote deletion. | Repository implementation complete; owner Supabase setup/region/email configuration and privacy/legal gates before production use |
 | **M13F — Purchase verification and support ledger** | Evaluate/select provider; implement one-off checkout, server verification, idempotent ledger, restore, refunds/chargebacks, receipts/support handling, and guest/account-link rules. | M13E; legal, tax/VAT, and provider decisions |
 | **M13G — Stars and cosmetic entitlements** | Derive lifetime Stars and milestone grants from verified ledger; display accessible supporter status; define reversal/versioning and offline cache behavior. | M13F; approved benefits and thresholds |
 | **M13H — Cosmetic experience** | Ship a small accessible set of optional badge/flair/card/table/board themes; free baseline and accessibility parity verified. | M13G; visual/accessibility review |
@@ -327,4 +347,4 @@ The order may be adjusted after M13D, but remote accounts must not be exposed to
 
 ## Recommended next bounded prompt
 
-**M13E — Account/profile service foundation.** First confirm the recommended Supabase service can meet deployment-region, data-processing, email delivery, and session-storage requirements, and name the privacy/support operator. Then implement only optional passwordless identity and explicit local display-name/favourite-game claim, private profile reads/updates, export, revocation, and account deletion. Keep local play/data independent. No purchase flow, Stars, cosmetics, or public spotlight. Do not begin until the applicable age/privacy/legal gate is resolved. M13D is complete; stop before M13F.
+**M13F — Purchase verification and support ledger.** Separately evaluate and select a payment provider only after owner Supabase configuration and legal/privacy/provider gates are understood. Implement provider verification, account binding, idempotent purchase/support ledger, restoration, refunds/chargebacks, and support handling; do not add public profiles/spotlight or game sync. M13E repository implementation is complete. Do not begin M13F until explicitly requested.

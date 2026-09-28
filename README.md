@@ -1,12 +1,12 @@
 # ZenPlay
 
-ZenPlay is a calm collection of familiar games designed to be clear and easy to use. Play Solitaire, Sudoku, Pairs, Word Search, Noughts & Crosses, and Fifteen Puzzle. There are no adverts or tracking, and you do not need an online account. An optional profile stays on this device. Accessibility settings include larger text and game pieces, high contrast, reduced motion, and Simple Mode.
+ZenPlay is a calm collection of familiar games designed to be clear and easy to use. There are no adverts or tracking, and you can play without an online account. An optional local profile stays on this device; if online accounts are configured, you can separately choose to save only its display name and favourite game to a private account profile. Accessibility settings include larger text and game pieces, high contrast, reduced motion, and Simple Mode.
 
 ## Install and offline play
 
 Use **Install ZenPlay** when your browser offers it, or follow the browser-specific instructions in the app. On iPhone and iPad, open ZenPlay in Safari, tap **Share**, then **Add to Home Screen**.
 
-After the app has loaded successfully and its offline copy is ready, the app and all six games work without a network connection. Saved games, statistics, and accessibility settings stay on this device. A new version waits for you to choose **Update now**; it does not refresh an active game automatically.
+After the app has loaded successfully and its offline copy is ready, the app and its games work without a network connection. Saved games, statistics, local profile, and accessibility settings stay on this device. Online account features require a connection and never block play. A new version waits for you to choose **Update now**; it does not refresh an active game automatically.
 
 ## Development
 
@@ -18,6 +18,19 @@ npm run dev
 ```
 
 Build and preview the production app with `npm run build` and `npm run preview`. Service workers are enabled for the production build; use `localhost` or HTTPS to test installation and offline behaviour.
+
+## Optional online account development
+
+Accounts are optional and appear in **Profile** only when Supabase is configured. Without configuration, ZenPlay stays local and works normally. The email address is handled by Supabase Auth and is not copied into the local profile. Connecting a profile uploads only the display name and selected favourite game after explicit confirmation. Game saves, statistics, settings, and the local profile ID stay on the device. Authentication sessions are persisted by the Supabase browser client in browser storage; the remote private profile is not cached by the app for offline use.
+
+1. Create a Supabase project and select a region after the privacy/data-location review. Install the Supabase CLI separately (it is not an app dependency).
+2. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. The publishable key is public. Never use a secret/service-role key or database password in a `VITE_` variable.
+3. In Supabase Auth, enable email OTP, set the OTP length to six digits and configure the Magic Link email template to include `{{ .Token }}` so it sends a code. Set the site URL to ZenPlay's canonical URL and allowlist only the required local and production origins. Configure a verified production SMTP sender; the default hosted email service is for development/testing. See Supabase's [email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless), [email delivery](https://supabase.com/docs/guides/auth/auth-smtp), and [redirect URL](https://supabase.com/docs/guides/auth/redirect-urls) guides.
+4. For local services, start Docker and run `supabase start`. Use the local API URL and publishable key it reports in `.env.local`. Then run `supabase test db` to execute the RLS policy tests. See the current [Supabase CLI workflow](https://supabase.com/docs/guides/local-development/cli-workflows).
+5. To apply the migration to a hosted project, authenticate with `supabase login`, link the project with `supabase link --project-ref <project-ref>`, review `supabase db push --dry-run`, then apply with `supabase db push`. Do not use `db reset --linked` on a production project.
+6. Add the same two `VITE_` values as build-time environment variables in Cloudflare Pages. Restart the Vite dev server after changing `.env.local`.
+
+**Owner action required:** create/configure the Supabase project, choose and review its region/terms, configure email delivery and allowed origins, add the Cloudflare Pages build variables, and apply the migration. This repository contains no project credentials, and live Supabase connectivity has not been verified. Account deletion, data export, and complete lifecycle handling remain deferred to M13J.
 
 ## Checks
 

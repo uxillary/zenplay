@@ -20,7 +20,7 @@ export default defineConfig({
       manifest: {
         name: 'ZenPlay',
         short_name: 'ZenPlay',
-        description: 'Six familiar games. No adverts or accounts.',
+        description: 'Familiar games. No adverts. An online account is optional.',
         id: '/',
         scope: '/',
         start_url: '/',

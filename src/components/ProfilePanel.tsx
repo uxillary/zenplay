@@ -10,6 +10,7 @@ import {
   type LocalProfile,
 } from '../lib/localProfile'
 import { GameDialog } from './GameDialog'
+import { AccountPanel } from './AccountPanel'
 
 type Props = { games: readonly GameDefinition[]; onOpenSupport: () => void }
 
@@ -91,7 +92,7 @@ export const ProfilePanel = ({ games, onOpenSupport }: Props) => {
   return (
     <section className="mx-auto max-w-2xl space-y-5 p-4 md:p-6" aria-labelledby="profile-title">
       <h1 id="profile-title" data-screen-heading tabIndex={-1} className="text-2xl font-semibold">Profile</h1>
-      <p className="text-lg leading-relaxed">A profile is optional. Your games, saved games, settings and accessibility work without one. This profile stays on this device and is private.</p>
+      <p className="text-lg leading-relaxed">A local profile is optional. Your games, saved games, settings and accessibility work without one. It stays private on this device unless you separately choose to connect selected details to an online account.</p>
 
       {status ? <p role="status" aria-live="polite">{status}</p> : null}
       {error ? <p id="profile-error" role="alert" className="rounded-lg border border-amber-700 p-3">{error}</p> : null}
@@ -136,6 +137,8 @@ export const ProfilePanel = ({ games, onOpenSupport }: Props) => {
           })()}
         </section>
       ) : null}
+
+      {!editing ? <AccountPanel localProfile={profile} games={games} /> : null}
 
       {!editing ? <section className="space-y-3 border-t border-[var(--zp-border)] pt-4">
         <h2 className="text-xl font-semibold">Optional support</h2>
@@ -187,7 +190,7 @@ export const ProfilePanel = ({ games, onOpenSupport }: Props) => {
       {confirmDelete ? <GameDialog
         alert
         title="Remove local profile?"
-        description="This removes the profile from this device. Your game saves, statistics and settings will stay here. There is no online profile to delete."
+        description="This removes only the profile stored on this device. Your game saves, statistics, settings and any separate online account profile are unchanged."
         onDismiss={() => setConfirmDelete(false)}
       >
         <div className="flex flex-wrap gap-3">

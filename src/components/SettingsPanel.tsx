@@ -97,7 +97,7 @@ export const SettingsPanel = ({ settings, onChange }: Props) => (
 
     <section aria-labelledby="about-heading" className="space-y-2 border-t border-zinc-400/70 pt-4">
       <h2 id="about-heading" className="text-xl font-semibold">About ZenPlay</h2>
-      <p className="text-base leading-relaxed">ZenPlay is a collection of familiar games designed to be clear and easy to use. There are no adverts or tracking, and you do not need an online account. You can make an optional profile that stays on this device. Your game progress, statistics and settings stay on this device.</p>
+      <p className="text-base leading-relaxed">ZenPlay is a collection of familiar games designed to be clear and easy to use. There are no adverts or tracking, and you do not need an online account. Your optional local profile, game progress, statistics and settings stay on this device. If online accounts are configured, you can separately choose to save only your profile name and favourite game to a private account profile.</p>
     </section>
   </section>
 )
