@@ -2,6 +2,41 @@ import type { MahjongFamily, MahjongState, MahjongTile } from './types.ts'
 
 export type MahjongSlot = Pick<MahjongTile, 'x' | 'y' | 'z'>
 
+// One elevation shifts a tile by a small fraction of its footprint. These are
+// logical board units shared by rendering and collision checks, not pixel math.
+export const MAHJONG_LAYER_STEP = 0.14
+export const MAHJONG_TILE_FOOTPRINT = 1
+const MIN_BLOCKING_OVERLAP = 0.1
+
+export const getMahjongTilePosition = (tile: MahjongSlot) => ({
+  x: tile.x + tile.z * MAHJONG_LAYER_STEP,
+  y: tile.y - tile.z * MAHJONG_LAYER_STEP,
+})
+
+export const getMahjongElevations = (tiles: readonly MahjongSlot[]): number[] => [...new Set(tiles.map(({ z }) => z))].sort((a, b) => a - b)
+export const getMahjongRaisedElevations = (tiles: readonly MahjongSlot[]): number[] => getMahjongElevations(tiles).slice(1)
+
+const footprint = (tile: MahjongSlot) => {
+  const { x, y } = getMahjongTilePosition(tile)
+  return { left: x, top: y, right: x + MAHJONG_TILE_FOOTPRINT, bottom: y + MAHJONG_TILE_FOOTPRINT }
+}
+
+const overlap = (aStart: number, aEnd: number, bStart: number, bEnd: number) => Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart))
+const touches = (a: number, b: number) => Math.abs(a - b) < 0.000001
+
+const positionIsFree = (slot: MahjongSlot, occupied: readonly MahjongSlot[]): boolean => {
+  const target = footprint(slot)
+  const others = occupied.filter((other) => other !== slot).map((other) => ({ tile: other, bounds: footprint(other) }))
+  const covered = others.some(({ tile, bounds }) => tile.z > slot.z
+    && overlap(target.left, target.right, bounds.left, bounds.right) > MIN_BLOCKING_OVERLAP
+    && overlap(target.top, target.bottom, bounds.top, bounds.bottom) > MIN_BLOCKING_OVERLAP)
+  const leftBlocked = others.some(({ tile, bounds }) => tile.z === slot.z && touches(bounds.right, target.left)
+    && overlap(target.top, target.bottom, bounds.top, bounds.bottom) > MIN_BLOCKING_OVERLAP)
+  const rightBlocked = others.some(({ tile, bounds }) => tile.z === slot.z && touches(bounds.left, target.right)
+    && overlap(target.top, target.bottom, bounds.top, bounds.bottom) > MIN_BLOCKING_OVERLAP)
+  return !covered && (!leftBlocked || !rightBlocked)
+}
+
 // The declarative layers use tile-sized grid coordinates. Wider lower rows form
 // the turtle shell; the centered upper layers make its back and raised spine.
 const rectangle = (width: number, height: number, z: number, xOffset = 0, yOffset = 0): MahjongSlot[] =>
@@ -38,12 +73,7 @@ const shuffled = <T,>(items: T[], random: () => number): T[] => {
   return items
 }
 
-const slotIsFree = (slot: MahjongSlot, remaining: MahjongSlot[]): boolean => {
-  const covered = remaining.some((other) => other.z > slot.z && Math.abs(other.x - slot.x) < 1 && Math.abs(other.y - slot.y) < 1)
-  const leftBlocked = remaining.some((other) => other.z === slot.z && other.y === slot.y && other.x === slot.x - 1)
-  const rightBlocked = remaining.some((other) => other.z === slot.z && other.y === slot.y && other.x === slot.x + 1)
-  return !covered && (!leftBlocked || !rightBlocked)
-}
+const slotIsFree = (slot: MahjongSlot, remaining: MahjongSlot[]): boolean => positionIsFree(slot, remaining)
 
 export const createMahjongState = (random: () => number = Math.random): MahjongState => {
   const slots = CLASSIC_TURTLE_LAYOUT.map((slot) => ({ ...slot }))
@@ -72,16 +102,12 @@ export const createMahjongState = (random: () => number = Math.random): MahjongS
   const tiles = shuffled(assigned, random).map(({ slot, face }, index) => {
     return { ...slot, ...face, id: `tile-${index}`, removed: false }
   })
-  return { tiles, removedPairs: [], moves: 0, accessibleLabels: false }
+  return { tiles, removedPairs: [], moves: 0, accessibleLabels: false, freeHints: 0, rewardedLayers: [] }
 }
 
 export const isMahjongTileFree = (tile: MahjongTile, tiles: readonly MahjongTile[]): boolean => {
   if (tile.removed) return false
-  const remaining = tiles.filter((item) => !item.removed)
-  const covered = remaining.some((other) => other.z > tile.z && Math.abs(other.x - tile.x) < 1 && Math.abs(other.y - tile.y) < 1)
-  const leftBlocked = remaining.some((other) => other.id !== tile.id && other.z === tile.z && other.y === tile.y && other.x === tile.x - 1)
-  const rightBlocked = remaining.some((other) => other.id !== tile.id && other.z === tile.z && other.y === tile.y && other.x === tile.x + 1)
-  return !covered && (!leftBlocked || !rightBlocked)
+  return positionIsFree(tile, tiles.filter((item) => !item.removed && item.id !== tile.id))
 }
 
 export const canMahjongTilesMatch = (a: MahjongTile, b: MahjongTile): boolean => a.id !== b.id && a.matchKey === b.matchKey
@@ -99,10 +125,28 @@ export const removeMahjongPair = (state: MahjongState, firstId: string, secondId
   const first = state.tiles.find((tile) => tile.id === firstId)
   const second = state.tiles.find((tile) => tile.id === secondId)
   if (!first || !second || !isMahjongTileFree(first, state.tiles) || !isMahjongTileFree(second, state.tiles) || !canMahjongTilesMatch(first, second)) return state
-  return { ...state, tiles: state.tiles.map((tile) => tile.id === firstId || tile.id === secondId ? { ...tile, removed: true } : tile), removedPairs: [...state.removedPairs, [firstId, secondId]], moves: state.moves + 1 }
+  const tiles = state.tiles.map((tile) => tile.id === firstId || tile.id === secondId ? { ...tile, removed: true } : tile)
+  const newlyCleared = getMahjongRaisedElevations(tiles)
+    .filter((elevation) => !state.rewardedLayers.includes(elevation)
+      && !tiles.some((tile) => tile.z === elevation && !tile.removed))
+  return {
+    ...state,
+    tiles,
+    removedPairs: [...state.removedPairs, [firstId, secondId]],
+    moves: state.moves + 1,
+    freeHints: state.freeHints + newlyCleared.length,
+    rewardedLayers: [...state.rewardedLayers, ...newlyCleared],
+  }
 }
 export const undoMahjong = (state: MahjongState): MahjongState => {
   const pair = state.removedPairs.at(-1)
   if (!pair) return state
   return { ...state, tiles: state.tiles.map((tile) => pair.includes(tile.id) ? { ...tile, removed: false } : tile), removedPairs: state.removedPairs.slice(0, -1), moves: Math.max(0, state.moves - 1) }
+}
+
+/** Performs the existing first-pair hint and spends one earned hint only on success. */
+export const applyMahjongHint = (state: MahjongState): { state: MahjongState; pair: [string, string] | null } => {
+  const pair = getAvailableMahjongPairs(state)[0] ?? null
+  if (!pair || state.freeHints === 0) return { state, pair }
+  return { state: { ...state, freeHints: state.freeHints - 1 }, pair }
 }

@@ -1343,18 +1343,20 @@ button:focus-visible,
 .mahjong-tile--selected { outline: 3px solid #ffe27a; outline-offset: 1px; transform: translate(0, 0); }
 .mahjong-tile--hinted { outline: 3px dashed #fff1a7; outline-offset: 1px; }
 .mahjong-tile:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-.mahjong-tile__mark { display: block; max-width: 100%; overflow: hidden; font-weight: 800; }
-.mahjong-tile__caption { display: block; max-width: 100%; overflow: hidden; font-size: .8em; font-weight: 700; white-space: nowrap; }
-.mahjong-family--characters .mahjong-tile__mark { color: #bc3030; }
-.mahjong-family--bamboo .mahjong-tile__mark { color: #237448; }
-.mahjong-family--dots .mahjong-tile__mark { color: #315a99; letter-spacing: -.16em; }
-.mahjong-family--winds .mahjong-tile__mark { color: #2f4e78; }
-.mahjong-family--dragons .mahjong-tile__mark { color: #b03730; }
-.mahjong-family--flowers .mahjong-tile__mark { color: #a34a73; }
-.mahjong-family--seasons .mahjong-tile__mark { color: #4b7652; }
+.mahjong-face { box-sizing: border-box; display: flex; width: 100%; height: 100%; min-width: 0; flex-direction: column; align-items: center; justify-content: center; padding: 1px; pointer-events: none; }
+.mahjong-face__art { display: block; width: 100%; min-width: 0; min-height: 0; flex: 1 1 auto; overflow: visible; }
+.mahjong-face__label { display: block; max-width: 100%; flex: 0 0 auto; overflow: hidden; color: #45443d; font-size: .42em; font-weight: 700; line-height: 1; letter-spacing: -.035em; white-space: nowrap; }
+.mahjong-face__label--compact { display: none; }
+.mahjong-face__cjk { font-family: 'Microsoft YaHei', 'Yu Mincho', 'SimSun', 'Segoe UI Symbol', serif; font-weight: 700; }
+.mahjong-face__cjk--red { fill: #ad3035; font-size: 47px; }
+.mahjong-face__cjk--ink { fill: #272a27; font-size: 34px; }
+.mahjong-face__wind-glyph { fill: #2f4e78; font-family: 'Microsoft YaHei', 'Yu Mincho', 'SimSun', 'Segoe UI Symbol', serif; font-size: 76px; font-weight: 700; }
+.mahjong-face__dragon--red text { fill: #b52e34; font-family: 'Microsoft YaHei', 'Yu Mincho', 'SimSun', 'Segoe UI Symbol', serif; font-size: 72px; font-weight: 700; }
+.mahjong-face__dragon--green text { fill: #28724e; font-family: 'Microsoft YaHei', 'Yu Mincho', 'SimSun', 'Segoe UI Symbol', serif; font-size: 66px; font-weight: 700; }
+.mahjong-face__one-bamboo, .mahjong-face__botanical, .mahjong-face__seasonal { overflow: visible; }
 .mahjong-accessible-toggle { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; font-size: 1rem; }
 .mahjong-accessible-toggle input { width: 1.15rem; height: 1.15rem; }
 .mahjong-no-moves { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; border-radius: .75rem; background: #eef3e9; padding: .75rem; color: #20251f; }
 .mahjong-reduced-motion *, .mahjong-reduced-motion *::before, .mahjong-reduced-motion *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-@media (max-width: 520px) { .mahjong-table { margin-inline: -1rem; width: calc(100% + 2rem); padding: .3rem; border-radius: .55rem; } .mahjong-tile { width: 5.45%; height: 11.8%; font-size: clamp(7px, 2.2vw, 11px); border-width: 1px; border-bottom-width: 2px; } .mahjong-tile--selected, .mahjong-tile--hinted, .mahjong-tile:focus-visible { outline-width: 2px; } }
+@media (max-width: 520px) { .mahjong-table { margin-inline: -1rem; width: calc(100% + 2rem); padding: .3rem; border-radius: .55rem; } .mahjong-tile { width: 5.45%; height: 11.8%; font-size: clamp(7px, 2.2vw, 11px); border-width: 1px; border-bottom-width: 2px; } .mahjong-tile--selected, .mahjong-tile--hinted, .mahjong-tile:focus-visible { outline-width: 2px; } .mahjong-face__label--full { display: none; } .mahjong-face__label--compact { display: block; font-size: .72em; letter-spacing: -.035em; } }
 @media (prefers-reduced-motion: reduce) { .mahjong-tile { scroll-behavior: auto; transition: none; } }

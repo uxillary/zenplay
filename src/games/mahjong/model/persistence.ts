@@ -1,4 +1,4 @@
-import { CLASSIC_TURTLE_LAYOUT } from './engine.ts'
+import { CLASSIC_TURTLE_LAYOUT, getMahjongRaisedElevations } from './engine.ts'
 import type { MahjongState, MahjongTile } from './types.ts'
 
 const record = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -11,9 +11,15 @@ const allowedKeys = new Set([
 ])
 const positionKey = (x: number, y: number, z: number) => `${x}:${y}:${z}`
 const expectedPositions = new Set(CLASSIC_TURTLE_LAYOUT.map(({ x, y, z }) => positionKey(x, y, z)))
+const eligibleLayers = new Set(getMahjongRaisedElevations(CLASSIC_TURTLE_LAYOUT))
 export const isMahjongState = (value: unknown): value is MahjongState => {
   if (!record(value) || !Array.isArray(value.tiles) || value.tiles.length !== CLASSIC_TURTLE_LAYOUT.length) return false
   if (!Array.isArray(value.removedPairs) || !Number.isSafeInteger(value.moves) || (value.moves as number) < 0 || typeof value.accessibleLabels !== 'boolean') return false
+  if (value.freeHints !== undefined && (!Number.isSafeInteger(value.freeHints) || (value.freeHints as number) < 0)) return false
+  if (value.rewardedLayers !== undefined && (!Array.isArray(value.rewardedLayers)
+    || value.rewardedLayers.some((layer) => !Number.isSafeInteger(layer) || !eligibleLayers.has(layer as number))
+    || new Set(value.rewardedLayers).size !== value.rewardedLayers.length)) return false
+  if ((value.freeHints as number | undefined ?? 0) > ((value.rewardedLayers as unknown[] | undefined)?.length ?? 0)) return false
   const ids = new Set<string>()
   const keys = new Map<string, number>()
   const positions = new Set<string>()
@@ -42,4 +48,12 @@ export const isMahjongState = (value: unknown): value is MahjongState => {
   return value.tiles.every((tile) => (tile as MahjongTile).removed === removed.has((tile as MahjongTile).id))
 }
 export const serializeMahjongState = (state: MahjongState): MahjongState => JSON.parse(JSON.stringify(state)) as MahjongState
-export const restoreMahjongState = (value: unknown): MahjongState | null => isMahjongState(value) ? serializeMahjongState(value) : null
+export const restoreMahjongState = (value: unknown): MahjongState | null => {
+  if (!isMahjongState(value)) return null
+  const restored = serializeMahjongState(value)
+  return {
+    ...restored,
+    freeHints: value.freeHints ?? 0,
+    rewardedLayers: value.rewardedLayers ? [...value.rewardedLayers] : [],
+  }
+}
