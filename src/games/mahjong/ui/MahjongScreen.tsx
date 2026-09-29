@@ -12,9 +12,9 @@ import { MahjongTileFace } from './MahjongTileFace'
 import { getMahjongAccessibleName } from './mahjongFaceData'
 import { getMahjongPairCountLabel } from './mahjongStatus'
 
-type Props = { settings: AppSettings; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void }
+type Props = { settings: AppSettings; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void; onSaveRecovery: () => void }
 
-export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailure }: Props) => {
+export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery }: Props) => {
   const [state, setState] = useState<MahjongState>(() => createMahjongState())
   const [ready, setReady] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -39,9 +39,12 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
   useEffect(() => {
     let mounted = true
     void (async () => {
-      const save = await loadMahjongSave()
+      const result = await loadMahjongSave()
+      if (result.status === 'rejected') onSaveRecovery()
+      const save = result.status === 'loaded' ? result.save : null
       if (!mounted) return
       const restored = save ? restoreMahjongState(save.state) : null
+      if (save && !restored) { await deleteActiveSave('mahjong'); onSaveRecovery() }
       if (save && restored) {
         session.current = { sessionId: save.sessionId, createdAt: save.createdAt }
         setState(restored)
@@ -52,7 +55,7 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
       setReady(true)
     })()
     return () => { mounted = false }
-  }, [])
+  }, [onSaveRecovery])
 
   useEffect(() => {
     if (!ready || !session.current) return

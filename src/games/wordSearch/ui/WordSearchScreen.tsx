@@ -12,11 +12,11 @@ import { restoreWordSearchState, serializeWordSearchState } from '../model/persi
 import type { WordSearchCell, WordSearchPuzzle, WordSearchState } from '../model/types'
 import { loadWordSearchSave } from '../save'
 
-type Props = { settings: AppSettings; onBack: () => void; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void }
+type Props = { settings: AppSettings; onBack: () => void; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void; onSaveRecovery: () => void }
 const initialPuzzle = WORD_SEARCH_PUZZLES[0]
 const sameCell = (a: WordSearchCell | null, b: WordSearchCell) => Boolean(a && a.row === b.row && a.column === b.column)
 
-export const WordSearchScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
+export const WordSearchScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery }: Props) => {
   const [puzzle, setPuzzle] = useState<WordSearchPuzzle>(initialPuzzle)
   const [state, setState] = useState<WordSearchState>(() => createWordSearchState(initialPuzzle.id))
   const [ready, setReady] = useState(false)
@@ -46,8 +46,11 @@ export const WordSearchScreen = ({ settings, onBack, onSaveAvailabilityChange, o
   useEffect(() => {
     let mounted = true
     void (async () => {
-      const save = await loadWordSearchSave()
+      const result = await loadWordSearchSave()
+      if (result.status === 'rejected') onSaveRecovery()
+      const save = result.status === 'loaded' ? result.save : null
       const restored = save ? restoreWordSearchState(save.state) : null
+      if (save && !restored) { await deleteActiveSave('word-search'); onSaveRecovery() }
       if (!mounted) return
       if (save && restored) {
         const restoredPuzzle = findWordSearchPuzzle(restored.puzzleId)
@@ -65,7 +68,7 @@ export const WordSearchScreen = ({ settings, onBack, onSaveAvailabilityChange, o
       if (mounted) setReady(true)
     })()
     return () => { mounted = false }
-  }, [])
+  }, [onSaveRecovery])
 
   useEffect(() => {
     if (!ready || !session.current) return

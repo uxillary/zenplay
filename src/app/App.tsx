@@ -42,6 +42,7 @@ const Application = () => {
   const [updateReady, setUpdateReady] = useState(false)
   const [offlineReady, setOfflineReady] = useState(false)
   const [saveWarning, setSaveWarning] = useState(false)
+  const [saveRecoveryWarning, setSaveRecoveryWarning] = useState(false)
   const updateServiceWorker = useRef<((reloadPage?: boolean) => Promise<void>) | null>(null)
   const { settings, effectiveSettings, setSetting } = useAccessibility()
   const ios = detectIos()
@@ -72,6 +73,7 @@ const Application = () => {
     setContinueAvailability((current) => ({ ...current, mahjong: hasSave }))
   }, [])
   const reportSaveFailure = useCallback(() => setSaveWarning(true), [])
+  const reportSaveRecovery = useCallback(() => setSaveRecoveryWarning(true), [])
 
   const selectedGame = games.find((game) => game.id === gameId)
   const returnHome = () => setScreen('home')
@@ -79,12 +81,13 @@ const Application = () => {
   useEffect(() => {
     if (screen !== 'home' && screen !== 'settings') return
     let mounted = true
-    void Promise.all(games.filter((game) => game.getContinueAvailability).map(async (game) => [game.id, await game.getContinueAvailability?.() ?? false] as const))
+    void Promise.all(games.filter((game) => game.getContinueAvailability).map(async (game) => [game.id, await game.getContinueAvailability?.() ?? 'none'] as const))
       .then((availability) => {
-        if (mounted) setContinueAvailability(Object.fromEntries(availability))
+        if (availability.some(([, status]) => status === 'rejected')) reportSaveRecovery()
+        if (mounted) setContinueAvailability(Object.fromEntries(availability.map(([id, status]) => [id, status === 'available'])))
       })
     return () => { mounted = false }
-  }, [screen])
+  }, [reportSaveRecovery, screen])
 
   useEffect(() => {
     const displayMode = window.matchMedia('(display-mode: standalone)')
@@ -145,6 +148,9 @@ const Application = () => {
           <span role="status" aria-live="polite">ZenPlay is ready to play offline.</span>
           <button type="button" onClick={() => setOfflineReady(false)} className="zen-game-button zen-game-button--small">Dismiss</button>
         </div> : null}
+        {saveRecoveryWarning ? <p role="alert" className="my-3 rounded-lg border border-amber-700 p-3 text-base">
+          A saved game couldn’t be restored. You can start a new game. <button type="button" className="underline" onClick={() => setSaveRecoveryWarning(false)}>Dismiss</button>
+        </p> : null}
         {screen === 'home' ? (
           <>
             <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
@@ -175,13 +181,13 @@ const Application = () => {
         {screen === 'game' && selectedGame ? (
           <GameShell title={selectedGame.name} onBack={returnHome}>
             {saveWarning ? <p role="alert" className="my-3 rounded-lg border border-amber-700 p-3 text-base">Your progress could not be saved on this device. Keep this page open to avoid losing it. <button type="button" className="underline" onClick={() => setSaveWarning(false)}>Dismiss</button></p> : null}
-            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
-            {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
-            {selectedGame.id === 'pairs' ? <PairsScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updatePairsSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
-            {selectedGame.id === 'word-search' ? <WordSearchScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateWordSearchSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
+            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+            {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+            {selectedGame.id === 'pairs' ? <PairsScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updatePairsSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+            {selectedGame.id === 'word-search' ? <WordSearchScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateWordSearchSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
             {selectedGame.id === 'noughts-crosses' ? <NoughtsCrossesScreen settings={effectiveSettings} onBack={returnHome} /> : null}
-            {selectedGame.id === 'fifteen' ? <FifteenScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateFifteenSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
-            {selectedGame.id === 'mahjong' ? <MahjongScreen settings={effectiveSettings} onSaveAvailabilityChange={updateMahjongSaveAvailability} onSaveFailure={reportSaveFailure} /> : null}
+            {selectedGame.id === 'fifteen' ? <FifteenScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateFifteenSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+            {selectedGame.id === 'mahjong' ? <MahjongScreen settings={effectiveSettings} onSaveAvailabilityChange={updateMahjongSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
           </GameShell>
         ) : null}
 

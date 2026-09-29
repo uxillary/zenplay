@@ -1,4 +1,4 @@
-import { deleteActiveSave, loadActiveSave } from '../../persistence/gameSave.ts'
+import { deleteActiveSave, loadActiveSave, type ActiveSaveLoadResult, type ContinueAvailability } from '../../persistence/gameSave.ts'
 import { recordGameCompleted } from '../../persistence/statistics.ts'
 import { isResumableSolitaireState, isSolitaireState } from './model/persistence.ts'
 import { isWin } from './model/rules.ts'
@@ -15,19 +15,23 @@ export const isSolitaireSaveState = (value: unknown): value is SolitaireSaveStat
   && (value.drawMode === 'one' || value.drawMode === 'three')
   && isSolitaireState(value.gameState)
 
-export const loadSolitaireSave = async () => {
-  const save = await loadActiveSave<SolitaireSaveState>('solitaire', isSolitaireSaveState)
-  if (!save) return null
+export const loadSolitaireSave = async (): Promise<ActiveSaveLoadResult<SolitaireSaveState>> => {
+  const result = await loadActiveSave<SolitaireSaveState>('solitaire', isSolitaireSaveState)
+  if (result.status !== 'loaded') return result
+  const save = result.save
   if (isWin(save.state.gameState)) {
     const recorded = await recordGameCompleted('solitaire', save.sessionId, save.state.gameState.history.length)
-    if (!recorded) return save
+    if (!recorded) return result
     if (recorded) await deleteActiveSave('solitaire')
-    return null
+    return { status: 'none' }
   }
-  return isResumableSolitaireState(save.state.gameState) ? save : null
+  if (isResumableSolitaireState(save.state.gameState)) return result
+  await deleteActiveSave('solitaire')
+  return { status: 'rejected' }
 }
 
-export const hasResumableSolitaireSave = async (): Promise<boolean> => {
-  const save = await loadSolitaireSave()
-  return save !== null && !isWin(save.state.gameState)
+export const hasResumableSolitaireSave = async (): Promise<ContinueAvailability> => {
+  const result: ActiveSaveLoadResult<SolitaireSaveState> = await loadSolitaireSave()
+  if (result.status !== 'loaded') return result.status
+  return isWin(result.save.state.gameState) ? 'none' : 'available'
 }

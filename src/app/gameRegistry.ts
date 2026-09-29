@@ -4,6 +4,7 @@ import { hasResumablePairsSave } from '../games/pairs/save'
 import { hasResumableWordSearchSave } from '../games/wordSearch/save'
 import { hasResumableFifteenSave } from '../games/fifteen/save'
 import { hasResumableMahjongSave } from '../games/mahjong/save'
+import type { ContinueAvailability } from '../persistence/gameSave'
 
 export type GameId = 'solitaire' | 'sudoku' | 'pairs' | 'word-search' | 'noughts-crosses' | 'fifteen' | 'mahjong'
 
@@ -14,7 +15,7 @@ export type GameDefinition = {
   status: 'available' | 'coming-soon'
   target: `/${string}`
   supportsContinue?: boolean
-  getContinueAvailability?: () => Promise<boolean>
+  getContinueAvailability?: () => Promise<ContinueAvailability>
 }
 
 export const games: readonly GameDefinition[] = [

@@ -11,9 +11,9 @@ import type { FifteenState } from '../model/types'
 import { loadFifteenSave } from '../save'
 import { formatFifteenStartedCount } from './statisticsCopy'
 
-type Props = { settings: AppSettings; onBack: () => void; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void }
+type Props = { settings: AppSettings; onBack: () => void; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void; onSaveRecovery: () => void }
 
-export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
+export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery }: Props) => {
   const [state, setState] = useState<FifteenState>(createShuffledFifteenState)
   const [ready, setReady] = useState(false)
   const [showNewPuzzle, setShowNewPuzzle] = useState(false)
@@ -33,9 +33,12 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSa
   useEffect(() => {
     let mounted = true
     void (async () => {
-      const save = await loadFifteenSave()
+      const result = await loadFifteenSave()
+      if (result.status === 'rejected') onSaveRecovery()
+      const save = result.status === 'loaded' ? result.save : null
       if (!mounted) return
       const restored = save ? restoreFifteenState(save.state) : null
+      if (save && !restored) { await deleteActiveSave('fifteen'); onSaveRecovery() }
       if (save && restored) {
         session.current = { sessionId: save.sessionId, createdAt: save.createdAt }
         setState(restored)
@@ -47,7 +50,7 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSa
       if (mounted) setReady(true)
     })()
     return () => { mounted = false }
-  }, [])
+  }, [onSaveRecovery])
 
   useEffect(() => {
     if (!ready || !session.current) return

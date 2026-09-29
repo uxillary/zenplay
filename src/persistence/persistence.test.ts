@@ -25,6 +25,7 @@ const validate = (value: unknown): value is { cards: string[] } =>
 
 test('serializes and restores a versioned active save', async () => {
   const database = new MemoryDatabase()
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'none' })
   const state = { cards: ['clubs-A'] }
   assert.equal(await saveActiveGame('solitaire', state, { sessionId: 'session-1', createdAt: '2026-01-01T00:00:00.000Z' }, database, '2026-01-01T00:01:00.000Z'), true)
   assert.deepEqual(database.saves.get('solitaire'), {
@@ -35,17 +36,18 @@ test('serializes and restores a versioned active save', async () => {
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:01:00.000Z',
   })
-  assert.deepEqual(await loadActiveSave('solitaire', validate, database), database.saves.get('solitaire'))
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'loaded', save: database.saves.get('solitaire') })
   assert.equal(await hasActiveSave('solitaire', validate, database), true)
 })
 
 test('rejects and removes malformed or unsupported saves', async () => {
   const database = new MemoryDatabase()
   database.saves.set('solitaire', { schemaVersion: 99, gameId: 'solitaire', state: { cards: [] } })
-  assert.equal(await loadActiveSave('solitaire', validate, database), null)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'rejected' })
   assert.equal(database.saves.has('solitaire'), false)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'none' })
   database.saves.set('solitaire', { schemaVersion: GAME_SAVE_SCHEMA_VERSION, gameId: 'solitaire', sessionId: 's', state: { invalid: true }, createdAt: '2026-01-01', updatedAt: '2026-01-01' })
-  assert.equal(await loadActiveSave('solitaire', validate, database), null)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'rejected' })
   assert.equal(database.saves.has('solitaire'), false)
 })
 
@@ -55,7 +57,7 @@ test('deletes active saves and allows new games to replace them', async () => {
   const second = { cards: ['hearts-K'] }
   await saveActiveGame('solitaire', first, { sessionId: 'first', createdAt: '2026-01-01T00:00:00.000Z' }, database)
   await saveActiveGame('solitaire', second, { sessionId: 'second', createdAt: '2026-01-02T00:00:00.000Z' }, database)
-  assert.deepEqual((await loadActiveSave('solitaire', validate, database))?.state, second)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'loaded', save: database.saves.get('solitaire') })
   assert.equal(await deleteActiveSave('solitaire', database), true)
   assert.equal(await hasActiveSave('solitaire', validate, database), false)
 })
@@ -96,7 +98,7 @@ test('storage failures return safe defaults without preventing play', async () =
     putStatistics: async () => { throw new Error('blocked') },
     updateStatistics: async () => { throw new Error('blocked') },
   }
-  assert.equal(await loadActiveSave('solitaire', validate, unavailable), null)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, unavailable), { status: 'none' })
   assert.equal(await saveActiveGame('solitaire', { cards: [] }, { sessionId: 's', createdAt: '2026-01-01' }, unavailable), false)
   assert.equal(await deleteActiveSave('solitaire', unavailable), false)
   assert.equal((await readStatistics('solitaire', unavailable)).gamesStarted, 0)
