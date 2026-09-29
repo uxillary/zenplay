@@ -7,6 +7,13 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const validTimestamp = (value: unknown): value is string =>
   typeof value === 'string' && Number.isFinite(Date.parse(value))
 
+export type ActiveSaveLoadResult<T> =
+  | { status: 'none' }
+  | { status: 'loaded'; save: GameSave<T> }
+  | { status: 'rejected' }
+
+export type ContinueAvailability = 'available' | 'none' | 'rejected'
+
 const isSaveEnvelope = (value: unknown, gameId: string): value is GameSave => {
   if (!isRecord(value)) return false
   return value.schemaVersion === GAME_SAVE_SCHEMA_VERSION
@@ -27,15 +34,15 @@ export const loadActiveSave = async <T,>(
   gameId: string,
   validateState: (value: unknown) => value is T,
   database: PersistenceDatabase = localDatabase,
-): Promise<GameSave<T> | null> => {
+): Promise<ActiveSaveLoadResult<T>> => {
   try {
     const raw = await database.getSave(gameId)
-    if (raw === undefined) return null
-    if (isSaveEnvelope(raw, gameId) && validateState(raw.state)) return raw as GameSave<T>
+    if (raw === undefined) return { status: 'none' }
+    if (isSaveEnvelope(raw, gameId) && validateState(raw.state)) return { status: 'loaded', save: raw as GameSave<T> }
     await database.deleteSave(gameId).catch(() => undefined)
-    return null
+    return { status: 'rejected' }
   } catch {
-    return null
+    return { status: 'none' }
   }
 }
 
@@ -74,8 +81,19 @@ export const deleteActiveSave = async (
   }
 }
 
+export const clearAllActiveSaves = async (
+  database: PersistenceDatabase = localDatabase,
+): Promise<boolean> => {
+  try {
+    await database.clearGameSaves()
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const hasActiveSave = async <T,>(
   gameId: string,
   validateState: (value: unknown) => value is T,
   database: PersistenceDatabase = localDatabase,
-): Promise<boolean> => (await loadActiveSave(gameId, validateState, database)) !== null
+): Promise<boolean> => (await loadActiveSave(gameId, validateState, database)).status === 'loaded'

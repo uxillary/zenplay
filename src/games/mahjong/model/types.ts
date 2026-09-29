@@ -16,4 +16,8 @@ export type MahjongState = {
   removedPairs: [string, string][]
   moves: number
   accessibleLabels: boolean
+  /** Earned hints that have not yet been used in this game. */
+  freeHints: number
+  /** Raised elevations whose one-time hint reward has already been granted. */
+  rewardedLayers: number[]
 }

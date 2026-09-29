@@ -20,6 +20,7 @@ type Props = {
   onBack: () => void
   onSaveAvailabilityChange: (hasSave: boolean) => void
   onSaveFailure: () => void
+  onSaveRecovery: () => void
 }
 
 type DragState = {
@@ -48,7 +49,7 @@ const reducer = (state: SolitaireState, action: Action): SolitaireState => {
 
 const cardCount = (count: number): string => `${count} ${count === 1 ? 'card' : 'cards'}`
 
-export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
+export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState)
   const [ready, setReady] = useState(false)
   const [gameDrawMode, setGameDrawMode] = useState(settings.drawMode)
@@ -70,8 +71,10 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   useEffect(() => {
     let mounted = true
     void (async () => {
-      const save = await loadSolitaireSave()
+      const result = await loadSolitaireSave()
       if (!mounted) return
+      if (result.status === 'rejected') onSaveRecovery()
+      const save = result.status === 'loaded' ? result.save : null
       if (save) {
         session.current = { sessionId: save.sessionId, createdAt: save.createdAt }
         setGameDrawMode(save.state.drawMode)
@@ -84,7 +87,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
       if (mounted) setReady(true)
     })()
     return () => { mounted = false }
-  }, [onSaveAvailabilityChange])
+  }, [onSaveAvailabilityChange, onSaveRecovery])
 
   useEffect(() => {
     if (!ready || !session.current) return
@@ -510,7 +513,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
               {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · {statistics.totalMoves} moves in completed games{statistics.bestMoves === null ? '' : ` · best ${statistics.bestMoves} moves`}</p> : <p>Statistics are stored on this device.</p>}
             </section> : null}
           </div>
-          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
+          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
         </GameDialog>
       ) : null}
     </div>

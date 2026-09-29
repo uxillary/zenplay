@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { getEffectiveSettings, loadSettings, resolveTheme, saveSettings, type AppSettings } from '../lib/settings'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { defaultSettings, getEffectiveSettings, loadSettings, resetStoredSettings, resolveTheme, saveSettings, type AppSettings } from '../lib/settings'
 import { AccessibilityContext, type AccessibilityContextValue } from './accessibilityContext'
 
 export const AccessibilityProvider = ({ children }: { children: ReactNode }) => {
@@ -11,7 +11,13 @@ export const AccessibilityProvider = ({ children }: { children: ReactNode }) => 
     [settings, systemReducedMotion],
   )
 
-  useEffect(() => saveSettings(settings), [settings])
+  useEffect(() => { saveSettings(settings) }, [settings])
+
+  const resetSettings = useCallback(() => {
+    if (!resetStoredSettings()) return false
+    setSettings({ ...defaultSettings })
+    return true
+  }, [])
 
   useEffect(() => {
     const dark = window.matchMedia('(prefers-color-scheme: dark)')
@@ -43,7 +49,8 @@ export const AccessibilityProvider = ({ children }: { children: ReactNode }) => 
     settings,
     effectiveSettings,
     setSetting: (key, value) => setSettings((current) => ({ ...current, [key]: value })),
-  }), [settings, effectiveSettings])
+    resetSettings,
+  }), [settings, effectiveSettings, resetSettings])
 
   return <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>
 }

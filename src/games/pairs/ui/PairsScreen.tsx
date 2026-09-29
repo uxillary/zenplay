@@ -17,6 +17,7 @@ type Props = {
   onBack: () => void
   onSaveAvailabilityChange: (hasSave: boolean) => void
   onSaveFailure: () => void
+  onSaveRecovery: () => void
 }
 
 type Action =
@@ -37,7 +38,7 @@ const boardSizeLabel: Record<PairsBoardSize, string> = {
 
 const faceLabel = (faceId: PairFaceId): string => PAIR_FACES.find(({ id }) => id === faceId)?.label ?? 'symbol'
 
-export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
+export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, () => createPairsState('easy'))
   const [ready, setReady] = useState(false)
   const [selectedBoardSize, setSelectedBoardSize] = useState<PairsBoardSize>('easy')
@@ -59,8 +60,10 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange, onSave
   useEffect(() => {
     let mounted = true
     void (async () => {
-      const save = await loadPairsSave()
+      const result = await loadPairsSave()
       if (!mounted) return
+      if (result.status === 'rejected') onSaveRecovery()
+      const save = result.status === 'loaded' ? result.save : null
       const restored = save ? restorePairsState(save.state) : null
       if (save && restored) {
         session.current = { sessionId: save.sessionId, createdAt: save.createdAt }
@@ -68,13 +71,17 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange, onSave
         dispatch({ type: 'restore', state: restored })
         if (isPairsComplete(restored)) setShowCompletion(true)
       } else {
+        if (save) {
+          await deleteActiveSave('pairs')
+          onSaveRecovery()
+        }
         session.current = { sessionId: createSessionId(), createdAt: new Date().toISOString() }
         await recordGameStarted('pairs')
       }
       if (mounted) setReady(true)
     })()
     return () => { mounted = false }
-  }, [])
+  }, [onSaveRecovery])
 
   useEffect(() => {
     if (!ready || !session.current) return
@@ -268,7 +275,7 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange, onSave
               {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · 6 pairs: {statistics.completionBreakdown.easy ?? 0}, 8 pairs: {statistics.completionBreakdown.standard ?? 0}, 12 pairs: {statistics.completionBreakdown.more ?? 0}</p> : <p>Statistics are stored on this device.</p>}
             </section> : null}
           </div>
-          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
+          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
         </GameDialog>
       ) : null}
 

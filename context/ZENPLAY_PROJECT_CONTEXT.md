@@ -1497,15 +1497,42 @@ Work:
 
 ---
 
-## M13 — Optional Supporter System
+## M13 — Mahjong Depth, Artwork & Progression — COMPLETE
 
-Goal:
+Finish Mahjong Solitaire as a familiar, layered and accessible ZenPlay game.
 
-Offer optional, privacy-first support and lifetime recognition while keeping games free, ad-free, accessible, and local/offline-first. Stars are a proposed lifetime support measure, not consumable currency. Profiles and public visibility are optional; core identity/community features should not be paywalled.
+- **M13A — Genuine layered geometry:** explicit X/Y/Z tile positions across four elevations, with covering and side blocking derived from logical tile footprints.
+- **M13B — Mahjong artwork:** reusable inline SVG faces for Characters, Circles, Bamboo, Winds, Dragons, Flowers and Seasons, with optional Tile Labels.
+- **M13C — Layer-clear progression:** raised-layer clears earn one-time free Hints; inventory, persistence and Undo prevent reward farming.
+- **M13D — Physical turtle presentation:** 144-tile turtle-like stack (102/32/8/2 across elevations), elevation projection, tile bodies, contact shadows and migration from earlier M13 saves.
+- **M13E — Final QA and closeout:** clarified matched-pair copy, verified interactions, rewards, save/resume, legacy migration, win/no-moves states, keyboard use, tile families and responsive layouts. Isolated board stacking so high tile z-order cannot cover game dialogs.
 
-Confirmed guardrails, proposed architecture, conceptual data model, threat/accessibility review, open questions, and milestone scope are maintained in [`M13_SUPPORTER_SYSTEM.md`](M13_SUPPORTER_SYSTEM.md).
+Verification: **112 tests pass**; bundled Node 24 typecheck, lint, production build and `git diff --check` pass. Manual responsive review covered 1280×900, 390×844, 360×800 and 320×780.
 
-Status: **M13E repository implementation complete; live Supabase configuration remains owner action required.** M13C remains a static, clearly-labelled fictional preview; no checkout, payments, supporter ledger, public visibility, or cosmetic entitlement exists. Ordinary play, saves, settings, local profiles, and statistics remain local-first and account-free. M13E adds optional Supabase email-code authentication and an explicitly connected private remote profile containing only display name and favourite game. This repository includes the client boundary, migration, RLS tests, local Supabase config, setup instructions, and Cloudflare Pages environment-variable guidance; no project credentials, deployment settings, or live service were configured or verified. Stars and public profile projections remain future work. Age/minor policy, legal/privacy/retention review, service region/terms, payment provider, reversal policy, and named privacy/support/moderation operations remain gates before the relevant later features are exposed. The next milestone is **M13F**; follow the bounded scope and open owner actions in [`M13_SUPPORTER_SYSTEM.md`](M13_SUPPORTER_SYSTEM.md).
+## M14 — Existing Games Polish — COMPLETE
+
+Close out the focused polish audit across the existing games.
+
+- **M14A — Six-game polish audit:** reviewed Solitaire, Sudoku, Pairs, Word Search, Noughts & Crosses and Fifteen Puzzle. No blockers or high-severity issues were found. Pairs and Noughts & Crosses were intentionally left unchanged because the audit found no actionable polish issue.
+- **M14B — Responsive reachability:** checked 1280×900, 390×844, 360×800 and 320×780. Sudoku and Solitaire mobile scrolling were left unchanged. Word Search gained an 820px side-by-side breakpoint; its word list uses two columns at 900px and above.
+- **M14C — Solitaire court-card detail:** retained original lightweight vector artwork for J, Q and K.
+- **M14D — Fifteen Puzzle finish:** corrected the Rules count to “1 puzzle started” and plural wording for other counts. Tile movement remains immediate; a brief slide would require extra position-capture and interruption handling for little added clarity. Stable tile identity and post-move focus keep keyboard focus on the moved tile. Verified pointer and keyboard moves, unchanged illegal moves, move counts, save/resume, and a final legal move into the solved state.
+
+## M15 — Product Experience & Launch Pass — COMPLETE
+
+- **M15A — Whole-product audit — COMPLETE:** reviewed all seven games, Home, Settings, persistence, accessibility and release information. No launch blockers or HIGH-severity findings; Home/discovery was intentionally retained.
+- **M15B — Product accuracy & save recovery — COMPLETE:** corrected current product/release references to seven games and described local data as saved games, statistics and settings. Rejected active saves are cleaned up and produce a dismissible recovery alert; valid saves and Continue remain supported. Settings storage fallback remains unchanged because failures safely keep the app on defaults/current in-memory settings and a separate warning would be noisy.
+- **M15C — Navigation, local-data controls & closeout — COMPLETE:** added same-URL History API screen entries for predictable browser Back/Forward and kept visible Back to Games. Settings now clears resumable saves, statistics, and preferences separately with confirmation and feedback; the old Solitaire-only clear control was removed. Each category uses its own storage operation, and offline app files/caches are untouched. Normalized Rules button copy to “Close Rules”.
+
+Final M15 verification: 117 tests pass; typecheck, lint, production build/PWA generation and `git diff --check` pass. Browser QA covered Home, Settings/Data, confirmations, and history at 1280×900, 390×844, 360×800 and 320×780; saved-game, statistics, and preference category separation was checked in an isolated origin. Physical-device PWA installation, physical screen-reader testing, and a second-deployment update-ready simulation remain unchecked in the release checklist.
+
+## Optional supporter system — separate M13 track
+
+The Mahjong milestone retains the M13 number in the main product roadmap. The supporter initiative also used M13 labels in its own historical design sequence; those labels do not replace or reorder Mahjong, M14, or M15.
+
+The supporter/account foundation from that separate track is present in this integration branch. It provides optional local profiles, optional Supabase email-code authentication, and an explicitly connected private remote profile containing only display name and favourite game. Game saves, statistics, settings, and local profile IDs remain local. The fictional supporter experience remains a clearly labelled prototype. There are no payments, verified supporter status, Stars ledger, entitlements, public profiles, or cloud gameplay sync. Live Supabase configuration and hosted verification have not been performed.
+
+The design, threat review, implementation history, and outstanding owner gates remain documented in [`M13_SUPPORTER_SYSTEM.md`](M13_SUPPORTER_SYSTEM.md). Any future production account work requires review of those gates; payment and public-profile proposals remain unimplemented and require separate authorization.
 
 ---
 

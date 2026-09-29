@@ -18,6 +18,7 @@ type Props = {
   onBack: () => void
   onSaveAvailabilityChange: (hasSave: boolean) => void
   onSaveFailure: () => void
+  onSaveRecovery: () => void
 }
 
 type Action =
@@ -62,7 +63,7 @@ const cellDescription = (
   return parts.join(', ')
 }
 
-export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure }: Props) => {
+export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, () => createSudokuState('easy-1'))
   const [ready, setReady] = useState(false)
   const [selectedCell, setSelectedCell] = useState(() => Math.max(0, findSudokuPuzzle('easy-1')?.givens.findIndex((value) => value === 0) ?? 0))
@@ -84,8 +85,10 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange, onSav
   useEffect(() => {
     let mounted = true
     void (async () => {
-      const saved = await loadSudokuSave()
+      const result = await loadSudokuSave()
       if (!mounted) return
+      if (result.status === 'rejected') onSaveRecovery()
+      const saved = result.status === 'loaded' ? result.save : null
       const restored = saved ? restoreSudokuState(saved.state) : null
       if (saved && restored) {
         session.current = { sessionId: saved.sessionId, createdAt: saved.createdAt }
@@ -93,13 +96,17 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange, onSav
         const firstEditable = restored.values.findIndex((value, index) => findSudokuPuzzle(restored.puzzleId)?.givens[index] === 0 && value === 0)
         if (firstEditable >= 0) setSelectedCell(firstEditable)
       } else {
+        if (saved) {
+          await deleteActiveSave('sudoku')
+          onSaveRecovery()
+        }
         session.current = { sessionId: createSessionId(), createdAt: new Date().toISOString() }
         await recordGameStarted('sudoku')
       }
       if (mounted) setReady(true)
     })()
     return () => { mounted = false }
-  }, [])
+  }, [onSaveRecovery])
 
   useEffect(() => {
     if (!ready || !session.current || !puzzle) return
@@ -326,7 +333,7 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange, onSav
               {statistics ? <p>{statistics.gamesStarted} puzzles started · {statistics.gamesCompleted} completed · Easy {statistics.completionBreakdown.easy ?? 0}, Medium {statistics.completionBreakdown.medium ?? 0}, Hard {statistics.completionBreakdown.hard ?? 0}</p> : <p>Statistics are stored on this device.</p>}
             </section> : null}
           </div>
-          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
+          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
         </GameDialog>
       ) : null}
 

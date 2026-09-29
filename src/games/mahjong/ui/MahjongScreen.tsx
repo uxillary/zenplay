@@ -4,32 +4,17 @@ import { GameDialog } from '../../../components/GameDialog'
 import { GameToolbar } from '../../../components/GameToolbar'
 import { createSessionId, deleteActiveSave, saveActiveGame } from '../../../persistence/gameSave'
 import { recordGameCompleted, recordGameStarted } from '../../../persistence/statistics'
-import { createMahjongState, getAvailableMahjongPairs, isMahjongComplete, isMahjongTileFree, removeMahjongPair, undoMahjong } from '../model/engine'
+import { applyMahjongHint, createMahjongState, getAvailableMahjongPairs, getMahjongTilePosition, isMahjongComplete, isMahjongTileFree, removeMahjongPair, undoMahjong } from '../model/engine'
 import { restoreMahjongState, serializeMahjongState } from '../model/persistence'
 import type { MahjongState, MahjongTile } from '../model/types'
 import { loadMahjongSave } from '../save'
+import { MahjongTileFace } from './MahjongTileFace'
+import { getMahjongAccessibleName } from './mahjongFaceData'
+import { getMahjongPairCountLabel } from './mahjongStatus'
 
-type Props = { settings: AppSettings; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void }
+type Props = { settings: AppSettings; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void; onSaveRecovery: () => void }
 
-const tileName = (tile: MahjongTile) => {
-  if (tile.family === 'characters') return `Characters ${tile.value}`
-  if (tile.family === 'bamboo') return `Bamboo ${tile.value}`
-  if (tile.family === 'dots') return `Dots ${tile.value}`
-  if (tile.family === 'winds') return `${tile.value} wind`
-  if (tile.family === 'dragons') return `${tile.value} dragon`
-  return `${tile.value} ${tile.family === 'flowers' ? 'flower' : 'season'}`
-}
-const shortName = (tile: MahjongTile) => `${tile.family === 'characters' ? 'C' : tile.family === 'bamboo' ? 'B' : tile.family === 'dots' ? 'D' : tile.family[0].toUpperCase()}${tile.family === 'winds' || tile.family === 'dragons' ? String(tile.value).charAt(0).toUpperCase() : typeof tile.value === 'number' ? tile.value : ''}`
-const faceMark = (tile: MahjongTile) => {
-  if (tile.family === 'bamboo') return tile.value === 1 ? '🀐' : String(tile.value)
-  if (tile.family === 'dots') return '●'.repeat(Math.min(9, Number(tile.value)))
-  if (tile.family === 'characters') return String(tile.value)
-  if (tile.family === 'winds') return ({ east: '東', south: '南', west: '西', north: '北' } as Record<string, string>)[String(tile.value)]
-  if (tile.family === 'dragons') return ({ red: '中', green: '發', white: '白' } as Record<string, string>)[String(tile.value)]
-  return tile.family === 'flowers' ? '花' : '季'
-}
-
-export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailure }: Props) => {
+export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery }: Props) => {
   const [state, setState] = useState<MahjongState>(() => createMahjongState())
   const [ready, setReady] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -54,9 +39,12 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
   useEffect(() => {
     let mounted = true
     void (async () => {
-      const save = await loadMahjongSave()
+      const result = await loadMahjongSave()
+      if (result.status === 'rejected') onSaveRecovery()
+      const save = result.status === 'loaded' ? result.save : null
       if (!mounted) return
       const restored = save ? restoreMahjongState(save.state) : null
+      if (save && !restored) { await deleteActiveSave('mahjong'); onSaveRecovery() }
       if (save && restored) {
         session.current = { sessionId: save.sessionId, createdAt: save.createdAt }
         setState(restored)
@@ -67,7 +55,7 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
       setReady(true)
     })()
     return () => { mounted = false }
-  }, [])
+  }, [onSaveRecovery])
 
   useEffect(() => {
     if (!ready || !session.current) return
@@ -98,7 +86,7 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
   const chooseTile = (tile: MahjongTile) => {
     if (!isMahjongTileFree(tile, state.tiles)) return
     setHinted([])
-    if (!selected) { setSelected(tile.id); setAnnouncement(`${tileName(tile)} selected. Choose a matching free tile.`); return }
+    if (!selected) { setSelected(tile.id); setAnnouncement(`${getMahjongAccessibleName(tile)} selected. Choose a matching free tile.`); return }
     if (selected === tile.id) { setSelected(null); setAnnouncement('Selection cleared.'); return }
     const first = state.tiles.find((candidate) => candidate.id === selected)
     if (first && first.matchKey === tile.matchKey) {
@@ -106,17 +94,21 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
       setState(next); setSelected(null)
       const nextFocus = next.tiles.find((item) => isMahjongTileFree(item, next.tiles))
       setFocusId(nextFocus?.id ?? null)
-      if (isMahjongComplete(next)) { setAnnouncement('Board cleared. You did it.'); setShowWin(true) }
-      else setAnnouncement(`${tileName(first)} pair removed. ${next.tiles.filter((item) => !item.removed).length} tiles remain.`)
+      const earned = next.rewardedLayers.length - state.rewardedLayers.length
+      const rewardMessage = earned === 1 ? 'Layer cleared. One free Hint earned.' : earned > 1 ? `Layers cleared. ${earned} free Hints earned.` : ''
+      if (isMahjongComplete(next)) { setAnnouncement(rewardMessage ? `Board cleared. ${rewardMessage}` : 'Board cleared. You did it.'); setShowWin(true) }
+      else setAnnouncement(rewardMessage || `${getMahjongAccessibleName(first)} pair removed. ${next.tiles.filter((item) => !item.removed).length} tiles remain.`)
     } else {
       setSelected(tile.id)
-      setAnnouncement(`${tileName(tile)} selected. Choose a matching free tile.`)
+      setAnnouncement(`${getMahjongAccessibleName(tile)} selected. Choose a matching free tile.`)
     }
   }
   const requestHint = () => {
     if (hintTimer.current !== null) window.clearTimeout(hintTimer.current)
-    const pair = pairs[0]
+    const result = applyMahjongHint(state)
+    const pair = result.pair
     if (!pair) { setAnnouncement(complete ? 'Every tile has been removed.' : 'No available matches. Undo a pair or start a new game.'); return }
+    setState(result.state)
     setSelected(null); setHinted(pair); setAnnouncement('Hint: two highlighted tiles match.');
     hintTimer.current = window.setTimeout(() => { setHinted([]); hintTimer.current = null }, settings.reducedMotion ? 2000 : 3000)
   }
@@ -146,9 +138,12 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
     <GameToolbar>
       <button type="button" onClick={() => state.moves ? setShowNew(true) : startNew()} className="zen-game-button">New Game</button>
       <button type="button" onClick={undo} disabled={!state.removedPairs.length} className="zen-game-button">Undo</button>
-      <button type="button" onClick={requestHint} disabled={complete} className="zen-game-button">Hint</button>
+      <button type="button" onClick={requestHint} disabled={complete} className="zen-game-button"
+        aria-label={state.freeHints ? `Hint, ${state.freeHints} free ${state.freeHints === 1 ? 'hint' : 'hints'} available` : 'Hint'}>
+        {state.freeHints ? `Hint · ${state.freeHints} free` : 'Hint'}
+      </button>
       <label className="mahjong-accessible-toggle"><input type="checkbox" checked={state.accessibleLabels} onChange={(event) => setState((current) => ({ ...current, accessibleLabels: event.target.checked }))} /> Tile labels</label>
-      {!settings.calmStats ? <span className="ml-auto text-base font-semibold">Pairs: {state.moves}</span> : null}
+      {!settings.calmStats ? <span className="ml-auto text-base font-semibold">{getMahjongPairCountLabel(state.moves)}</span> : null}
     </GameToolbar>
     <div className="flex flex-wrap justify-between gap-2 text-base" aria-label="Board status">
       <span>{state.tiles.filter((tile) => !tile.removed).length} tiles remaining</span><span>{pairs.length} available matches</span>
@@ -160,13 +155,14 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
           const free = isMahjongTileFree(tile, state.tiles)
           const isSelected = selected === tile.id
           const isHinted = hinted.includes(tile.id)
-          const label = `${tileName(tile)}, ${free ? 'free' : 'blocked'}${isSelected ? ', selected' : ''}`
+          const label = `${getMahjongAccessibleName(tile)}, ${free ? 'free' : 'blocked'}${isSelected ? ', selected' : ''}`
+          const position = getMahjongTilePosition(tile)
           return <button id={`mahjong-${tile.id}`} key={tile.id} type="button" tabIndex={free && focusTileId === tile.id ? 0 : -1}
-            className={`mahjong-tile ${free ? 'mahjong-tile--free' : 'mahjong-tile--blocked'} ${isSelected ? 'mahjong-tile--selected' : ''} ${isHinted ? 'mahjong-tile--hinted' : ''} mahjong-family--${tile.family}`}
-            style={{ left: `${(tile.x + 3) / 18 * 100 + tile.z * 0.28}%`, top: `${tile.y / 8 * 100 + tile.z * 0.45}%`, zIndex: tile.z * 2 + 1 }}
+            className={`mahjong-tile mahjong-tile--layer-${tile.z} ${free ? 'mahjong-tile--free' : 'mahjong-tile--blocked'} ${isSelected ? 'mahjong-tile--selected' : ''} ${isHinted ? 'mahjong-tile--hinted' : ''} mahjong-family--${tile.family}`}
+            style={{ left: `${(position.x + 3) / 18 * 100}%`, top: `${(position.y + 0.5) / 9 * 100}%`, zIndex: tile.z * 1000 + Math.round(tile.y * 100) + Math.round(tile.x * 10) }}
             aria-label={label} aria-pressed={isSelected} aria-disabled={!free} onFocus={() => setFocusId(tile.id)} onClick={() => chooseTile(tile)}>
-            <span className="mahjong-tile__mark" aria-hidden="true">{faceMark(tile)}</span>
-            <span className="mahjong-tile__caption" aria-hidden="true">{state.accessibleLabels ? shortName(tile) : tile.family === 'characters' ? `${tile.value}萬` : tile.family === 'bamboo' ? `${tile.value}索` : tile.family === 'dots' ? `${tile.value}筒` : tile.value}</span>
+            <span className="mahjong-tile__side" aria-hidden="true" />
+            <span className="mahjong-tile__face"><MahjongTileFace tile={tile} labels={state.accessibleLabels} /></span>
             <span className="sr-only">{label}</span>
           </button>
         })}

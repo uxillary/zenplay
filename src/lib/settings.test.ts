@@ -5,6 +5,7 @@ import {
   getEffectiveSettings,
   parseSettings,
   resolveTheme,
+  resetStoredSettings,
   serializeSettings,
 } from './settings.ts'
 
@@ -37,6 +38,14 @@ test('versioned settings can be serialized and restored', () => {
     ...defaultSettings,
     uiScale: 'large',
   })
+})
+
+test('resetting preferences stores all defined defaults and reports storage failure', () => {
+  let stored = ''
+  const storage = { setItem: (_key: string, value: string) => { stored = value } }
+  assert.equal(resetStoredSettings(storage), true)
+  assert.deepEqual(parseSettings(stored), defaultSettings)
+  assert.equal(resetStoredSettings({ setItem: () => { throw new Error('blocked') } }), false)
 })
 
 test('Simple Mode derives larger, higher contrast, reduced motion preferences', () => {

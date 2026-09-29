@@ -5,6 +5,7 @@ export type AccessibilityContextValue = {
   settings: AppSettings
   effectiveSettings: AppSettings
   setSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void
+  resetSettings: () => boolean
 }
 
 export const AccessibilityContext = createContext<AccessibilityContextValue | null>(null)

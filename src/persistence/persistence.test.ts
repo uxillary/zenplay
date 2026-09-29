@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { PersistenceDatabase } from './database.ts'
-import { deleteActiveSave, hasActiveSave, loadActiveSave, saveActiveGame } from './gameSave.ts'
-import { recordGameCompleted, recordGameStarted, readStatistics } from './statistics.ts'
+import { clearAllActiveSaves, deleteActiveSave, hasActiveSave, loadActiveSave, saveActiveGame } from './gameSave.ts'
+import { clearAllStatistics, recordGameCompleted, recordGameStarted, readStatistics } from './statistics.ts'
 import { GAME_SAVE_SCHEMA_VERSION } from './types.ts'
 
 class MemoryDatabase implements PersistenceDatabase {
@@ -11,8 +11,10 @@ class MemoryDatabase implements PersistenceDatabase {
   async getSave(gameId: string) { return this.saves.get(gameId) }
   async putSave(save: unknown) { this.saves.set((save as { gameId: string }).gameId, structuredClone(save)) }
   async deleteSave(gameId: string) { this.saves.delete(gameId) }
+  async clearGameSaves() { this.saves.clear() }
   async getStatistics(gameId: string) { return structuredClone(this.statistics.get(gameId)) }
   async putStatistics(stats: Parameters<PersistenceDatabase['putStatistics']>[0]) { this.statistics.set(stats.gameId, structuredClone(stats)) }
+  async clearStatistics() { this.statistics.clear() }
   async updateStatistics(gameId: string, update: Parameters<PersistenceDatabase['updateStatistics']>[1]) {
     const next = update(this.statistics.get(gameId))
     this.statistics.set(gameId, structuredClone(next))
@@ -25,6 +27,7 @@ const validate = (value: unknown): value is { cards: string[] } =>
 
 test('serializes and restores a versioned active save', async () => {
   const database = new MemoryDatabase()
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'none' })
   const state = { cards: ['clubs-A'] }
   assert.equal(await saveActiveGame('solitaire', state, { sessionId: 'session-1', createdAt: '2026-01-01T00:00:00.000Z' }, database, '2026-01-01T00:01:00.000Z'), true)
   assert.deepEqual(database.saves.get('solitaire'), {
@@ -35,17 +38,18 @@ test('serializes and restores a versioned active save', async () => {
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:01:00.000Z',
   })
-  assert.deepEqual(await loadActiveSave('solitaire', validate, database), database.saves.get('solitaire'))
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'loaded', save: database.saves.get('solitaire') })
   assert.equal(await hasActiveSave('solitaire', validate, database), true)
 })
 
 test('rejects and removes malformed or unsupported saves', async () => {
   const database = new MemoryDatabase()
   database.saves.set('solitaire', { schemaVersion: 99, gameId: 'solitaire', state: { cards: [] } })
-  assert.equal(await loadActiveSave('solitaire', validate, database), null)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'rejected' })
   assert.equal(database.saves.has('solitaire'), false)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'none' })
   database.saves.set('solitaire', { schemaVersion: GAME_SAVE_SCHEMA_VERSION, gameId: 'solitaire', sessionId: 's', state: { invalid: true }, createdAt: '2026-01-01', updatedAt: '2026-01-01' })
-  assert.equal(await loadActiveSave('solitaire', validate, database), null)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'rejected' })
   assert.equal(database.saves.has('solitaire'), false)
 })
 
@@ -55,7 +59,7 @@ test('deletes active saves and allows new games to replace them', async () => {
   const second = { cards: ['hearts-K'] }
   await saveActiveGame('solitaire', first, { sessionId: 'first', createdAt: '2026-01-01T00:00:00.000Z' }, database)
   await saveActiveGame('solitaire', second, { sessionId: 'second', createdAt: '2026-01-02T00:00:00.000Z' }, database)
-  assert.deepEqual((await loadActiveSave('solitaire', validate, database))?.state, second)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'loaded', save: database.saves.get('solitaire') })
   assert.equal(await deleteActiveSave('solitaire', database), true)
   assert.equal(await hasActiveSave('solitaire', validate, database), false)
 })
@@ -87,18 +91,36 @@ test('completed statistics can count completions by category once per session', 
   assert.deepEqual((await readStatistics('sudoku', database)).completionBreakdown, { easy: 1, hard: 1 })
 })
 
+test('clears saved games and statistics independently', async () => {
+  const database = new MemoryDatabase()
+  await saveActiveGame('solitaire', { cards: ['clubs-A'] }, { sessionId: 's', createdAt: '2026-01-01' }, database)
+  await recordGameStarted('solitaire', database)
+  assert.equal(await clearAllActiveSaves(database), true)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, database), { status: 'none' })
+  assert.equal((await readStatistics('solitaire', database)).gamesStarted, 1)
+
+  await saveActiveGame('pairs', { cards: ['hearts-K'] }, { sessionId: 'p', createdAt: '2026-01-01' }, database)
+  assert.equal(await clearAllStatistics(database), true)
+  assert.deepEqual((await loadActiveSave('pairs', validate, database)).status, 'loaded')
+  assert.equal((await readStatistics('solitaire', database)).gamesStarted, 0)
+})
+
 test('storage failures return safe defaults without preventing play', async () => {
   const unavailable: PersistenceDatabase = {
     getSave: async () => { throw new Error('blocked') },
     putSave: async () => { throw new Error('blocked') },
     deleteSave: async () => { throw new Error('blocked') },
+    clearGameSaves: async () => { throw new Error('blocked') },
     getStatistics: async () => { throw new Error('blocked') },
     putStatistics: async () => { throw new Error('blocked') },
+    clearStatistics: async () => { throw new Error('blocked') },
     updateStatistics: async () => { throw new Error('blocked') },
   }
-  assert.equal(await loadActiveSave('solitaire', validate, unavailable), null)
+  assert.deepEqual(await loadActiveSave('solitaire', validate, unavailable), { status: 'none' })
   assert.equal(await saveActiveGame('solitaire', { cards: [] }, { sessionId: 's', createdAt: '2026-01-01' }, unavailable), false)
   assert.equal(await deleteActiveSave('solitaire', unavailable), false)
+  assert.equal(await clearAllActiveSaves(unavailable), false)
+  assert.equal(await clearAllStatistics(unavailable), false)
   assert.equal((await readStatistics('solitaire', unavailable)).gamesStarted, 0)
   assert.equal(await recordGameStarted('solitaire', unavailable), null)
 })

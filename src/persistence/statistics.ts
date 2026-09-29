@@ -54,6 +54,17 @@ export const readStatistics = async (
   }
 }
 
+export const clearAllStatistics = async (
+  database: PersistenceDatabase = localDatabase,
+): Promise<boolean> => {
+  try {
+    await database.clearStatistics()
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const recordGameStarted = (
   gameId: string,
   database: PersistenceDatabase = localDatabase,

@@ -4,7 +4,7 @@ Complete the manual and release items against the production build and deploymen
 
 ## Automated
 
-- [x] `npm test` (86 passed)
+- [x] `npm test`
 - [x] `npm run typecheck`
 - [x] `npm run lint`
 - [x] `npm run build`
@@ -13,8 +13,15 @@ Complete the manual and release items against the production build and deploymen
 ## Local production preview review
 
 - [x] Home, Settings, and install instructions reviewed
-- [x] Opened the default screen for each of the six games
+- [ ] Review the default screen of all seven games, including Mahjong, in the production preview
 - [x] Continue indicators returned after refreshing the preview for auto-saved game states
+
+## M15C browser review (isolated localhost)
+
+- [x] Home, game, Settings, browser Back/Forward, and in-app Back to Games navigation
+- [x] Saved-game, statistics, and preference actions with confirmation, cancellation, and category separation
+- [x] Home, Settings/Data, and confirmation dialog at 1280×900, 390×844, 360×800, and 320×780
+- [x] No document-level horizontal overflow; tested browser QA data cleared afterward
 
 ## Desktop manual
 
