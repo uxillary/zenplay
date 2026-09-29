@@ -1138,9 +1138,19 @@ button:focus-visible,
   align-items: start;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 820px) {
   .word-search-layout {
     grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.42fr);
+  }
+
+  .word-search-word-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 900px) {
+  .word-search-word-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
