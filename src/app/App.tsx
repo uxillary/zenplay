@@ -6,7 +6,7 @@ import { games } from './gameRegistry'
 import { GameCard } from '../components/GameCard'
 import { GameShell } from '../components/GameShell'
 import { SettingsPanel } from '../components/SettingsPanel'
-import { SavedGamePanel } from '../components/SavedGamePanel'
+import { LocalDataPanel } from '../components/LocalDataPanel'
 import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
 import { SudokuScreen } from '../games/sudoku/ui/SudokuScreen'
 import { PairsScreen } from '../games/pairs/ui/PairsScreen'
@@ -15,8 +15,11 @@ import { NoughtsCrossesScreen } from '../games/noughtsCrosses/ui/NoughtsCrossesS
 import { FifteenScreen } from '../games/fifteen/ui/FifteenScreen'
 import { MahjongScreen } from '../games/mahjong/ui/MahjongScreen'
 import { getInstallExperience, isStandaloneMode } from '../lib/pwa'
+import { createAppHistoryState, readAppNavigation, type AppNavigation, type AppScreen } from './navigation'
 
-type Screen = 'home' | 'game' | 'settings' | 'install'
+const knownGameIds = new Set(games.map((game) => game.id))
+const homeNavigation: AppNavigation = { screen: 'home', gameId: null }
+
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
@@ -31,9 +34,10 @@ const detectIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent)
   || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
 
 const Application = () => {
-  const [screen, setScreen] = useState<Screen>('home')
-  const [gameId, setGameId] = useState<string | null>(null)
-  const previousScreen = useRef(screen)
+  const initialNavigation = readAppNavigation(window.history.state, knownGameIds) ?? homeNavigation
+  const [navigation, setNavigation] = useState<AppNavigation>(initialNavigation)
+  const { screen, gameId } = navigation
+  const previousNavigation = useRef(navigation)
   const [continueAvailability, setContinueAvailability] = useState<Record<string, boolean>>({})
   const [standalone, setStandalone] = useState(detectStandaloneMode)
   const [installed, setInstalled] = useState(false)
@@ -44,15 +48,30 @@ const Application = () => {
   const [saveWarning, setSaveWarning] = useState(false)
   const [saveRecoveryWarning, setSaveRecoveryWarning] = useState(false)
   const updateServiceWorker = useRef<((reloadPage?: boolean) => Promise<void>) | null>(null)
-  const { settings, effectiveSettings, setSetting } = useAccessibility()
+  const { settings, effectiveSettings, setSetting, resetSettings } = useAccessibility()
   const ios = detectIos()
   const installExperience = getInstallExperience(standalone || installed, Boolean(installPrompt), ios)
 
   useEffect(() => {
-    if (previousScreen.current === screen) return
-    previousScreen.current = screen
+    if (previousNavigation.current.screen === screen && previousNavigation.current.gameId === gameId) return
+    previousNavigation.current = navigation
     window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-screen-heading]')?.focus())
-  }, [screen])
+  }, [gameId, navigation, screen])
+
+  useEffect(() => {
+    if (!readAppNavigation(window.history.state, knownGameIds)) {
+      window.history.replaceState(createAppHistoryState(window.history.state, homeNavigation), '', window.location.href)
+    }
+    const onPopState = (event: PopStateEvent) => {
+      const next = readAppNavigation(event.state, knownGameIds) ?? homeNavigation
+      if (!readAppNavigation(event.state, knownGameIds)) {
+        window.history.replaceState(createAppHistoryState(event.state, next), '', window.location.href)
+      }
+      setNavigation(next)
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   const updateSolitaireSaveAvailability = useCallback((hasSave: boolean) => {
     setContinueAvailability((current) => ({ ...current, solitaire: hasSave }))
@@ -76,7 +95,12 @@ const Application = () => {
   const reportSaveRecovery = useCallback(() => setSaveRecoveryWarning(true), [])
 
   const selectedGame = games.find((game) => game.id === gameId)
-  const returnHome = () => setScreen('home')
+  const navigateTo = (nextScreen: AppScreen, nextGameId: string | null = null) => {
+    const next = { screen: nextScreen, gameId: nextGameId }
+    window.history.pushState(createAppHistoryState(window.history.state, next), '', window.location.href)
+    setNavigation(next)
+  }
+  const returnHome = () => window.history.back()
 
   useEffect(() => {
     if (screen !== 'home' && screen !== 'settings') return
@@ -160,8 +184,8 @@ const Application = () => {
                 <p className="mt-2 text-lg">Classic games. Easy to see. Easy to understand. No adverts or accounts.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => setScreen('settings')} className="zen-game-button">Settings</button>
-                {installExperience !== 'installed' ? <button type="button" onClick={() => setScreen('install')} className="zen-game-button">Install ZenPlay</button> : null}
+                <button type="button" onClick={() => navigateTo('settings')} className="zen-game-button">Settings</button>
+                {installExperience !== 'installed' ? <button type="button" onClick={() => navigateTo('install')} className="zen-game-button">Install ZenPlay</button> : null}
               </div>
             </header>
             <div className="zen-game-library grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -170,8 +194,8 @@ const Application = () => {
                   key={game.id}
                   game={game}
                   canContinue={continueAvailability[game.id] ?? false}
-                  onSelect={() => { setSaveWarning(false); setGameId(game.id); setScreen('game') }}
-                  onContinue={() => { setSaveWarning(false); setGameId(game.id); setScreen('game') }}
+                  onSelect={() => { setSaveWarning(false); navigateTo('game', game.id) }}
+                  onContinue={() => { setSaveWarning(false); navigateTo('game', game.id) }}
                 />
               ))}
             </div>
@@ -193,15 +217,24 @@ const Application = () => {
 
         {screen === 'settings' ? (
           <section className="mx-auto max-w-2xl space-y-4">
-            <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
+            <button type="button" onClick={returnHome} className="zen-game-button zen-game-button--back">Back to Games</button>
             <SettingsPanel settings={settings} onChange={setSetting} />
-            {continueAvailability.solitaire ? <SavedGamePanel hasSave onSaveCleared={() => setContinueAvailability((current) => ({ ...current, solitaire: false }))} /> : null}
+            <LocalDataPanel
+              onSavedGamesCleared={() => {
+                setContinueAvailability((current) => ({
+                  ...current,
+                  ...Object.fromEntries(games.filter((game) => game.getContinueAvailability).map((game) => [game.id, false])),
+                }))
+                setSaveRecoveryWarning(false)
+              }}
+              onPreferencesReset={resetSettings}
+            />
           </section>
         ) : null}
 
         {screen === 'install' ? (
           <section className="mx-auto max-w-2xl space-y-4 text-lg" aria-labelledby="install-title">
-            <button type="button" onClick={() => setScreen('home')} className="zen-game-button zen-game-button--back">Back to Games</button>
+            <button type="button" onClick={returnHome} className="zen-game-button zen-game-button--back">Back to Games</button>
             <h1 id="install-title" data-screen-heading tabIndex={-1} className="text-2xl font-semibold">Install ZenPlay</h1>
             <p>Keep ZenPlay with your other apps and play offline after it has loaded once.</p>
             {installExperience === 'installed' ? <p role="status">ZenPlay is already installed and ready to use.</p> : null}

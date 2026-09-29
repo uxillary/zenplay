@@ -89,10 +89,15 @@ export const loadSettings = (): AppSettings => {
   }
 }
 
-export const saveSettings = (settings: AppSettings): void => {
+export const saveSettings = (settings: AppSettings, storage: Pick<Storage, 'setItem'> = localStorage): boolean => {
   try {
-    localStorage.setItem(STORAGE_KEY, serializeSettings(settings))
+    storage.setItem(STORAGE_KEY, serializeSettings(settings))
+    return true
   } catch {
     // Keep the app usable when browser storage is unavailable.
+    return false
   }
 }
+
+export const resetStoredSettings = (storage: Pick<Storage, 'setItem'> = localStorage): boolean =>
+  saveSettings(defaultSettings, storage)

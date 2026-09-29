@@ -513,7 +513,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
               {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · {statistics.totalMoves} moves in completed games{statistics.bestMoves === null ? '' : ` · best ${statistics.bestMoves} moves`}</p> : <p>Statistics are stored on this device.</p>}
             </section> : null}
           </div>
-          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
+          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
         </GameDialog>
       ) : null}
     </div>

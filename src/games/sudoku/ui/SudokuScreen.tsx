@@ -333,7 +333,7 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange, onSav
               {statistics ? <p>{statistics.gamesStarted} puzzles started · {statistics.gamesCompleted} completed · Easy {statistics.completionBreakdown.easy ?? 0}, Medium {statistics.completionBreakdown.medium ?? 0}, Hard {statistics.completionBreakdown.hard ?? 0}</p> : <p>Statistics are stored on this device.</p>}
             </section> : null}
           </div>
-          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
+          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
         </GameDialog>
       ) : null}
 

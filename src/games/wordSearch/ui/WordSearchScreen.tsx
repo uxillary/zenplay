@@ -241,7 +241,7 @@ export const WordSearchScreen = ({ settings, onBack, onSaveAvailabilityChange, o
     </GameDialog> : null}
     {showRules ? <GameDialog title="How to play Word Search" description="Find each listed word in the letter grid. Words run in a straight line horizontally, vertically, or diagonally. Some run backwards." onDismiss={() => setShowRules(false)}>
       <div className="max-h-[60vh] space-y-3 overflow-y-auto text-lg"><p>Tap a first letter, then tap the last letter. Or press and drag across a word. Press Escape to clear a selection.</p><p>Use arrow keys to move around the grid. Press Enter or Space to choose a first or last letter. Hint gives you the first letter of an unfound word.</p>{!settings.simpleMode ? <section aria-label="Word Search statistics"><h3 className="font-bold">Statistics</h3>{statistics ? <p>{statistics.gamesStarted} puzzles started · {statistics.gamesCompleted} completed across {Object.keys(statistics.completionBreakdown).length} themes.</p> : <p>Statistics are stored on this device.</p>}</section> : null}</div>
-      <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
+      <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
     </GameDialog> : null}
     {complete && showCompletion && !showNewPuzzle ? <GameDialog title="You did it." description={`You found every word in ${puzzle.theme}.`}><div className="flex flex-wrap gap-3"><button type="button" onClick={() => setShowNewPuzzle(true)} className="zen-game-button">New Puzzle</button><button type="button" onClick={onBack} className="zen-game-button">Back to Games</button></div></GameDialog> : null}
   </div>

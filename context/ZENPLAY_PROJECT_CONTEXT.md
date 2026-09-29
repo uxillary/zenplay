@@ -1516,14 +1516,13 @@ Close out the focused polish audit across the existing games.
 - **M14C — Solitaire court-card detail:** retained original lightweight vector artwork for J, Q and K.
 - **M14D — Fifteen Puzzle finish:** corrected the Rules count to “1 puzzle started” and plural wording for other counts. Tile movement remains immediate; a brief slide would require extra position-capture and interruption handling for little added clarity. Stable tile identity and post-move focus keep keyboard focus on the moved tile. Verified pointer and keyboard moves, unchanged illegal moves, move counts, save/resume, and a final legal move into the solved state.
 
-## M15 — Product accuracy & save recovery
+## M15 — Product Experience & Launch Pass — COMPLETE
 
-- **M15A — Whole-product audit — COMPLETE:** reviewed all seven games, Home, Settings, persistence, accessibility and release information. No launch blockers or HIGH-severity findings; identified stale six-game copy, overly broad local-progress wording, and silent rejected-save cleanup.
-- **M15B — Product accuracy & save recovery — COMPLETE:** corrected current product/release references to seven games, described local data as saved games, statistics and settings, and distinguished absent saves from rejected saves. Unusable active saves are cleaned up and produce a dismissible recovery alert; valid saves and Continue remain supported. Settings storage fallback remains unchanged because failures safely keep the app on defaults/current in-memory settings and a separate warning would be noisy. M15B verification: 7 games; 113 automated tests; typecheck, lint, production build and diff checks pass. Four responsive viewport sizes reviewed; valid-save and rejected-save recovery flows checked in isolated browser storage.
+- **M15A — Whole-product audit — COMPLETE:** reviewed all seven games, Home, Settings, persistence, accessibility and release information. No launch blockers or HIGH-severity findings; Home/discovery was intentionally retained.
+- **M15B — Product accuracy & save recovery — COMPLETE:** corrected current product/release references to seven games and described local data as saved games, statistics and settings. Rejected active saves are cleaned up and produce a dismissible recovery alert; valid saves and Continue remain supported. Settings storage fallback remains unchanged because failures safely keep the app on defaults/current in-memory settings and a separate warning would be noisy.
+- **M15C — Navigation, local-data controls & closeout — COMPLETE:** added same-URL History API screen entries for predictable browser Back/Forward and kept visible Back to Games. Settings now clears resumable saves, statistics, and preferences separately with confirmation and feedback; the old Solitaire-only clear control was removed. Each category uses its own storage operation, and offline app files/caches are untouched. Normalized Rules button copy to “Close Rules”.
 
-M15C remains future work: browser Back/history behaviour, local-data management controls, and small shared copy consistency cleanup.
-
-Final smoke check confirmed Word Search’s side-by-side layout at 820px and two-column word list at 900px, Solitaire court artwork and mobile horizontal scrolling, and Fifteen Puzzle grammar and immediate movement. **113 tests pass**; bundled Node 24 typecheck, lint, production build and `git diff --check` pass.
+Final M15 verification: 117 tests pass; typecheck, lint, production build/PWA generation and `git diff --check` pass. Browser QA covered Home, Settings/Data, confirmations, and history at 1280×900, 390×844, 360×800 and 320×780; saved-game, statistics, and preference category separation was checked in an isolated origin. Physical-device PWA installation, physical screen-reader testing, and a second-deployment update-ready simulation remain unchecked in the release checklist.
 
 ## Future consideration — Optional Purchases / Support
 

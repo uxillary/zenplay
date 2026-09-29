@@ -81,6 +81,17 @@ export const deleteActiveSave = async (
   }
 }
 
+export const clearAllActiveSaves = async (
+  database: PersistenceDatabase = localDatabase,
+): Promise<boolean> => {
+  try {
+    await database.clearGameSaves()
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const hasActiveSave = async <T,>(
   gameId: string,
   validateState: (value: unknown) => value is T,

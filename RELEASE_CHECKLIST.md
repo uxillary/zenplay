@@ -16,6 +16,13 @@ Complete the manual and release items against the production build and deploymen
 - [ ] Review the default screen of all seven games, including Mahjong, in the production preview
 - [x] Continue indicators returned after refreshing the preview for auto-saved game states
 
+## M15C browser review (isolated localhost)
+
+- [x] Home, game, Settings, browser Back/Forward, and in-app Back to Games navigation
+- [x] Saved-game, statistics, and preference actions with confirmation, cancellation, and category separation
+- [x] Home, Settings/Data, and confirmation dialog at 1280×900, 390×844, 360×800, and 320×780
+- [x] No document-level horizontal overflow; tested browser QA data cleared afterward
+
 ## Desktop manual
 
 - [ ] Review Home and Settings on desktop

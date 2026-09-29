@@ -7,8 +7,10 @@ export interface PersistenceDatabase {
   getSave(gameId: string): Promise<unknown>
   putSave(save: unknown): Promise<void>
   deleteSave(gameId: string): Promise<void>
+  clearGameSaves(): Promise<void>
   getStatistics(gameId: string): Promise<unknown>
   putStatistics(statistics: GameStatistics): Promise<void>
+  clearStatistics(): Promise<void>
   updateStatistics(gameId: string, update: (current: unknown) => GameStatistics): Promise<GameStatistics>
 }
 
@@ -94,7 +96,9 @@ export const localDatabase: PersistenceDatabase = {
   getSave: (gameId) => withStore('gameSaves', 'readonly', (store) => store.get(gameId)),
   putSave: async (save) => { await withStore('gameSaves', 'readwrite', (store) => store.put(save)) },
   deleteSave: (gameId) => withStore('gameSaves', 'readwrite', (store) => store.delete(gameId)),
+  clearGameSaves: async () => { await withStore('gameSaves', 'readwrite', (store) => store.clear()) },
   getStatistics: (gameId) => withStore('statistics', 'readonly', (store) => store.get(gameId)),
   putStatistics: async (statistics) => { await withStore('statistics', 'readwrite', (store) => store.put(statistics)) },
+  clearStatistics: async () => { await withStore('statistics', 'readwrite', (store) => store.clear()) },
   updateStatistics: (gameId, update) => mutateStatistics(gameId, update),
 }

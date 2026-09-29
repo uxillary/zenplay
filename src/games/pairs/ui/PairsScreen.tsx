@@ -275,7 +275,7 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange, onSave
               {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · 6 pairs: {statistics.completionBreakdown.easy ?? 0}, 8 pairs: {statistics.completionBreakdown.standard ?? 0}, 12 pairs: {statistics.completionBreakdown.more ?? 0}</p> : <p>Statistics are stored on this device.</p>}
             </section> : null}
           </div>
-          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close rules</button>
+          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
         </GameDialog>
       ) : null}
 
