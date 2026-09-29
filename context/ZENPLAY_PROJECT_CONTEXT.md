@@ -1495,9 +1495,19 @@ Work:
 
 ---
 
-## M13 — Optional Purchases / Support
+## M13 — Mahjong Depth, Artwork & Progression — COMPLETE
 
-Goal:
+Finish Mahjong Solitaire as a familiar, layered and accessible ZenPlay game.
+
+- **M13A — Genuine layered geometry:** explicit X/Y/Z tile positions across four elevations, with covering and side blocking derived from logical tile footprints.
+- **M13B — Mahjong artwork:** reusable inline SVG faces for Characters, Circles, Bamboo, Winds, Dragons, Flowers and Seasons, with optional Tile Labels.
+- **M13C — Layer-clear progression:** raised-layer clears earn one-time free Hints; inventory, persistence and Undo prevent reward farming.
+- **M13D — Physical turtle presentation:** 144-tile turtle-like stack (102/32/8/2 across elevations), elevation projection, tile bodies, contact shadows and migration from earlier M13 saves.
+- **M13E — Final QA and closeout:** clarified matched-pair copy, verified interactions, rewards, save/resume, legacy migration, win/no-moves states, keyboard use, tile families and responsive layouts. Isolated board stacking so high tile z-order cannot cover game dialogs.
+
+Verification: **112 tests pass**; bundled Node 24 typecheck, lint, production build and `git diff --check` pass. Manual responsive review covered 1280×900, 390×844, 360×800 and 320×780.
+
+## Future consideration — Optional Purchases / Support
 
 Add monetisation only after the core product is excellent.
 

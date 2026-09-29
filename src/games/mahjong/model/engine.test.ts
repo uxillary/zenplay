@@ -219,7 +219,7 @@ test('legacy M13A saves migrate to the current layered footprint and preserve ti
   const oldState: MahjongState = { ...state, tiles: oldTiles, freeHints: 2, rewardedLayers: [1, 2] }
   const restored = restoreMahjongState(serializeMahjongState(oldState))
   assert.ok(restored)
-  assert.deepEqual(restored.tiles.map(({ id, x, y, z, removed, matchKey }) => ({ id, x, y, z, removed, matchKey })), state.tiles.map(({ id, x, y, z, removed, matchKey }) => ({ id, x, y, z, removed, matchKey })))
+  assert.deepEqual(restored.tiles.map(({ id, family, value, x, y, z, removed, matchKey }) => ({ id, family, value, x, y, z, removed, matchKey })), state.tiles.map(({ id, family, value, x, y, z, removed, matchKey }) => ({ id, family, value, x, y, z, removed, matchKey })))
   assert.equal(restored.freeHints, 2)
   assert.deepEqual(restored.rewardedLayers, [1, 2])
   assert.deepEqual(restored.removedPairs, state.removedPairs)

@@ -10,6 +10,7 @@ import type { MahjongState, MahjongTile } from '../model/types'
 import { loadMahjongSave } from '../save'
 import { MahjongTileFace } from './MahjongTileFace'
 import { getMahjongAccessibleName } from './mahjongFaceData'
+import { getMahjongPairCountLabel } from './mahjongStatus'
 
 type Props = { settings: AppSettings; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void }
 
@@ -139,7 +140,7 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
         {state.freeHints ? `Hint · ${state.freeHints} free` : 'Hint'}
       </button>
       <label className="mahjong-accessible-toggle"><input type="checkbox" checked={state.accessibleLabels} onChange={(event) => setState((current) => ({ ...current, accessibleLabels: event.target.checked }))} /> Tile labels</label>
-      {!settings.calmStats ? <span className="ml-auto text-base font-semibold">Pairs: {state.moves}</span> : null}
+      {!settings.calmStats ? <span className="ml-auto text-base font-semibold">{getMahjongPairCountLabel(state.moves)}</span> : null}
     </GameToolbar>
     <div className="flex flex-wrap justify-between gap-2 text-base" aria-label="Board status">
       <span>{state.tiles.filter((tile) => !tile.removed).length} tiles remaining</span><span>{pairs.length} available matches</span>

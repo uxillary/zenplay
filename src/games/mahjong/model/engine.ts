@@ -4,7 +4,7 @@ export type MahjongSlot = Pick<MahjongTile, 'x' | 'y' | 'z'>
 
 // One elevation shifts a tile by a small fraction of its footprint. These are
 // logical board units shared by rendering and collision checks, not pixel math.
-export const MAHJONG_LAYER_STEP = 0.24
+export const MAHJONG_LAYER_STEP = 0.27
 export const MAHJONG_TILE_FOOTPRINT = 1
 const MIN_BLOCKING_OVERLAP = 0.1
 
