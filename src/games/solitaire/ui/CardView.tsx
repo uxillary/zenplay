@@ -2,6 +2,7 @@ import type { DragEvent, TouchEvent } from 'react'
 import { useRef } from 'react'
 import type { Card } from '../model/types'
 import { describeSolitaireCard } from './cardAccessibility'
+import { CourtCardArt } from './CourtCardArt'
 
 const suitSymbol = {
   clubs: '♣',
@@ -81,7 +82,11 @@ export const CardView = ({
       <span className={`zen-card-corner zen-card-corner--top ${suitColour}`} aria-hidden="true">
         <span>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
       </span>
-      <span className={`zen-card-center-suit ${suitColour}`} aria-hidden="true">{suitSymbol[card.suit]}</span>
+      {card.rank === 'J' || card.rank === 'Q' || card.rank === 'K' ? (
+        <span className="zen-court-art" aria-hidden="true"><CourtCardArt rank={card.rank} suit={card.suit} /></span>
+      ) : (
+        <span className={`zen-card-center-suit ${suitColour}`} aria-hidden="true">{suitSymbol[card.suit]}</span>
+      )}
       <span className={`zen-card-corner zen-card-corner--bottom ${suitColour}`} aria-hidden="true">
         <span>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
       </span>

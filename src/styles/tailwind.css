@@ -511,6 +511,23 @@ button:focus-visible,
   line-height: 1;
 }
 
+.zen-court-art {
+  position: absolute;
+  z-index: 0;
+  inset: 0.85rem 0.4rem;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.zen-court-card-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
 .zen-card-suit--red {
   color: var(--zp-card-red);
 }
