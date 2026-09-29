@@ -1507,6 +1507,17 @@ Finish Mahjong Solitaire as a familiar, layered and accessible ZenPlay game.
 
 Verification: **112 tests pass**; bundled Node 24 typecheck, lint, production build and `git diff --check` pass. Manual responsive review covered 1280×900, 390×844, 360×800 and 320×780.
 
+## M14 — Existing Games Polish — COMPLETE
+
+Close out the focused polish audit across the existing games.
+
+- **M14A — Six-game polish audit:** reviewed Solitaire, Sudoku, Pairs, Word Search, Noughts & Crosses and Fifteen Puzzle. No blockers or high-severity issues were found. Pairs and Noughts & Crosses were intentionally left unchanged because the audit found no actionable polish issue.
+- **M14B — Responsive reachability:** checked 1280×900, 390×844, 360×800 and 320×780. Sudoku and Solitaire mobile scrolling were left unchanged. Word Search gained an 820px side-by-side breakpoint; its word list uses two columns at 900px and above.
+- **M14C — Solitaire court-card detail:** retained original lightweight vector artwork for J, Q and K.
+- **M14D — Fifteen Puzzle finish:** corrected the Rules count to “1 puzzle started” and plural wording for other counts. Tile movement remains immediate; a brief slide would require extra position-capture and interruption handling for little added clarity. Stable tile identity and post-move focus keep keyboard focus on the moved tile. Verified pointer and keyboard moves, unchanged illegal moves, move counts, save/resume, and a final legal move into the solved state.
+
+Final smoke check confirmed Word Search’s side-by-side layout at 820px and two-column word list at 900px, Solitaire court artwork and mobile horizontal scrolling, and Fifteen Puzzle grammar and immediate movement. **113 tests pass**; bundled Node 24 typecheck, lint, production build and `git diff --check` pass.
+
 ## Future consideration — Optional Purchases / Support
 
 Add monetisation only after the core product is excellent.

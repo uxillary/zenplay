@@ -9,6 +9,7 @@ import { createShuffledFifteenState, isFifteenSolved, moveFifteenTile } from '..
 import { restoreFifteenState, serializeFifteenState } from '../model/persistence'
 import type { FifteenState } from '../model/types'
 import { loadFifteenSave } from '../save'
+import { formatFifteenStartedCount } from './statisticsCopy'
 
 type Props = { settings: AppSettings; onBack: () => void; onSaveAvailabilityChange: (hasSave: boolean) => void; onSaveFailure: () => void }
 
@@ -20,6 +21,9 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSa
   const [showCompletion, setShowCompletion] = useState(false)
   const [statistics, setStatistics] = useState<GameStatistics | null>(null)
   const [announcement, setAnnouncement] = useState('Slide a tile into the empty space.')
+  const boardRef = useRef<HTMLDivElement>(null)
+  const focusFrame = useRef<number | null>(null)
+  const pendingFocusTile = useRef<number | null>(null)
   const session = useRef<{ sessionId: string; createdAt: string } | null>(null)
   const persistenceQueue = useRef<Promise<void>>(Promise.resolve())
   const completedSession = useRef<string | null>(null)
@@ -68,6 +72,21 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSa
     if (showRules) void readStatistics('fifteen').then(setStatistics)
   }, [showRules])
 
+  useEffect(() => {
+    if (focusFrame.current !== null) window.cancelAnimationFrame(focusFrame.current)
+    const tile = pendingFocusTile.current
+    pendingFocusTile.current = null
+    if (tile === null) return
+    focusFrame.current = window.requestAnimationFrame(() => {
+      boardRef.current?.querySelector<HTMLButtonElement>(`[data-tile="${tile}"]`)?.focus()
+      focusFrame.current = null
+    })
+  }, [state])
+
+  useEffect(() => () => {
+    if (focusFrame.current !== null) window.cancelAnimationFrame(focusFrame.current)
+  }, [])
+
   const startNewPuzzle = () => {
     const nextSession = { sessionId: createSessionId(), createdAt: new Date().toISOString() }
     session.current = nextSession
@@ -84,8 +103,11 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSa
     if (!ready || complete || showNewPuzzle || showRules) return
     const next = moveFifteenTile(state, index)
     if (next === state) return
+    const movedTile = state.tiles[index]
+    const solved = isFifteenSolved(next)
+    pendingFocusTile.current = solved ? null : movedTile
     setState(next)
-    if (isFifteenSolved(next)) {
+    if (solved) {
       setAnnouncement('Puzzle solved. You did it.')
       setShowCompletion(true)
     } else setAnnouncement(settings.calmStats ? 'Tile moved.' : `Move ${next.moves}.`)
@@ -104,15 +126,16 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSa
       {!settings.calmStats ? <span className="ml-auto text-lg font-semibold">Moves: {state.moves}</span> : null}
     </GameToolbar>
     <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
-    <div className={`fifteen-board ${piecesLarge ? 'fifteen-board--large' : ''}`} role="group" aria-label="Fifteen Puzzle. Use Tab to focus a tile, then Enter or Space to slide it into the empty space.">
+    <div ref={boardRef} className={`fifteen-board ${piecesLarge ? 'fifteen-board--large' : ''}`} role="group" aria-label="Fifteen Puzzle. Use Tab to focus a tile, then Enter or Space to slide it into the empty space.">
       {state.tiles.map((tile, index) => {
         const row = Math.floor(index / 4) + 1
         const column = index % 4 + 1
         const empty = tile === null
         return <button
-          key={index}
+          key={tile ?? 'empty'}
           type="button"
           className={`fifteen-tile ${empty ? 'fifteen-tile--empty' : ''}`}
+          data-tile={tile ?? ''}
           aria-label={empty ? `Empty space, row ${row}, column ${column}` : `Tile ${tile}, row ${row}, column ${column}`}
           aria-disabled={empty || !ready || complete}
           onClick={() => moveTile(index)}
@@ -126,7 +149,7 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSa
     </GameDialog> : null}
     {showRules ? <GameDialog title="How to play Fifteen Puzzle" description="Slide a numbered tile into the empty space. Only a tile next to the empty space can move. Arrange tiles from 1 to 15, with the empty space in the bottom-right corner. Every new puzzle can be solved." onDismiss={() => setShowRules(false)}>
       <p className="text-lg">Use Tab to focus tiles and Enter or Space to move a focused tile. The empty space is labelled but cannot be moved.</p>
-      {!settings.simpleMode ? <p className="text-lg">{statistics ? `${statistics.gamesStarted} puzzles started · ${statistics.gamesCompleted} completed · best: ${statistics.bestMoves ?? 'not yet set'} moves.` : 'Statistics are stored on this device.'}</p> : null}
+      {!settings.simpleMode ? <p className="text-lg">{statistics ? `${formatFifteenStartedCount(statistics.gamesStarted)} · ${statistics.gamesCompleted} completed · best: ${statistics.bestMoves ?? 'not yet set'} moves.` : 'Statistics are stored on this device.'}</p> : null}
       <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
     </GameDialog> : null}
     {complete && showCompletion ? <GameDialog title="You did it." description={settings.calmStats ? 'Puzzle solved.' : `Puzzle solved in ${state.moves} moves.`}>
