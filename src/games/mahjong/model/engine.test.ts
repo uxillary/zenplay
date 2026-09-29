@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { applyMahjongHint, CLASSIC_TURTLE_LAYOUT, canMahjongTilesMatch, createMahjongState, getAvailableMahjongPairs, getMahjongRaisedElevations, hasMahjongMoves, isMahjongComplete, isMahjongTileFree, removeMahjongPair, undoMahjong } from './engine.ts'
+import { applyMahjongHint, CLASSIC_TURTLE_LAYOUT, canMahjongTilesMatch, createMahjongState, getAvailableMahjongPairs, getMahjongRaisedElevations, hasMahjongMoves, isMahjongComplete, isMahjongTileFree, LEGACY_CLASSIC_TURTLE_LAYOUT, removeMahjongPair, undoMahjong } from './engine.ts'
 import { restoreMahjongState, serializeMahjongState } from './persistence.ts'
 import type { MahjongState, MahjongTile } from './types.ts'
 
@@ -200,6 +200,30 @@ test('valid saved state round-trips and malformed/incompatible state is rejected
   assert.equal(restoreMahjongState({ ...state, tiles: state.tiles.map((item, i) => i === 0 ? { ...item, x: Number.NaN } : item) }), null)
   assert.equal(restoreMahjongState({ ...state, tiles: state.tiles.map((item, i) => i === 0 ? { ...item, x: 999 } : item) }), null)
   assert.equal(restoreMahjongState({ ...state, freeHints: 1 }), null)
+})
+
+test('legacy M13A saves migrate to the current layered footprint and preserve tile state', () => {
+  const initial = createMahjongState(() => 0.23)
+  const [first, second] = getAvailableMahjongPairs(initial)[0]
+  const state = removeMahjongPair(initial, first, second)
+  const oldByLayer = new Map<number, typeof LEGACY_CLASSIC_TURTLE_LAYOUT[number][]>()
+  const newByLayer = new Map<number, typeof CLASSIC_TURTLE_LAYOUT[number][]>()
+  for (const z of [0, 1, 2, 3]) {
+    oldByLayer.set(z, LEGACY_CLASSIC_TURTLE_LAYOUT.filter((slot) => slot.z === z).slice().sort((a, b) => a.y - b.y || a.x - b.x))
+    newByLayer.set(z, CLASSIC_TURTLE_LAYOUT.filter((slot) => slot.z === z).slice().sort((a, b) => a.y - b.y || a.x - b.x))
+  }
+  const oldTiles = state.tiles.map((item) => {
+    const index = newByLayer.get(item.z)!.findIndex((slot) => slot.x === item.x && slot.y === item.y)
+    return { ...item, ...oldByLayer.get(item.z)![index] }
+  })
+  const oldState: MahjongState = { ...state, tiles: oldTiles, freeHints: 2, rewardedLayers: [1, 2] }
+  const restored = restoreMahjongState(serializeMahjongState(oldState))
+  assert.ok(restored)
+  assert.deepEqual(restored.tiles.map(({ id, x, y, z, removed, matchKey }) => ({ id, x, y, z, removed, matchKey })), state.tiles.map(({ id, x, y, z, removed, matchKey }) => ({ id, x, y, z, removed, matchKey })))
+  assert.equal(restored.freeHints, 2)
+  assert.deepEqual(restored.rewardedLayers, [1, 2])
+  assert.deepEqual(restored.removedPairs, state.removedPairs)
+  assert.deepEqual(undoMahjong(restored).tiles.map(({ id, removed }) => [id, removed]), initial.tiles.map(({ id, removed }) => [id, removed]))
 })
 
 test('old saves default M13C progression without inferring rewards from empty layers', () => {

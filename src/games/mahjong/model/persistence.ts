@@ -1,4 +1,4 @@
-import { CLASSIC_TURTLE_LAYOUT, getMahjongRaisedElevations } from './engine.ts'
+import { CLASSIC_TURTLE_LAYOUT, getMahjongRaisedElevations, LEGACY_CLASSIC_TURTLE_LAYOUT } from './engine.ts'
 import type { MahjongState, MahjongTile } from './types.ts'
 
 const record = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -11,7 +11,20 @@ const allowedKeys = new Set([
 ])
 const positionKey = (x: number, y: number, z: number) => `${x}:${y}:${z}`
 const expectedPositions = new Set(CLASSIC_TURTLE_LAYOUT.map(({ x, y, z }) => positionKey(x, y, z)))
+const legacyPositions = new Set(LEGACY_CLASSIC_TURTLE_LAYOUT.map(({ x, y, z }) => positionKey(x, y, z)))
 const eligibleLayers = new Set(getMahjongRaisedElevations(CLASSIC_TURTLE_LAYOUT))
+
+const samePositions = (positions: Set<string>, expected: Set<string>) =>
+  positions.size === expected.size && [...positions].every((position) => expected.has(position))
+
+const orderSlots = <T extends { x: number; y: number; z: number }>(a: T, b: T) => a.z - b.z || a.y - b.y || a.x - b.x
+const legacyToCurrentPosition = new Map<string, { x: number; y: number; z: number }>()
+for (const z of getMahjongRaisedElevations(CLASSIC_TURTLE_LAYOUT).concat([0])) {
+  const legacy = LEGACY_CLASSIC_TURTLE_LAYOUT.filter((slot) => slot.z === z).slice().sort(orderSlots)
+  const current = CLASSIC_TURTLE_LAYOUT.filter((slot) => slot.z === z).slice().sort(orderSlots)
+  legacy.forEach((slot, index) => legacyToCurrentPosition.set(positionKey(slot.x, slot.y, slot.z), current[index]))
+}
+
 export const isMahjongState = (value: unknown): value is MahjongState => {
   if (!record(value) || !Array.isArray(value.tiles) || value.tiles.length !== CLASSIC_TURTLE_LAYOUT.length) return false
   if (!Array.isArray(value.removedPairs) || !Number.isSafeInteger(value.moves) || (value.moves as number) < 0 || typeof value.accessibleLabels !== 'boolean') return false
@@ -35,7 +48,7 @@ export const isMahjongState = (value: unknown): value is MahjongState => {
     positions.add(positionKey(item.x as number, item.y as number, item.z as number))
     keys.set(item.matchKey, (keys.get(item.matchKey) ?? 0) + 1)
   }
-  if (positions.size !== expectedPositions.size || [...positions].some((position) => !expectedPositions.has(position))) return false
+  if (!samePositions(positions, expectedPositions) && !samePositions(positions, legacyPositions)) return false
   if (keys.size !== 36 || [...keys.values()].some((count) => count !== 4)) return false
   const removed = new Set<string>()
   for (const pair of value.removedPairs) {
@@ -51,8 +64,10 @@ export const serializeMahjongState = (state: MahjongState): MahjongState => JSON
 export const restoreMahjongState = (value: unknown): MahjongState | null => {
   if (!isMahjongState(value)) return null
   const restored = serializeMahjongState(value)
+  const isLegacyLayout = samePositions(new Set(restored.tiles.map(({ x, y, z }) => positionKey(x, y, z))), legacyPositions)
   return {
     ...restored,
+    tiles: isLegacyLayout ? restored.tiles.map((tile) => ({ ...tile, ...legacyToCurrentPosition.get(positionKey(tile.x, tile.y, tile.z))! })) : restored.tiles,
     freeHints: value.freeHints ?? 0,
     rewardedLayers: value.rewardedLayers ? [...value.rewardedLayers] : [],
   }

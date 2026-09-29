@@ -154,10 +154,11 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
           const label = `${getMahjongAccessibleName(tile)}, ${free ? 'free' : 'blocked'}${isSelected ? ', selected' : ''}`
           const position = getMahjongTilePosition(tile)
           return <button id={`mahjong-${tile.id}`} key={tile.id} type="button" tabIndex={free && focusTileId === tile.id ? 0 : -1}
-            className={`mahjong-tile ${free ? 'mahjong-tile--free' : 'mahjong-tile--blocked'} ${isSelected ? 'mahjong-tile--selected' : ''} ${isHinted ? 'mahjong-tile--hinted' : ''} mahjong-family--${tile.family}`}
-            style={{ left: `${(position.x + 3) / 18 * 100}%`, top: `${(position.y + 0.5) / 9 * 100}%`, zIndex: tile.z * 2 + 1 }}
+            className={`mahjong-tile mahjong-tile--layer-${tile.z} ${free ? 'mahjong-tile--free' : 'mahjong-tile--blocked'} ${isSelected ? 'mahjong-tile--selected' : ''} ${isHinted ? 'mahjong-tile--hinted' : ''} mahjong-family--${tile.family}`}
+            style={{ left: `${(position.x + 3) / 18 * 100}%`, top: `${(position.y + 0.5) / 9 * 100}%`, zIndex: tile.z * 1000 + Math.round(tile.y * 100) + Math.round(tile.x * 10) }}
             aria-label={label} aria-pressed={isSelected} aria-disabled={!free} onFocus={() => setFocusId(tile.id)} onClick={() => chooseTile(tile)}>
-            <MahjongTileFace tile={tile} labels={state.accessibleLabels} />
+            <span className="mahjong-tile__side" aria-hidden="true" />
+            <span className="mahjong-tile__face"><MahjongTileFace tile={tile} labels={state.accessibleLabels} /></span>
             <span className="sr-only">{label}</span>
           </button>
         })}

@@ -4,7 +4,7 @@ export type MahjongSlot = Pick<MahjongTile, 'x' | 'y' | 'z'>
 
 // One elevation shifts a tile by a small fraction of its footprint. These are
 // logical board units shared by rendering and collision checks, not pixel math.
-export const MAHJONG_LAYER_STEP = 0.14
+export const MAHJONG_LAYER_STEP = 0.24
 export const MAHJONG_TILE_FOOTPRINT = 1
 const MIN_BLOCKING_OVERLAP = 0.1
 
@@ -37,12 +37,11 @@ const positionIsFree = (slot: MahjongSlot, occupied: readonly MahjongSlot[]): bo
   return !covered && (!leftBlocked || !rightBlocked)
 }
 
-// The declarative layers use tile-sized grid coordinates. Wider lower rows form
-// the turtle shell; the centered upper layers make its back and raised spine.
+// The legacy footprint is retained only to migrate saved M13A/M13C games.
 const rectangle = (width: number, height: number, z: number, xOffset = 0, yOffset = 0): MahjongSlot[] =>
   Array.from({ length: height }, (_, y) => Array.from({ length: width }, (_, x) => ({ x: x + xOffset, y: y + yOffset, z }))).flat()
 
-export const CLASSIC_TURTLE_LAYOUT: readonly MahjongSlot[] = [
+export const LEGACY_CLASSIC_TURTLE_LAYOUT: readonly MahjongSlot[] = [
   ...rectangle(12, 8, 0),
   ...rectangle(8, 4, 1, 2, 2),
   ...rectangle(4, 2, 2, 4, 3),
@@ -50,6 +49,22 @@ export const CLASSIC_TURTLE_LAYOUT: readonly MahjongSlot[] = [
   ...rectangle(3, 1, 0, -3, 3),
   ...rectangle(3, 1, 0, 12, 3),
 ].flat()
+
+// Rows taper around the shell and spine. The broad z0 shoulders incorporate
+// the characteristic wings into the foundation instead of leaving loose rows.
+const centeredRows = (widths: readonly number[], z: number, yOffset: number, centerX = 6): MahjongSlot[] =>
+  widths.flatMap((width, row) => Array.from({ length: width }, (_, column) => ({
+    x: centerX - width / 2 + column,
+    y: yOffset + row,
+    z,
+  })))
+
+export const CLASSIC_TURTLE_LAYOUT: readonly MahjongSlot[] = [
+  ...centeredRows([9, 11, 13, 18, 18, 13, 11, 9], 0, 0),
+  ...centeredRows([6, 10, 10, 6], 1, 2),
+  ...centeredRows([3, 5], 2, 3),
+  ...centeredRows([2], 3, 3),
+]
 
 type Face = { family: MahjongFamily; value: number | string; matchKey: string }
 
