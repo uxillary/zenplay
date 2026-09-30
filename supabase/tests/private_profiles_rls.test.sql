@@ -19,11 +19,8 @@ select is(
   'user A creates a profile owned by their auth ID'
 );
 select is((select count(*)::integer from public.private_profiles), 1, 'user A can read their own profile');
-select is(
-  (with changed as (
-    update public.private_profiles set display_name = 'Player A updated' returning 1
-  ) select count(*)::integer from changed),
-  1,
+select lives_ok(
+  $$update public.private_profiles set display_name = 'Player A updated'$$,
   'user A can update their own profile'
 );
 select is(
@@ -46,11 +43,13 @@ select throws_ok(
 
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000002","role":"authenticated"}', true);
 select is((select count(*)::integer from public.private_profiles), 0, 'user B cannot read user A profile');
+
+-- RLS silently filters an unauthorized UPDATE; verify the row is unchanged as its owner.
+update public.private_profiles set display_name = 'Changed by B';
+select set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
 select is(
-  (with changed as (
-    update public.private_profiles set display_name = 'Changed by B' returning 1
-  ) select count(*)::integer from changed),
-  0,
+  (select display_name from public.private_profiles),
+  'Player A updated',
   'user B cannot update user A profile'
 );
 
