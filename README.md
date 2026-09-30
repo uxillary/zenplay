@@ -32,7 +32,7 @@ The Profile screen also links to a static Support ZenPlay prototype. Its fiction
 5. To apply the migration to a hosted project, authenticate with `supabase login`, link the project with `supabase link --project-ref <project-ref>`, review `supabase db push --dry-run`, then apply with `supabase db push`. Do not use `db reset --linked` on a production project.
 6. Add the same two `VITE_` values as build-time environment variables in Cloudflare Pages. Restart the Vite dev server after changing `.env.local`.
 
-**Owner action required:** create/configure the Supabase project, choose and review its region/terms, configure email delivery and allowed origins, add the Cloudflare Pages build variables, and apply the migration. This repository contains no project credentials, and live Supabase connectivity has not been verified. Account deletion, data export, and complete lifecycle handling remain deferred to M13J.
+**M16A.2 hosted development status:** the `zenplay` Supabase project is in West Europe (London); migration `20260928090000_create_private_profiles.sql` is applied and local/remote migration history is aligned. The hosted table, RLS setting, and three owner-only policies were inspected, and the corrected nine-assertion pgTAP suite passed in the hosted SQL Editor. This is database/role-context evidence only: real OTP, browser, and PostgREST authentication have not been verified. The default Auth email template, custom SMTP, and Cloudflare build configuration remain pending. Account deletion, data export, and complete lifecycle handling remain deferred to M13J. No credentials are stored in the repo.
 
 ## Checks
 

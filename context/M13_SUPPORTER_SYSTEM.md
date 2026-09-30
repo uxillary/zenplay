@@ -1,6 +1,6 @@
 # M13 — Supporter System
 
-**Status:** M13E repository implementation complete; Supabase production configuration remains owner action required. Payments, Stars, entitlements, cosmetics, public supporter profiles, and account deletion remain unimplemented.
+**Status:** M13E repository implementation complete; initial hosted development schema and database-level RLS verification are complete. Real OTP/browser authentication and production email/configuration remain owner actions. Payments, Stars, entitlements, cosmetics, public supporter profiles, and account deletion remain unimplemented.
 **Scope:** optional profiles, lifetime support recognition, cosmetic entitlements, and a privacy-first supporter spotlight.
 **Working name:** ZenPlay Stars. The name and all example thresholds are provisional.
 
@@ -228,15 +228,15 @@ Severity is the security priority for the relevant feature, not a judgement abou
 
 Connecting is a separate checked action. It sends only the chosen display name and a current supported favourite game; an unsupported old favourite is omitted. It never sends local profile ID, local created date, visibility placeholder, local statistics, saves, settings, or accessibility choices. The local profile remains authoritative for that device; edits do not silently sync. Remote profile edits require an explicit save. The Auth session is SDK-managed in browser storage; remote profile details exist only in app memory and are not cached for offline use. Local profile/game behavior continues if Auth or the profile request fails. The M13C fictional supporter fixtures remain unchanged and have no service connection.
 
-Remote account deletion, account data export, purchase-linked retention, and complete recovery/lifecycle support remain deferred to **M13J**. M13E provides no fake account deletion control. No live Supabase project was available for connectivity or hosted RLS verification; the migration and local pgTAP test are committed for reproducible verification when the owner sets up the project.
+Remote account deletion, account data export, purchase-linked retention, and complete recovery/lifecycle support remain deferred to **M13J**. M13E provides no fake account deletion control. The hosted `zenplay` development project is in West Europe (London); migration `20260928090000_create_private_profiles.sql` is applied and its local/remote migration history is aligned. The hosted table, RLS setting, and three policies were inspected, and the corrected nine-assertion pgTAP test passed in SQL Editor. This is database/role-context evidence, not a real OTP-authenticated browser/PostgREST test. SMTP/template setup and Cloudflare configuration remain pending for M16A.3.
 
 ### Owner action required
 
-- Create a Supabase project and choose its region after the required privacy/data-location review.
+- Review the hosted development project's region and data-processing terms before production use.
 - Put the project URL and publishable key in local `.env.local` and the Cloudflare Pages build environment. The publishable key is expected to be public; never use a secret/service-role key or database password in the browser.
 - Set the Auth Site URL to ZenPlay's canonical origin; allowlist required local and production origins. Enable email OTP, use a six-digit code and `{{ .Token }}` email template, configure resend/expiry limits, and set up verified production SMTP.
-- Install/run the Supabase CLI and local Docker stack if available; run `supabase start` and `supabase test db`. To apply remotely, `supabase login`, `supabase link --project-ref …`, `supabase db push --dry-run`, review the plan, then `supabase db push`.
-- Confirm the deployed project and migration before exposing account access to users. No credentials, Dashboard configuration, migration application, or live connectivity are claimed complete here.
+- The hosted migration and database-level RLS test are verified for the development project. For future schema changes, use the repository migration files and linked Supabase CLI workflow; local Docker is not required for remote `db push`.
+- Configure the token-based Auth email template and custom SMTP, then Cloudflare build variables, before proceeding to M16A.3 real-auth testing. No real browser/PostgREST authentication is claimed complete.
 
 ### Eventual payments requirements (not implementation or provider selection)
 
