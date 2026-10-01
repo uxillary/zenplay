@@ -28,6 +28,7 @@ export interface AccountGateway {
   getCurrentUser(): Promise<AccountUser | null>
   subscribeToAuthChanges(listener: (user: AccountUser | null) => void): () => void
   signOutLocally(): Promise<void>
+  deleteOnlineAccount(): Promise<void>
   getPrivateProfile(): Promise<RemotePrivateProfile | null>
   createPrivateProfile(fields: RemoteProfileFields): Promise<RemotePrivateProfile>
   updatePrivateProfile(fields: RemoteProfileFields): Promise<RemotePrivateProfile>
@@ -44,6 +45,13 @@ export class ProfileConnectionConfirmationError extends Error {
   constructor() {
     super('Confirm which local profile details to connect first.')
     this.name = 'ProfileConnectionConfirmationError'
+  }
+}
+
+export class AccountSessionError extends Error {
+  constructor() {
+    super('Sign in again before deleting your online account.')
+    this.name = 'AccountSessionError'
   }
 }
 
@@ -106,6 +114,7 @@ export const createAccountService = (
     subscribeToAuthChanges: (listener: (user: AccountUser | null) => void) =>
       gateway?.subscribeToAuthChanges(listener) ?? (() => undefined),
     signOut: () => requireGateway().signOutLocally(),
+    deleteOnlineAccount: () => requireGateway().deleteOnlineAccount(),
     getPrivateProfile: () => requireGateway().getPrivateProfile(),
     connectLocalProfile: (
       profile: LocalProfile | null,

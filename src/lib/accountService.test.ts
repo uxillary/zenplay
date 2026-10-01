@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   AccountUnavailableError,
+  AccountSessionError,
   createAccountService,
   prepareRemoteProfileFields,
   ProfileConnectionConfirmationError,
@@ -9,7 +10,9 @@ import {
   type RemotePrivateProfile,
   type RemoteProfileFields,
 } from './accountService.ts'
-import { createBrowserAccountService } from './supabaseAccountService.ts'
+import { createBrowserAccountService, createSupabaseAccountGateway } from './supabaseAccountService.ts'
+import type { Database } from './database.types.ts'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   createLocalProfile,
   loadLocalProfile,
@@ -32,10 +35,11 @@ const remoteProfile: RemotePrivateProfile = {
 }
 
 const makeGateway = (overrides: Partial<AccountGateway> = {}) => {
-  const calls: { created: RemoteProfileFields[]; updated: RemoteProfileFields[]; signedOut: number } = {
+  const calls: { created: RemoteProfileFields[]; updated: RemoteProfileFields[]; signedOut: number; deleted: number } = {
     created: [],
     updated: [],
     signedOut: 0,
+    deleted: 0,
   }
   const gateway: AccountGateway = {
     sendEmailCode: async () => undefined,
@@ -43,6 +47,7 @@ const makeGateway = (overrides: Partial<AccountGateway> = {}) => {
     getCurrentUser: async () => null,
     subscribeToAuthChanges: () => () => undefined,
     signOutLocally: async () => { calls.signedOut += 1 },
+    deleteOnlineAccount: async () => { calls.deleted += 1 },
     getPrivateProfile: async () => remoteProfile,
     createPrivateProfile: async (fields) => { calls.created.push(fields); return { ...remoteProfile, ...fields } },
     updatePrivateProfile: async (fields) => { calls.updated.push(fields); return { ...remoteProfile, ...fields } },
@@ -121,6 +126,105 @@ test('sign out and authentication errors leave local profile data untouched', as
   await service.signOut()
   assert.equal(calls.signedOut, 1)
   assert.deepEqual(loadLocalProfile(storage), localProfile)
+})
+
+test('account service propagates signed-out session errors from its gateway', async () => {
+  const { gateway, calls } = makeGateway({ deleteOnlineAccount: async () => { calls.deleted += 1; throw new AccountSessionError() } })
+  const service = createAccountService({ url: 'https://project.supabase.co', publishableKey: 'public-key' }, () => gateway)
+
+  await assert.rejects(service.deleteOnlineAccount(), AccountSessionError)
+  assert.equal(calls.deleted, 1)
+})
+
+test('online account deletion is exposed through the account service', async () => {
+  const { gateway, calls } = makeGateway()
+  const service = createAccountService({ url: 'https://project.supabase.co', publishableKey: 'public-key' }, () => gateway)
+
+  await service.deleteOnlineAccount()
+  assert.equal(calls.deleted, 1)
+})
+
+test('online account deletion leaves local profile, game and preference storage untouched', async () => {
+  const storage = new MemoryStorage()
+  const profile = createLocalProfile({ displayName: 'Ada', favouriteGameId: 'mahjong' }, {
+    storage,
+    createId: () => 'local-profile-1',
+  })!
+  storage.setItem('zenplay.game.sudoku.save', '{"board":"local-save"}')
+  storage.setItem('zenplay.statistics.sudoku', '{"gamesCompleted":4}')
+  storage.setItem('zenplay.settings', '{"highContrast":true}')
+  storage.setItem('zenplay.accessibility', '{"reducedMotion":true}')
+  const before = new Map(storage.values)
+  const { gateway } = makeGateway()
+  const service = createAccountService({ url: 'https://project.supabase.co', publishableKey: 'public-key' }, () => gateway)
+
+  await service.deleteOnlineAccount()
+
+  assert.deepEqual(storage.values, before)
+  assert.deepEqual(loadLocalProfile(storage), profile)
+})
+
+test('online account deletion failure leaves all local storage untouched', async () => {
+  const storage = new MemoryStorage()
+  createLocalProfile({ displayName: 'Ada', favouriteGameId: 'pairs' }, { storage, createId: () => 'local-profile-2' })
+  storage.setItem('zenplay.game.pairs.save', '{"cards":[]}')
+  storage.setItem('zenplay.statistics.pairs', '{"gamesCompleted":2}')
+  storage.setItem('zenplay.settings', '{"sound":false}')
+  storage.setItem('zenplay.accessibility', '{"largeText":true}')
+  const before = new Map(storage.values)
+  const { gateway } = makeGateway({ deleteOnlineAccount: async () => { throw new Error('server failure') } })
+  const service = createAccountService({ url: 'https://project.supabase.co', publishableKey: 'public-key' }, () => gateway)
+
+  await assert.rejects(service.deleteOnlineAccount(), /server failure/)
+  assert.deepEqual(storage.values, before)
+})
+
+test('browser gateway requires a verified current user and invokes deletion without identity parameters', async () => {
+  const events: string[] = []
+  const client = {
+    auth: {
+      getUser: async () => ({ data: { user: { id: 'verified-user' } }, error: null }),
+      signOut: async (options: { scope: string }) => { events.push(`signOut:${options.scope}`); return { error: null } },
+    },
+    functions: {
+      invoke: async (...args: unknown[]) => { events.push(JSON.stringify(args)); return { data: { deleted: true }, error: null } },
+    },
+  } as unknown as SupabaseClient<Database>
+  const gateway = createSupabaseAccountGateway(client)
+
+  await gateway.deleteOnlineAccount()
+  assert.deepEqual(events, [
+    '["delete-account",{"method":"POST"}]',
+    'signOut:local',
+  ])
+})
+
+test('browser gateway does not invoke deletion when the session is invalid', async () => {
+  let invoked = false
+  const client = {
+    auth: {
+      getUser: async () => ({ data: { user: null }, error: null }),
+      signOut: async () => ({ error: null }),
+    },
+    functions: { invoke: async () => { invoked = true; return { data: null, error: null } } },
+  } as unknown as SupabaseClient<Database>
+
+  await assert.rejects(createSupabaseAccountGateway(client).deleteOnlineAccount(), AccountSessionError)
+  assert.equal(invoked, false)
+})
+
+test('function failure leaves the browser session intact for recovery', async () => {
+  let signedOut = false
+  const client = {
+    auth: {
+      getUser: async () => ({ data: { user: { id: 'verified-user' } }, error: null }),
+      signOut: async () => { signedOut = true; return { error: null } },
+    },
+    functions: { invoke: async () => ({ data: null, error: new Error('network failure') }) },
+  } as unknown as SupabaseClient<Database>
+
+  await assert.rejects(createSupabaseAccountGateway(client).deleteOnlineAccount(), /network failure/)
+  assert.equal(signedOut, false)
 })
 
 test('remote profile errors do not alter local profile state', async () => {

@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { GameDefinition } from '../app/gameRegistry'
 import type { LocalProfile } from '../lib/localProfile'
-import type { AccountUser, RemotePrivateProfile } from '../lib/accountService'
+import { AccountSessionError, type AccountUser, type RemotePrivateProfile } from '../lib/accountService'
 import { createBrowserAccountService } from '../lib/supabaseAccountService'
+import { GameDialog } from './GameDialog'
 
 type Props = {
   localProfile: LocalProfile | null
   games: readonly GameDefinition[]
 }
 
-type Operation = 'sending-code' | 'verifying-code' | 'connecting' | 'updating-profile' | 'signing-out' | null
+type Operation = 'sending-code' | 'verifying-code' | 'connecting' | 'updating-profile' | 'signing-out' | 'deleting-account' | null
 type ProfileLoadState = 'none' | 'loading' | 'missing' | 'present' | 'error'
 
 const toDraft = (profile: Pick<RemotePrivateProfile, 'display_name' | 'favourite_game_id'>) => ({
@@ -32,10 +33,13 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
   const [profileLoadState, setProfileLoadState] = useState<ProfileLoadState>('none')
   const [draft, setDraft] = useState({ displayName: '', favouriteGameId: '' })
   const [connectConfirmed, setConnectConfirmed] = useState(false)
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const codeInputRef = useRef<HTMLInputElement>(null)
   const sendInProgress = useRef(false)
+  const deleteInProgress = useRef(false)
+  const emailInputRef = useRef<HTMLInputElement>(null)
   const gameIds = useMemo(() => games.map((game) => game.id), [games])
   const accountUserId = accountUser?.id ?? null
   const localProfileId = localProfile?.profileId ?? null
@@ -46,6 +50,7 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
   const setUser = useCallback((user: AccountUser | null) => {
     setAccountUser(user)
     setAuthState(user ? 'signed-in' : 'signed-out')
+    if (!user) setConfirmDeleteAccount(false)
     setError('')
   }, [])
 
@@ -211,6 +216,45 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
     }
   }
 
+  const deleteOnlineAccount = async () => {
+    if (deleteInProgress.current) return
+    deleteInProgress.current = true
+    setError('')
+    setMessage('')
+    setOperation('deleting-account')
+    try {
+      await service.deleteOnlineAccount()
+      setUser(null)
+      setRemoteProfile(null)
+      setProfileLoadState('none')
+      setDraft({ displayName: '', favouriteGameId: '' })
+      setConnectConfirmed(false)
+      setEmail('')
+      setCode('')
+      setCodeSent(false)
+      setConfirmDeleteAccount(false)
+      setMessage('Your ZenPlay online account and connected private profile were deleted. Your local profile, games, saves, statistics, settings and accessibility preferences remain on this device.')
+      window.requestAnimationFrame(() => emailInputRef.current?.focus())
+    } catch (cause) {
+      if (cause instanceof AccountSessionError) {
+        try { await service.signOut() } catch { /* Clear this device's account UI even if the session was already invalid. */ }
+        setUser(null)
+        setRemoteProfile(null)
+        setProfileLoadState('none')
+        setEmail('')
+        setCodeSent(false)
+        setCode('')
+        setConfirmDeleteAccount(false)
+        setError('Your session expired before deletion. Sign in again before trying to delete the online account. Your local data is unchanged.')
+      } else {
+        setError('We could not confirm online account deletion. Your local data is unchanged. Check your connection, then sign in again if needed.')
+      }
+    } finally {
+      deleteInProgress.current = false
+      setOperation(null)
+    }
+  }
+
   const busy = operation !== null
 
   return (
@@ -220,7 +264,7 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
 
       {message ? <p role="status" aria-live="polite" className="rounded-lg border border-[var(--zp-border)] p-3">{message}</p> : null}
       {error ? <p id="account-error" role="alert" className="rounded-lg border border-amber-700 p-3">{error}</p> : null}
-      {operation ? <p role="status" aria-live="polite">{operation === 'sending-code' ? 'Sending a code…' : operation === 'verifying-code' ? 'Checking the code…' : operation === 'connecting' ? 'Connecting profile…' : operation === 'updating-profile' ? 'Saving online profile…' : 'Signing out…'}</p> : null}
+      {operation ? <p role="status" aria-live="polite">{operation === 'sending-code' ? 'Sending a code…' : operation === 'verifying-code' ? 'Checking the code…' : operation === 'connecting' ? 'Connecting profile…' : operation === 'updating-profile' ? 'Saving online profile…' : operation === 'deleting-account' ? 'Deleting online account…' : 'Signing out…'}</p> : null}
 
       {authState === 'unconfigured' ? <p>Online accounts are not configured in this build. ZenPlay works normally without them.</p> : null}
 
@@ -241,6 +285,7 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
           <div className="space-y-2">
             <label htmlFor="account-email" className="block font-semibold">Email address</label>
             <input
+              ref={emailInputRef}
               id="account-email"
               type="email"
               name="email"
@@ -348,10 +393,25 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
             </form>
           ) : null}
 
-          <button type="button" className="zen-game-button" disabled={busy} onClick={() => void signOut()}>{operation === 'signing-out' ? 'Signing out…' : 'Sign out on this device'}</button>
-          <p className="text-sm">Remote account deletion is not available yet. Removing your local profile is separate and does not delete this account.</p>
+          <div className="flex flex-wrap gap-3 border-t border-[var(--zp-border)] pt-4">
+            <button type="button" className="zen-game-button" disabled={busy} onClick={() => void signOut()}>{operation === 'signing-out' ? 'Signing out…' : 'Sign out on this device'}</button>
+            <button type="button" className="zen-game-button border border-red-700" disabled={busy || profileLoadState === 'loading'} onClick={() => { setError(''); setConfirmDeleteAccount(true) }}>Delete online account</button>
+          </div>
+          <p className="text-sm">Deleting your online account is permanent. It is separate from removing the local profile on this device.</p>
         </div>
       ) : null}
+
+      {confirmDeleteAccount ? <GameDialog
+        alert
+        title="Delete online account?"
+        description="This permanently deletes your ZenPlay online account and connected private online profile, then signs you out on this device. Your local profile, games, game saves, statistics, settings and accessibility preferences remain on this device. Removing the local profile is a separate action and will not delete the online account."
+        onDismiss={busy ? undefined : () => setConfirmDeleteAccount(false)}
+      >
+        <div className="flex flex-wrap gap-3">
+          <button type="button" className="zen-game-button" disabled={busy} onClick={() => setConfirmDeleteAccount(false)}>Cancel</button>
+          <button type="button" className="zen-game-button border border-red-700" disabled={busy} onClick={() => void deleteOnlineAccount()}>{busy ? 'Deleting account…' : 'Permanently delete account'}</button>
+        </div>
+      </GameDialog> : null}
     </section>
   )
 }

@@ -1,6 +1,6 @@
 begin;
 
-select plan(9);
+select plan(10);
 
 insert into auth.users (id, email)
 values
@@ -64,5 +64,13 @@ select throws_ok(
 );
 
 reset role;
+delete from auth.users
+where id = '10000000-0000-4000-8000-000000000001';
+select is(
+  (select count(*)::integer from public.private_profiles where id = '10000000-0000-4000-8000-000000000001'),
+  0,
+  'deleting the auth user cascades to the private profile'
+);
+
 select * from finish();
 rollback;

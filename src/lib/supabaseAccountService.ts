@@ -3,6 +3,7 @@ import {
   createAccountService,
   type AccountConfiguration,
   type AccountGateway,
+  AccountSessionError,
   type AccountUser,
   type RemotePrivateProfile,
   type RemoteProfileFields,
@@ -15,7 +16,7 @@ const throwIfError = (error: { message: string } | null) => {
   if (error) throw error
 }
 
-const createGateway = (client: SupabaseClient<Database>): AccountGateway => ({
+export const createSupabaseAccountGateway = (client: SupabaseClient<Database>): AccountGateway => ({
   async sendEmailCode(email) {
     const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
     throwIfError(error)
@@ -46,6 +47,30 @@ const createGateway = (client: SupabaseClient<Database>): AccountGateway => ({
     // Each device/browser keeps its own session; signing out here must not revoke other devices.
     const { error } = await client.auth.signOut({ scope: 'local' })
     throwIfError(error)
+  },
+
+  async deleteOnlineAccount() {
+    const { data, error: authError } = await client.auth.getUser()
+    if (authError) {
+      if (
+        authError.name === 'AuthSessionMissingError'
+        || ('status' in authError && (authError.status === 401 || authError.status === 403))
+      ) throw new AccountSessionError()
+      throw authError
+    }
+    if (!data.user) throw new AccountSessionError()
+
+    const { error } = await client.functions.invoke('delete-account', { method: 'POST' })
+    if (error) {
+      const status = error.context instanceof Response ? error.context.status : undefined
+      if (status === 401 || status === 403) throw new AccountSessionError()
+      throw error
+    }
+
+    // The server has confirmed deletion. Clear this browser's persisted session;
+    // Auth deletion does not immediately erase its already-issued JWT.
+    const { error: signOutError } = await client.auth.signOut({ scope: 'local' })
+    throwIfError(signOutError)
   },
 
   async getPrivateProfile(): Promise<RemotePrivateProfile | null> {
@@ -101,5 +126,5 @@ export const createBrowserAccountService = (
       detectSessionInUrl: false,
     },
   })
-  return createGateway(client)
+  return createSupabaseAccountGateway(client)
 })
