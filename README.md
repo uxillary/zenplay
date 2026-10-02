@@ -10,6 +10,8 @@ After the app has loaded successfully and its offline copy is ready, the app and
 
 ## Development
 
+See [infrastructure/README.md](infrastructure/README.md) for the service inventory, configuration boundaries, and production verification checklist.
+
 Use Node.js **20.19+** or **22.12+** (Node.js 24 is also supported). Install dependencies, then run:
 
 ```bash
@@ -27,7 +29,7 @@ The Profile screen also links to a static Support ZenPlay prototype. Its fiction
 
 1. Create a Supabase project and select a region after the privacy/data-location review. Install the Supabase CLI separately (it is not an app dependency).
 2. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. The publishable key is public. Never use a secret/service-role key or database password in a `VITE_` variable.
-3. In Supabase Auth, enable email OTP, set the OTP length to six digits and configure the Magic Link email template to include `{{ .Token }}` so it sends a code. Set the site URL to ZenPlay's canonical URL and allowlist only the required local and production origins. Configure a verified production SMTP sender; the default hosted email service is for development/testing. See Supabase's [email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless), [email delivery](https://supabase.com/docs/guides/auth/auth-smtp), and [redirect URL](https://supabase.com/docs/guides/auth/redirect-urls) guides.
+3. In Supabase Auth, keep the intended email-confirmation policy enabled, set OTP length to six digits and expiry to 600 seconds, then configure **both** Email Templates: **Confirm sign up** and **Magic Link / OTP**. Copy the corresponding repository templates, `supabase/templates/confirmation.html` and `supabase/templates/magic_link.html`, into the dashboard. Both must use `{{ .Token }}` as a six-digit code and must not include `{{ .ConfirmationURL }}`. New accounts use Confirm sign up; existing accounts use Magic Link / OTP. ZenPlay verifies the code in the page and does not depend on a redirect or email link. Set Site URL to ZenPlay's canonical production origin and allowlist only origins actually needed elsewhere. Configure a verified production SMTP sender; the default hosted mail service is for development/testing. See Supabase's [email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless), [email templates](https://supabase.com/docs/guides/auth/auth-email-templates), [email delivery](https://supabase.com/docs/guides/auth/auth-smtp), and [redirect URL](https://supabase.com/docs/guides/auth/redirect-urls) guides.
 4. For local services, start Docker and run `supabase start`. Use the local API URL and publishable key it reports in `.env.local`. Then run `supabase test db` to execute the RLS policy tests. See the current [Supabase CLI workflow](https://supabase.com/docs/guides/local-development/cli-workflows).
 5. To apply the migration to a hosted project, authenticate with `supabase login`, link the project with `supabase link --project-ref <project-ref>`, review `supabase db push --dry-run`, then apply with `supabase db push`. Do not use `db reset --linked` on a production project.
 6. Add the same two `VITE_` values as build-time environment variables in Cloudflare Pages. Restart the Vite dev server after changing `.env.local`.

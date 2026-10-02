@@ -199,6 +199,42 @@ test('browser gateway requires a verified current user and invokes deletion with
   ])
 })
 
+test('the same email-code request supports new and existing accounts without a redirect', async () => {
+  const requests: unknown[] = []
+  const client = {
+    auth: {
+      signInWithOtp: async (request: unknown) => { requests.push(request); return { error: null } },
+    },
+  } as unknown as SupabaseClient<Database>
+  const gateway = createSupabaseAccountGateway(client)
+
+  // Supabase decides whether each email is new or already registered. The app
+  // sends the same OTP-first request in either case and never supplies a URL.
+  await gateway.sendEmailCode('new-player@example.test')
+  await gateway.sendEmailCode('returning-player@example.test')
+
+  assert.deepEqual(requests, [
+    { email: 'new-player@example.test', options: { shouldCreateUser: true } },
+    { email: 'returning-player@example.test', options: { shouldCreateUser: true } },
+  ])
+})
+
+test('six-digit email verification uses Supabase email OTP and returns its signed-in user', async () => {
+  let verification: unknown
+  const client = {
+    auth: {
+      verifyOtp: async (request: unknown) => {
+        verification = request
+        return { data: { user: { id: 'signed-in-user' } }, error: null }
+      },
+    },
+  } as unknown as SupabaseClient<Database>
+  const gateway = createSupabaseAccountGateway(client)
+
+  assert.deepEqual(await gateway.verifyEmailCode('player@example.test', '123456'), { id: 'signed-in-user' })
+  assert.deepEqual(verification, { email: 'player@example.test', token: '123456', type: 'email' })
+})
+
 test('browser gateway does not invoke deletion when the session is invalid', async () => {
   let invoked = false
   const client = {

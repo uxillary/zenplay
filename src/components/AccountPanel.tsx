@@ -2,6 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import type { GameDefinition } from '../app/gameRegistry'
 import type { LocalProfile } from '../lib/localProfile'
 import { AccountSessionError, type AccountUser, type RemotePrivateProfile } from '../lib/accountService'
+import {
+  codeDeliveryGuidance,
+  codeExpiryGuidance,
+  codeRequestFailure,
+  codeRequestStatus,
+  codeVerificationFailure,
+  isEmailCodeResendBlocked,
+  resendGuidance,
+} from '../lib/emailCodeCopy'
 import { createBrowserAccountService } from '../lib/supabaseAccountService'
 import { GameDialog } from './GameDialog'
 
@@ -29,6 +38,7 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
   const [code, setCode] = useState('')
   const [codeSent, setCodeSent] = useState(false)
   const [resendSeconds, setResendSeconds] = useState(0)
+  const [resendEmail, setResendEmail] = useState('')
   const [remoteProfile, setRemoteProfile] = useState<RemotePrivateProfile | null>(null)
   const [profileLoadState, setProfileLoadState] = useState<ProfileLoadState>('none')
   const [draft, setDraft] = useState({ displayName: '', favouriteGameId: '' })
@@ -46,6 +56,7 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
   const localDisplayName = localProfile?.displayName ?? ''
   const localFavouriteGameId = localProfile?.favouriteGameId ?? ''
   const currentRemoteProfile = remoteProfile?.id === accountUserId ? remoteProfile : null
+  const resendBlocked = isEmailCodeResendBlocked(email, resendEmail, resendSeconds)
 
   const setUser = useCallback((user: AccountUser | null) => {
     setAccountUser(user)
@@ -132,7 +143,7 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
   }, [resendSeconds])
 
   const sendCode = async () => {
-    if (sendInProgress.current || resendSeconds > 0) return
+    if (sendInProgress.current || resendBlocked) return
     sendInProgress.current = true
     setError('')
     setMessage('')
@@ -142,11 +153,13 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
       setCodeSent(true)
       setCode('')
       setResendSeconds(60)
-      setMessage('If this address can receive ZenPlay email, a one-time code should arrive shortly.')
+      setResendEmail(email)
+      setMessage(codeRequestStatus(email))
       window.requestAnimationFrame(() => codeInputRef.current?.focus())
     } catch {
       setResendSeconds(60)
-      setError('We could not send a code right now. Check the address and wait a moment before trying again.')
+      setResendEmail(email)
+      setError(codeRequestFailure)
     } finally {
       sendInProgress.current = false
       setOperation(null)
@@ -168,9 +181,9 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
       setUser(user)
       setCodeSent(false)
       setCode('')
-      setMessage('Your ZenPlay account is connected on this device.')
+      setMessage("You're signed in to ZenPlay.")
     } catch {
-      setError('We could not verify that code. Check it and try again.')
+      setError(codeVerificationFailure)
     } finally {
       setOperation(null)
     }
@@ -255,6 +268,15 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
     }
   }
 
+  const useDifferentEmail = () => {
+    setEmail('')
+    setCodeSent(false)
+    setCode('')
+    setError('')
+    setMessage('')
+    window.requestAnimationFrame(() => emailInputRef.current?.focus())
+  }
+
   const busy = operation !== null
 
   return (
@@ -264,7 +286,7 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
 
       {message ? <p role="status" aria-live="polite" className="rounded-lg border border-[var(--zp-border)] p-3">{message}</p> : null}
       {error ? <p id="account-error" role="alert" className="rounded-lg border border-amber-700 p-3">{error}</p> : null}
-      {operation ? <p role="status" aria-live="polite">{operation === 'sending-code' ? 'Sending a code…' : operation === 'verifying-code' ? 'Checking the code…' : operation === 'connecting' ? 'Connecting profile…' : operation === 'updating-profile' ? 'Saving online profile…' : operation === 'deleting-account' ? 'Deleting online account…' : 'Signing out…'}</p> : null}
+      {operation ? <p role="status" aria-live="polite">{operation === 'sending-code' ? 'Requesting sign-in email…' : operation === 'verifying-code' ? 'Signing you in…' : operation === 'connecting' ? 'Connecting profile…' : operation === 'updating-profile' ? 'Saving online profile…' : operation === 'deleting-account' ? 'Deleting online account…' : 'Signing out…'}</p> : null}
 
       {authState === 'unconfigured' ? <p>Online accounts are not configured in this build. ZenPlay works normally without them.</p> : null}
 
@@ -298,13 +320,18 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
               aria-invalid={Boolean(error)}
             />
           </div>
-            <button type="submit" className="zen-game-button zen-game-button--primary" disabled={busy || resendSeconds > 0}>{resendSeconds > 0 ? `Send a sign-in code in ${resendSeconds}s` : 'Send a sign-in code'}</button>
+            <button type="submit" className="zen-game-button zen-game-button--primary" disabled={busy || resendBlocked}>{busy ? 'Requesting sign-in email…' : 'Email me a sign-in code'}</button>
+            {resendBlocked ? <p className="text-sm">{resendGuidance(true)}</p> : null}
         </form>
       ) : (
         <form className="space-y-3" onSubmit={(event) => void verifyCode(event)}>
-          <p>Enter the one-time code sent to <span className="font-semibold">{email}</span>.</p>
+          <div className="space-y-2 rounded-lg border border-[var(--zp-border)] p-3">
+            <h3 className="text-lg font-semibold">Check your email</h3>
+            <p>{codeDeliveryGuidance(email)}</p>
+            <p className="text-sm">{codeExpiryGuidance}</p>
+          </div>
           <div className="space-y-2">
-            <label htmlFor="account-code" className="block font-semibold">Six-digit sign-in code</label>
+            <label htmlFor="account-code" className="block text-lg font-semibold">Six-digit sign-in code</label>
             <input
               ref={codeInputRef}
               id="account-code"
@@ -318,15 +345,16 @@ export const AccountPanel = ({ localProfile, games }: Props) => {
               value={code}
               onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
               className="w-full min-w-0 rounded-lg border border-current bg-transparent p-3"
-              aria-describedby={error ? 'account-error' : 'account-code-help'}
+              aria-describedby={error ? 'account-error account-code-help account-resend-help' : 'account-code-help account-resend-help'}
               aria-invalid={Boolean(error)}
             />
-            <p id="account-code-help" className="text-sm">The code is used only to sign in and is not saved by ZenPlay.</p>
+            <p id="account-code-help" className="text-sm">Enter the newest code you received. ZenPlay does not save it.</p>
+            <p id="account-resend-help" className="text-sm" aria-live="polite">{resendGuidance(resendBlocked)}</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button type="submit" className="zen-game-button zen-game-button--primary" disabled={busy || code.length !== 6}>{operation === 'verifying-code' ? 'Checking code…' : 'Verify code'}</button>
-            <button type="button" className="zen-game-button" disabled={busy || resendSeconds > 0} onClick={() => void sendCode()}>{resendSeconds > 0 ? `Send another code in ${resendSeconds}s` : 'Send another code'}</button>
-            <button type="button" className="zen-game-button" disabled={busy} onClick={() => { setCodeSent(false); setCode(''); setError(''); setMessage('') }}>Use a different email</button>
+            <button type="submit" className="zen-game-button zen-game-button--primary" disabled={busy || code.length !== 6}>{operation === 'verifying-code' ? 'Signing you in…' : 'Verify code and sign in'}</button>
+            <button type="button" className="zen-game-button" disabled={busy || resendBlocked} onClick={() => void sendCode()}>Send another email</button>
+            <button type="button" className="zen-game-button" disabled={busy} onClick={useDifferentEmail}>Use a different email</button>
           </div>
         </form>
       ) : null}
