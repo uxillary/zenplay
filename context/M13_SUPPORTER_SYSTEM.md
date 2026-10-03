@@ -1,10 +1,12 @@
 # M13 — Supporter System
 
-**Status:** M13E account/profile implementation and hosted authentication are reported complete by the owner. M16B account lifecycle work, including production deployment and disposable-account verification of self-service online deletion, is complete. Payments, Stars, entitlements, cosmetics, and public supporter profiles remain unimplemented; payment-linked account lifecycle work belongs to that future scope.
-**Scope:** optional profiles, lifetime support recognition, cosmetic entitlements, and a privacy-first supporter spotlight.
-**Working name:** ZenPlay Stars. The name and all example thresholds are provisional.
+> **Current product direction:** M17A.1 in [`M17A1_SUPPORTER_PROGRESSION_DIRECTION.md`](M17A1_SUPPORTER_PROGRESSION_DIRECTION.md) supersedes conflicting M13/M17A supporter-product recommendations, including prototype Stars thresholds, cosmetics ladders, and spotlight ranking ideas. M13 remains the history and implementation record for the optional profile foundation. Its supporter screens/data are fictional prototypes; they do not approve prices, a spendable Stars balance, public visibility, purchases, or entitlements. Preserve M17A's server-verified payment security architecture as described in M17A.1.
 
-**M17A update (3 October 2026):** M13 is historical proposal/context, not approval for implementation. The discovery recommendation is in [M17A Supporter Monetisation and Payment Architecture](M17A_SUPPORTER_PAYMENT_ARCHITECTURE.md). It recommends one-off support only for an initial release, account-linked restoration, no launch Stars, no public spotlight, and a provisional Paddle evaluation. M13 example amounts, thresholds, milestone rewards, spotlight mechanics, and cosmetic concepts remain illustrative; do not treat them as approved product or pricing decisions. Existing M16B account deletion has no payment-aware retention behavior yet.
+**Status:** M13E account/profile implementation and hosted authentication are reported complete by the owner. M16B account lifecycle work, including production deployment and disposable-account verification of self-service online deletion, is complete. Payments, Stars, entitlements, cosmetics, and public supporter profiles remain unimplemented; payment-linked account lifecycle work belongs to that future scope.
+**Historical scope:** optional profiles, lifetime support recognition, cosmetic entitlements, and a privacy-first supporter spotlight.
+**Historical working name:** ZenPlay Stars. The name and all example thresholds are provisional and superseded by M17A.1; they do not define a currency or approved progression.
+
+**M17A update (3 October 2026):** M13 is historical proposal/context, not approval for implementation. See [M17A Supporter Monetisation and Payment Architecture](M17A_SUPPORTER_PAYMENT_ARCHITECTURE.md) for payment-security discovery and [M17A.1 Supporter Progression and Collectibles Product Direction](M17A1_SUPPORTER_PROGRESSION_DIRECTION.md) for current product direction. M17A.1 supersedes conflicting M17A recommendations about no Stars/cosmetics and provisional Paddle preference. M13 example amounts, thresholds, rewards, spotlight mechanics, and cosmetic concepts remain illustrative and unapproved. Existing M16B account deletion has no payment-aware retention behavior yet.
 
 ## Purpose and current state
 
