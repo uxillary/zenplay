@@ -1,8 +1,10 @@
 # M13 — Supporter System
 
-**Status:** M13E account/profile implementation and hosted authentication are reported complete by the owner. M16B-B self-service online account deletion is implemented in the repository; Edge Function deployment and hosted deletion verification remain owner actions. Payments, Stars, entitlements, cosmetics, and public supporter profiles remain unimplemented.
+**Status:** M13E account/profile implementation and hosted authentication are reported complete by the owner. M16B account lifecycle work, including production deployment and disposable-account verification of self-service online deletion, is complete. Payments, Stars, entitlements, cosmetics, and public supporter profiles remain unimplemented; payment-linked account lifecycle work belongs to that future scope.
 **Scope:** optional profiles, lifetime support recognition, cosmetic entitlements, and a privacy-first supporter spotlight.
 **Working name:** ZenPlay Stars. The name and all example thresholds are provisional.
+
+**M17A update (3 October 2026):** M13 is historical proposal/context, not approval for implementation. The discovery recommendation is in [M17A Supporter Monetisation and Payment Architecture](M17A_SUPPORTER_PAYMENT_ARCHITECTURE.md). It recommends one-off support only for an initial release, account-linked restoration, no launch Stars, no public spotlight, and a provisional Paddle evaluation. M13 example amounts, thresholds, milestone rewards, spotlight mechanics, and cosmetic concepts remain illustrative; do not treat them as approved product or pricing decisions. Existing M16B account deletion has no payment-aware retention behavior yet.
 
 ## Purpose and current state
 
@@ -234,7 +236,7 @@ The signed-in Account panel offers a distinct **Delete online account** action w
 
 On confirmed success, the browser clears its own persisted Auth session and remote profile UI. Local profile, games, saves, progress, statistics, settings, and accessibility preferences are not read or modified by the deletion path. Removing a local profile remains a separate action. CORS is allowlisted for `https://playadfree.games`, `http://localhost:5173`, and `http://127.0.0.1:5173`; valid authentication remains mandatory.
 
-The hosted Supabase Edge Function has not been deployed or used to delete an account. No manual admin/service-role secret is required for deployment: Supabase injects `SUPABASE_SECRET_KEYS` for Edge Functions. Deploy the function to the intended project, then perform the end-to-end verification only with a disposable account. No hosted deletion has been verified by this repository change. Account export and full recovery/lifecycle support remain open. Payment cancellation, entitlement revocation, customer-reference treatment, and legally required transaction retention remain deferred until supporter payments exist and their retention policy is defined.
+**Production verification: COMPLETE (owner-reported).** The `delete-account` Edge Function is deployed and was tested with a disposable account. The Auth user and associated `private_profiles` row were removed, ZenPlay returned to signed-out state, local profile/game/save/statistics/settings/accessibility data remained intact, and no privileged Supabase credential is exposed to the browser. No manual admin/service-role secret is required for deployment: Supabase injects `SUPABASE_SECRET_KEYS` for Edge Functions. Account export and full recovery/lifecycle support remain open. Payment cancellation, entitlement revocation, customer-reference treatment, and legally required transaction retention remain deferred until supporter payments exist and their retention policy is defined.
 
 ### Owner action required
 
@@ -242,7 +244,7 @@ The hosted Supabase Edge Function has not been deployed or used to delete an acc
 - Put the project URL and publishable key in local `.env.local` and the Cloudflare Pages build environment. The publishable key is expected to be public; never use a secret/service-role key or database password in the browser.
 - Set the Auth Site URL to ZenPlay's canonical production origin; allowlist only origins required by redirect-based flows. Keep the desired email-confirmation policy enabled, set a six-digit code, 600-second expiry and resend limit, and configure both **Confirm sign up** and **Magic Link / OTP** templates to use `{{ .Token }}` without `{{ .ConfirmationURL }}`. Set up verified production SMTP. The current typed-code flow does not depend on Site URL redirects.
 - The hosted migration and database-level RLS test are verified for the development project. For future schema changes, use the repository migration files and linked Supabase CLI workflow; local Docker is not required for remote `db push`.
-- Production OTP, account sign-in/sign-out, session persistence, and an explicitly connected profile are reported tested by the owner. The current issue is new-account template consistency: check both hosted templates before further disposable-account tests. Do not claim the repository changed or verified hosted settings.
+- Production OTP is verified by the owner for new and returning accounts using the same six-digit in-app code flow. Sign-in, sign-out, repeat sign-in, and explicit private-profile connection are also verified. Both hosted templates are configured for the typed-code flow; retain the corresponding templates when changing Auth email settings.
 
 ### Eventual payments requirements (not implementation or provider selection)
 
