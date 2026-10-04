@@ -17,6 +17,7 @@ Run only after a production change, against the intended production resources. C
 - [ ] Confirm hosted Auth Site URL, allowed redirect URLs, signup/confirmation policy, OTP length/expiry/resend limits, both email templates, and verified production SMTP sender match the intended configuration. The current typed-code flow should not require a redirect callback.
 - [ ] Read, create, and update a private profile as its owner. Verify a different authenticated user cannot read or modify it, and anonymous access is denied (RLS).
 - [ ] Confirm the intended migration is present in the target database; compare migration history before any `supabase db push`.
+- [ ] For payment rollout only after M17C-B approval: verify payment-ledger RLS and pgTAP checks in the intended project; confirm the Stripe Edge Function secrets and test Price mappings without exposing values; do not test live charges during test-mode setup.
 - [ ] Confirm the `delete-account` Edge Function is deployed to the intended project. With a disposable account, verify unauthenticated calls fail, authenticated self-deletion succeeds, the local browser session clears, and the user's auth/profile data is removed as expected.
 - [ ] Verify allowed production CORS origin is the canonical site and unexpected origins are rejected.
 

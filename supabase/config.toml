@@ -1,5 +1,8 @@
 project_id = "zenplay"
 
+[functions.stripe-support-webhook]
+verify_jwt = false
+
 [api]
 enabled = true
 port = 54321
