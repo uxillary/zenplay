@@ -1532,7 +1532,7 @@ The Mahjong milestone retains the M13 number in the main product roadmap. The su
 
 The supporter/account foundation from that separate track is present in this integration branch. It provides optional local profiles, optional Supabase email-code authentication, and an explicitly connected private remote profile containing only display name and favourite game. Game saves, statistics, settings, and local profile IDs remain local. The fictional supporter experience remains a clearly labelled prototype. There are no payments, verified supporter status, Stars ledger, entitlements, public profiles, or cloud gameplay sync. Live Supabase configuration and hosted verification have not been performed.
 
-The design, threat review, implementation history, and outstanding owner gates remain documented in [`M13_SUPPORTER_SYSTEM.md`](M13_SUPPORTER_SYSTEM.md). Any future production account work requires review of those gates; payment and public-profile proposals remain unimplemented and require separate authorization.
+The design, threat review, implementation history, and current owner decisions are documented in [`M13_SUPPORTER_SYSTEM.md`](M13_SUPPORTER_SYSTEM.md) and [M17A.2 Supporter Monetisation Decisions](M17A2_SUPPORTER_MONETISATION_DECISIONS.md). Payments and public-profile proposals remain unimplemented and require their separate milestones and launch gates. The next supporter implementation/design milestone is **M17C — Stripe Payment Ledger & Trust Boundary**; it does not include Aura visuals or progression-algorithm implementation.
 
 ---
 

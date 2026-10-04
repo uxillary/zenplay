@@ -2,6 +2,8 @@
 
 **Status:** Discovery recommendation; no provider account, product, price, schema, payment code, or deployment is created by this milestone. Provider facts checked against official documentation on 3 October 2026; commercial acceptance, exact fees, payout eligibility, and legal treatment must be confirmed before implementation.
 
+> **Superseded owner decisions:** [M17A.2](M17A2_SUPPORTER_MONETISATION_DECISIONS.md) selects Stripe and £2 / £5 / £10 one-off offers, and names the supporter identity Aura. M17A remains security/payment architecture research; its conditional product recommendations and open provider/pricing conclusions are historical. Current Stripe acceptance and legal/provider checks remain necessary.
+
 ## Decision summary
 
 - Keep all seven games free, account-optional for play, offline-capable, ad-free, and fully accessible.

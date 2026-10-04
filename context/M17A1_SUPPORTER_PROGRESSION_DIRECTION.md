@@ -1,6 +1,6 @@
 # M17A.1 — Supporter Progression and Collectibles Product Direction
 
-**Status:** Product direction for future discovery; not an implementation approval. No prices, provider, progression formula, reward catalog, public profile, leaderboard, data model, migration, account, or deployment is approved by this document. This document supersedes conflicting M17A product recommendations while preserving its payment-security architecture and provider research. M17A remains useful historical discovery; this addendum is the current product direction. See [M17B Commercial Model and Provider Decision](M17B_COMMERCIAL_MODEL_PROVIDER_DECISION.md) for the later commercial research and conditional provider recommendation; M17B leaves the exact provider and prices open pending written terms and owner decisions.
+**Status:** Historical product direction, superseded where it conflicts with [M17A.2 Supporter Monetisation Decisions](M17A2_SUPPORTER_MONETISATION_DECISIONS.md). M17A.2 is the authoritative owner decision record for Aura naming/progression, Stripe selection, prices, reversals, and future community direction. This document remains useful for research and design context; it is not implementation approval.
 
 ## Direction summary
 
@@ -82,8 +82,8 @@ This is a bounded proposal; each implementation milestone needs its own approval
 
 | Milestone | Scope and gate |
 | --- | --- |
-| **M17B — Commercial and provider decision (completed as research)** | See [M17B_COMMERCIAL_MODEL_PROVIDER_DECISION.md](M17B_COMMERCIAL_MODEL_PROVIDER_DECISION.md). Model low-price economics, provider/operator burden, and consumer/policy gates. Provider, prices and legal decisions remain open; no implementation. |
-| **M17C — Payment ledger and trust boundary** | Design and implement server-created checkout intents, immutable/idempotent financial events, verified webhooks, reconciliation, account binding/deletion retention, and private read path, gated by approved provider and terms. |
+| **M17B — Commercial and provider decision (research history)** | See [M17B_COMMERCIAL_MODEL_PROVIDER_DECISION.md](M17B_COMMERCIAL_MODEL_PROVIDER_DECISION.md), with owner decisions and supersessions recorded in [M17A.2](M17A2_SUPPORTER_MONETISATION_DECISIONS.md). |
+| **M17C — Stripe Payment Ledger & Trust Boundary** | Follow the bounded M17A.2 handoff: server-created Stripe Checkout sessions, account binding, £2 / £5 / £10 offers, verified/idempotent provider-event ingestion, auditable events, server-derived payment state and reversal representation. Do not invent Aura grant values or implement Aura visuals/progression algorithm without separate approval. |
 | **M17D — Support progression rules** | Define deterministic progression inputs, thresholds/form evolution, source separation, reversals, restore, and accessible private display. No broad cosmetics catalog. |
 | **M17E — Collectibles and entitlement grants** | Define reason/source-aware grants, ownership, revocation/recalculation, equip state, compatibility and privacy. Include gameplay/achievement sources in the model; no payment-only assumption. |
 | **M17F — Supporter UX and deterministic reward reveal** | Build the approved one-off support journey, pending/verified/refund states, reward reveal for predetermined earned rewards, and a small reviewed set of benefits. No public surfaces or paid randomness. |

@@ -2,6 +2,8 @@
 
 **Status:** Research and recommendation, not implementation approval. No provider has approved ZenPlay's offer, no provider or product/account exists, and no live prices are selected. Reviewed **3 October 2026** using current official provider, UK government/legislation, and Valve documentation. Fees and terms can change; exact seller-specific quotes and legal/accounting treatment remain to be confirmed.
 
+> **Superseded owner decisions:** [M17A.2](M17A2_SUPPORTER_MONETISATION_DECISIONS.md) selects Stripe for initial web payments and sets £2 / £5 / £10 one-off offers. This M17B document remains historical commercial/provider research; its conditional Paddle recommendation, provider uncertainty, and proposed price research range are not current decisions. Stripe/provider acceptance and legal/accounting verification remain launch gates.
+
 ## Executive recommendation
 
 Proceed to implementation planning only after the owner accepts the commercial and legal gates below. For a first monetised release, prefer **a hosted Merchant of Record (MoR), conditionally Paddle**, if Paddle confirms in writing that the one-off support purchase tied to deterministic digital cosmetics fits its product and seller policies and provides an acceptable low-price fee/payout offer. Its currently documented GBP minimum of £0.55 supports all modeled price points, but its standard fee has a fixed US$0.50 component (about £0.38 at an illustrative £1=$1.32, before any FX spread), which is costly below £3.99.
@@ -192,7 +194,7 @@ This contains more than a private badge while avoiding a community launch. If re
 | Milestone | Bounded objective / gate |
 |---|---|
 | **M17B — Commercial decision (this document)** | Provider classification/approval and pricing quote, one-off offer/reward definition, UK consumer/privacy/tax/accounting gates. No implementation. |
-| **M17C — Financial ledger and account lifecycle design** | Design schema, event invariants, deletion/retention process, reconciliation and support operations; owner review before migration. |
+| **M17C — Stripe Payment Ledger & Trust Boundary** | Follow the authoritative [M17A.2 handoff](M17A2_SUPPORTER_MONETISATION_DECISIONS.md): server-created Stripe Checkout sessions, account binding, £2 / £5 / £10 one-off offers, verified/idempotent provider events, auditable payment events, derived payment state, and refund/reversal/dispute representation. Legal/provider gates and unresolved owner decisions remain open; no Aura visuals or progression algorithm absent separate approval. |
 | **M17D — Provider sandbox adapter and authenticated checkout intent** | One provider sandbox, server-defined offers, account binding, hosted checkout and return/pending flow. No live prices/product. |
 | **M17E — Webhook ledger, refunds and disputes** | Signature verification, idempotency, out-of-order/replay reconciliation, immutable successes/refunds/disputes/reversals; no cosmetic grant until validated. |
 | **M17F — Progression and deterministic entitlement rules** | Versioned offer-to-units mapping, emblem stages, source/reason grants and reversal behavior; private server-derived state only. |
