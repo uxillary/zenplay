@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createAppHistoryState, readAppNavigation, type AppNavigation } from './navigation.ts'
+import { FLAGS_GAME } from '../games/flags/game.ts'
 
 const gameIds = new Set(['solitaire', 'mahjong'])
 
@@ -20,4 +21,9 @@ test('adds ZenPlay navigation without discarding other history state', () => {
     otherFeature: 4,
     zenplayNavigation: navigation,
   })
+})
+
+test('Flags is available in the shared game registry and accepted by history navigation', () => {
+  assert.equal(FLAGS_GAME.name, 'Flags')
+  assert.deepEqual(readAppNavigation({ zenplayNavigation: { screen: 'game', gameId: 'flags' } }, new Set([...gameIds, FLAGS_GAME.id])), { screen: 'game', gameId: 'flags' })
 })

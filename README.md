@@ -1,12 +1,12 @@
 # ZenPlay
 
-ZenPlay is a calm collection of seven familiar games: Solitaire, Sudoku, Pairs, Word Search, Noughts & Crosses, Fifteen Puzzle, and Mahjong Solitaire. There are no adverts or tracking, and an account is optional. Accessibility settings include larger text and game pieces, high contrast, reduced motion, and Simple Mode.
+ZenPlay is a calm collection of familiar games: Solitaire, Sudoku, Pairs, Word Search, Noughts & Crosses, Fifteen Puzzle, Mahjong Solitaire, and Flags. There are no adverts or tracking, and an account is optional. Accessibility settings include larger text and game pieces, high contrast, reduced motion, and Simple Mode.
 
 ## Install and offline play
 
 Use **Install ZenPlay** when your browser offers it, or follow the browser-specific instructions in the app. On iPhone and iPad, open ZenPlay in Safari, tap **Share**, then **Add to Home Screen**.
 
-After the app has loaded successfully and its offline copy is ready, the app and all seven games work without a network connection. Saved games, statistics, local profiles, and accessibility settings stay on this device. Optional account features require a connection and never block play. A new version waits for you to choose **Update now**; it does not refresh an active game automatically.
+After the app has loaded successfully and its offline copy is ready, the app and all games work without a network connection. Saved games, statistics, local profiles, and accessibility settings stay on this device. Optional account features require a connection and never block play. A new version waits for you to choose **Update now**; it does not refresh an active game automatically.
 
 ## Development
 

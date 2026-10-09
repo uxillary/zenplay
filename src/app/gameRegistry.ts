@@ -4,9 +4,10 @@ import { hasResumablePairsSave } from '../games/pairs/save'
 import { hasResumableWordSearchSave } from '../games/wordSearch/save'
 import { hasResumableFifteenSave } from '../games/fifteen/save'
 import { hasResumableMahjongSave } from '../games/mahjong/save'
+import { FLAGS_GAME } from '../games/flags/game'
 import type { ContinueAvailability } from '../persistence/gameSave'
 
-export type GameId = 'solitaire' | 'sudoku' | 'pairs' | 'word-search' | 'noughts-crosses' | 'fifteen' | 'mahjong'
+export type GameId = 'solitaire' | 'sudoku' | 'pairs' | 'word-search' | 'noughts-crosses' | 'fifteen' | 'mahjong' | 'flags'
 
 export type GameDefinition = {
   id: GameId
@@ -79,5 +80,10 @@ export const games: readonly GameDefinition[] = [
     target: '/games/mahjong',
     supportsContinue: true,
     getContinueAvailability: hasResumableMahjongSave,
+  },
+  {
+    ...FLAGS_GAME,
+    status: 'available',
+    target: '/games/flags',
   },
 ]

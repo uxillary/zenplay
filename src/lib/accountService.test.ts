@@ -102,11 +102,15 @@ test('unsupported local favourite IDs are omitted from the remote profile', () =
   })
 })
 
-test('the current seven-game catalogue supports Mahjong as a remote favourite', () => {
-  const gameIds = ['solitaire', 'sudoku', 'pairs', 'word-search', 'noughts-crosses', 'fifteen', 'mahjong']
+test('the current eight-game catalogue supports Flags and Mahjong as remote favourites', () => {
+  const gameIds = ['solitaire', 'sudoku', 'pairs', 'word-search', 'noughts-crosses', 'fifteen', 'mahjong', 'flags']
   assert.deepEqual(prepareRemoteProfileFields({ displayName: 'Ada', favouriteGameId: 'mahjong' }, gameIds), {
     display_name: 'Ada',
     favourite_game_id: 'mahjong',
+  })
+  assert.deepEqual(prepareRemoteProfileFields({ displayName: 'Ada', favouriteGameId: 'flags' }, gameIds), {
+    display_name: 'Ada',
+    favourite_game_id: 'flags',
   })
 })
 

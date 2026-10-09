@@ -16,6 +16,7 @@ import { WordSearchScreen } from '../games/wordSearch/ui/WordSearchScreen'
 import { NoughtsCrossesScreen } from '../games/noughtsCrosses/ui/NoughtsCrossesScreen'
 import { FifteenScreen } from '../games/fifteen/ui/FifteenScreen'
 import { MahjongScreen } from '../games/mahjong/ui/MahjongScreen'
+import { FlagsScreen } from '../games/flags/ui/FlagsScreen'
 import { getInstallExperience, isStandaloneMode } from '../lib/pwa'
 import { createAppHistoryState, readAppNavigation, type AppNavigation, type AppScreen } from './navigation'
 
@@ -217,6 +218,7 @@ const Application = () => {
             {selectedGame.id === 'noughts-crosses' ? <NoughtsCrossesScreen settings={effectiveSettings} onBack={returnHome} /> : null}
             {selectedGame.id === 'fifteen' ? <FifteenScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateFifteenSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
             {selectedGame.id === 'mahjong' ? <MahjongScreen settings={effectiveSettings} onSaveAvailabilityChange={updateMahjongSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+            {selectedGame.id === 'flags' ? <FlagsScreen onBack={returnHome} /> : null}
           </GameShell>
         ) : null}
 

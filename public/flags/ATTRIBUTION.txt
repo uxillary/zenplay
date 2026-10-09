@@ -1,0 +1,3 @@
+Flag artwork source: svg-country-flags v1.2.10
+Repository: https://github.com/hampusborgos/country-flags
+The source README states that its flag designs are public domain; the npm package metadata uses license "PD". The source notes artwork was taken from Wikimedia Commons and cautions that national flag use may have other restrictions. ZenPlay includes only the 195 country SVGs matching its ISO alpha-2 dataset, with this attribution notice retained for provenance. No source CSS, JavaScript, or runtime dependency is included.

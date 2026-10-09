@@ -137,6 +137,71 @@ main.zen-app-frame {
 .zen-game-card--sudoku { --zen-card-accent: #657a89; }
 .zen-game-card--pairs { --zen-card-accent: #9b7447; }
 .zen-game-card--wordsearch { --zen-card-accent: #7b8453; }
+.zen-game-card--flags { --zen-card-accent: #537b83; }
+
+.flags-screen__progress {
+  width: fit-content;
+  margin: 0 auto;
+  border: 1px solid var(--zp-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  color: var(--zp-muted);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.flags-setup__options { display: grid; gap: 0.5rem; }
+.flags-setup__options--mode { grid-template-columns: minmax(0, 1fr); }
+.flags-setup__options--region { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.flags-setup__options .zen-choice-button { min-height: 3.5rem; overflow-wrap: anywhere; }
+.flags-setup__options .flags-setup__mode-option { min-height: 4.75rem; align-items: flex-start; flex-direction: column; gap: 0.2rem; text-align: left; }
+.flags-setup__mode-description { font-size: 0.9rem; font-weight: 400; line-height: 1.3; }
+.flags-setup__mode-option.is-selected .flags-setup__mode-description { font-weight: 400; }
+@media (min-width: 40rem) { .flags-setup__options--mode { grid-template-columns: repeat(3, minmax(0, 1fr)); } .flags-setup__options--region { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.flags-reverse-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.flags-reverse-choice { display: block; width: 100%; min-width: 0; border: 2px solid var(--zp-border); border-radius: 1rem; padding: 0; background: transparent; color: var(--zp-text); text-align: center; }
+.flags-reverse-choice__card { display: grid; min-height: 10rem; width: 100%; place-items: center; align-content: center; gap: 0.35rem; border-radius: 0.85rem; background: var(--zp-panel-alt); padding: 0.65rem; }
+.flags-reverse-choice__card img { display: block; width: 100%; height: clamp(4.5rem, 19vw, 7rem); object-fit: contain; }
+.flags-reverse-choice__status { min-height: 1.3em; font-size: 0.85rem; font-weight: 700; line-height: 1.25; }
+.flags-reverse-choice.is-selected { border-color: #8a3434; background: #fff0f0; }
+.flags-reverse-choice.is-correct { border-color: #286044; background: #edf7ee; }
+.dark .flags-reverse-choice__card { background: #fff; }
+.dark .flags-reverse-choice.is-selected { border-color: #fca5a5; background: #542f32; }
+.dark .flags-reverse-choice.is-correct { border-color: #86efac; background: #263e30; }
+.high-contrast .flags-reverse-choice.is-selected,
+.high-contrast .flags-reverse-choice.is-correct { outline: 2px solid currentColor; outline-offset: 2px; text-decoration: underline; }
+
+.flags-flag-card {
+  display: grid;
+  width: 100%;
+  min-height: clamp(11rem, 46vw, 18rem);
+  place-items: center;
+  border: 1px solid var(--zp-border);
+  border-radius: 1rem;
+  background: var(--zp-panel-alt);
+  padding: clamp(1rem, 4vw, 1.75rem);
+}
+
+.flags-flag-card__image {
+  display: block;
+  width: min(100%, 27rem);
+  max-height: 17rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.16));
+}
+
+.dark .flags-flag-card { background: #fff; }
+.flags-screen__choice-label { display: block; min-width: 0; overflow-wrap: anywhere; }
+.flags-screen__choice-state { font-weight: 700; }
+.flags-screen__choice { min-height: 3.5rem; align-items: flex-start; justify-content: flex-start; }
+.zen-choice-button.flags-screen__choice.is-selected { border-color: #8a3434; background: #fff0f0; text-decoration: underline; text-underline-offset: 0.2em; }
+.zen-choice-button.flags-screen__choice.is-correct { border-color: #286044; background: #edf7ee; }
+.flags-screen__feedback { min-height: 1.5em; font-size: 1.05rem; }
+.dark .zen-choice-button.flags-screen__choice.is-selected { border-color: #fca5a5; background: #542f32; }
+.dark .zen-choice-button.flags-screen__choice.is-correct { border-color: #86efac; background: #263e30; }
+.high-contrast .zen-choice-button.flags-screen__choice.is-selected,
+.high-contrast .zen-choice-button.flags-screen__choice.is-correct { outline: 2px solid currentColor; outline-offset: 2px; text-decoration: underline; }
 
 .zen-game-card__open {
   width: 100%;

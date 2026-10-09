@@ -8,6 +8,7 @@ const gameMotif: Record<GameDefinition['id'], string> = {
   'noughts-crosses': '×  ○  ×',
   fifteen: '1  2  3  4',
   mahjong: '🀙  🀐  🀀',
+  flags: '⚑  ⚑  ⚑',
 }
 
 type Props = {
