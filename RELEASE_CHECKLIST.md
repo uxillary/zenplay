@@ -48,6 +48,15 @@ Complete the manual and release items against the production build and deploymen
 - [ ] Actual offline runtime — **NOT VERIFIED**; build precache coverage does not verify browser service-worker operation.
 - [ ] Owner selects Afghanistan representation before labeling or changing that asset.
 
+## M18G Flags performance and loading
+
+- [x] All eight game screens now load on demand; the initial entry fell from 599.07 kB to 473.40 kB raw (gzip 173.56 to 137.90 kB). See [M18G performance audit](context/M18G_FLAGS_PERFORMANCE_LOADING_AUDIT.md).
+- [x] Accessible pending/error states and regression guard added; route/history behavior was left unchanged.
+- [x] Production build precaches all 195 flag SVGs and all application JavaScript chunks (221 entries total).
+- [ ] Browser Back/Forward during delayed or failed game-chunk loading — **NOT VERIFIED**.
+- [ ] Actual installed offline launch and Classic, Practice, and Reverse play — **NOT VERIFIED**; the build manifest alone does not prove runtime offline operation.
+- [ ] Lower-powered mobile and network-waterfall profiling — **NOT VERIFIED**.
+
 ## Local production preview review
 
 - [x] Home, Settings, and install instructions reviewed

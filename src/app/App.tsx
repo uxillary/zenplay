@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { registerSW } from 'virtual:pwa-register'
 import { AccessibilityProvider } from './AccessibilityProvider'
 import { useAccessibility } from './accessibilityContext'
@@ -9,16 +9,33 @@ import { SettingsPanel } from '../components/SettingsPanel'
 import { ProfilePanel } from '../components/ProfilePanel'
 import { LocalDataPanel } from '../components/LocalDataPanel'
 import { SupportZenPlayPanel } from '../components/SupporterExperience'
-import { SolitaireScreen } from '../games/solitaire/ui/SolitaireScreen'
-import { SudokuScreen } from '../games/sudoku/ui/SudokuScreen'
-import { PairsScreen } from '../games/pairs/ui/PairsScreen'
-import { WordSearchScreen } from '../games/wordSearch/ui/WordSearchScreen'
-import { NoughtsCrossesScreen } from '../games/noughtsCrosses/ui/NoughtsCrossesScreen'
-import { FifteenScreen } from '../games/fifteen/ui/FifteenScreen'
-import { MahjongScreen } from '../games/mahjong/ui/MahjongScreen'
-import { FlagsScreen } from '../games/flags/ui/FlagsScreen'
 import { getInstallExperience, isStandaloneMode } from '../lib/pwa'
 import { createAppHistoryState, readAppNavigation, type AppNavigation, type AppScreen } from './navigation'
+
+const SolitaireScreen = lazy(() => import('../games/solitaire/ui/SolitaireScreen').then(({ SolitaireScreen }) => ({ default: SolitaireScreen })))
+const SudokuScreen = lazy(() => import('../games/sudoku/ui/SudokuScreen').then(({ SudokuScreen }) => ({ default: SudokuScreen })))
+const PairsScreen = lazy(() => import('../games/pairs/ui/PairsScreen').then(({ PairsScreen }) => ({ default: PairsScreen })))
+const WordSearchScreen = lazy(() => import('../games/wordSearch/ui/WordSearchScreen').then(({ WordSearchScreen }) => ({ default: WordSearchScreen })))
+const NoughtsCrossesScreen = lazy(() => import('../games/noughtsCrosses/ui/NoughtsCrossesScreen').then(({ NoughtsCrossesScreen }) => ({ default: NoughtsCrossesScreen })))
+const FifteenScreen = lazy(() => import('../games/fifteen/ui/FifteenScreen').then(({ FifteenScreen }) => ({ default: FifteenScreen })))
+const MahjongScreen = lazy(() => import('../games/mahjong/ui/MahjongScreen').then(({ MahjongScreen }) => ({ default: MahjongScreen })))
+const FlagsScreen = lazy(() => import('../games/flags/ui/FlagsScreen').then(({ FlagsScreen }) => ({ default: FlagsScreen })))
+
+class GameScreenErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children
+    return <div className="my-3 space-y-3 text-lg" role="alert">
+      <p>This game could not be displayed.</p>
+      <button type="button" className="zen-game-button" onClick={() => window.location.reload()}>Reload ZenPlay</button>
+    </div>
+  }
+}
 
 const knownGameIds = new Set(games.map((game) => game.id))
 const homeNavigation: AppNavigation = { screen: 'home', gameId: null }
@@ -211,14 +228,18 @@ const Application = () => {
         {screen === 'game' && selectedGame ? (
           <GameShell title={selectedGame.name} onBack={returnHome}>
             {saveWarning ? <p role="alert" className="my-3 rounded-lg border border-amber-700 p-3 text-base">Your progress could not be saved on this device. Keep this page open to avoid losing it. <button type="button" className="underline" onClick={() => setSaveWarning(false)}>Dismiss</button></p> : null}
-            {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
-            {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
-            {selectedGame.id === 'pairs' ? <PairsScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updatePairsSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
-            {selectedGame.id === 'word-search' ? <WordSearchScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateWordSearchSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
-            {selectedGame.id === 'noughts-crosses' ? <NoughtsCrossesScreen settings={effectiveSettings} onBack={returnHome} /> : null}
-            {selectedGame.id === 'fifteen' ? <FifteenScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateFifteenSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
-            {selectedGame.id === 'mahjong' ? <MahjongScreen settings={effectiveSettings} onSaveAvailabilityChange={updateMahjongSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
-            {selectedGame.id === 'flags' ? <FlagsScreen onBack={returnHome} /> : null}
+            <GameScreenErrorBoundary>
+              <Suspense fallback={<p className="my-3 text-lg" role="status" aria-live="polite">Loading game…</p>}>
+                {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+                {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+                {selectedGame.id === 'pairs' ? <PairsScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updatePairsSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+                {selectedGame.id === 'word-search' ? <WordSearchScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateWordSearchSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+                {selectedGame.id === 'noughts-crosses' ? <NoughtsCrossesScreen settings={effectiveSettings} onBack={returnHome} /> : null}
+                {selectedGame.id === 'fifteen' ? <FifteenScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateFifteenSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+                {selectedGame.id === 'mahjong' ? <MahjongScreen settings={effectiveSettings} onSaveAvailabilityChange={updateMahjongSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
+                {selectedGame.id === 'flags' ? <FlagsScreen onBack={returnHome} /> : null}
+              </Suspense>
+            </GameScreenErrorBoundary>
           </GameShell>
         ) : null}
 
