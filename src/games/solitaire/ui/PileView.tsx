@@ -43,11 +43,10 @@ export const PileView = ({
   hintedDestination,
   motionEnabled,
 }: Props) => {
-  const cardHeight = largeCards ? 128 : 112
-  const faceDownGap = largeCards ? 28 : 22
-  const faceUpGap = largeCards ? 56 : 48
-  const topOffsetFor = (index: number) =>
-    cards.slice(0, index).reduce((offset, card) => offset + (card.faceUp ? faceUpGap : faceDownGap), 0)
+  const topOffsetFor = (index: number) => {
+    const faceUpCount = cards.slice(0, index).filter((card) => card.faceUp).length
+    return `calc(${faceUpCount} * var(--zen-faceup-step) + ${index - faceUpCount} * var(--zen-facedown-step))`
+  }
 
   if (cards.length === 0) {
     return (
@@ -59,7 +58,7 @@ export const PileView = ({
           event.preventDefault()
           onPileDrop?.()
         }}
-        className={`${canDrop ? 'zen-drop-target' : ''} ${hintedDestination ? 'zen-hint-destination' : ''}`}
+        className={`zen-empty-pile ${canDrop ? 'zen-drop-target' : ''} ${hintedDestination ? 'zen-hint-destination' : ''}`}
         aria-label={ariaLabel}
       >
         <CardView placeholder largeCards={largeCards} />
@@ -69,7 +68,7 @@ export const PileView = ({
 
   return (
     <div
-      className={`zen-pile-column relative min-h-28 ${hintedDestination ? 'zen-hint-destination' : ''}`}
+      className={`zen-pile-column relative ${hintedDestination ? 'zen-hint-destination' : ''}`}
       onClick={onPileClick}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
@@ -87,7 +86,7 @@ export const PileView = ({
           <div
             key={card.id}
             className={`absolute ${motionEnabled ? 'zen-card-position' : ''} ${canDrop && index === cards.length - 1 ? 'zen-drop-target' : ''}`}
-            style={{ top: `${topOffsetFor(index)}px` }}
+            style={{ top: topOffsetFor(index) }}
           >
           <CardView
             card={card}
@@ -105,7 +104,7 @@ export const PileView = ({
           </div>
         )
       })}
-      <div style={{ height: `${topOffsetFor(cards.length - 1) + cardHeight}px` }} />
+      <div style={{ height: `calc(${topOffsetFor(cards.length - 1)} + var(--zen-card-height))` }} />
     </div>
   )
 }

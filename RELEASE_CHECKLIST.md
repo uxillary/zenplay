@@ -2,6 +2,19 @@
 
 Complete the manual and release items against the production build and deployment target. Do not mark a device check complete without testing that device.
 
+## M18H final Flags QA (10 October 2026)
+
+- [x] **PASS** — production build and automated checks: 192 tests, typecheck, lint, build, and `git diff --check`; see [M18H final QA](context/M18H_FLAGS_FINAL_QA.md).
+- [x] **PASS (automated/source review only)** — Classic, Practice, Reverse rules, hook handling, semantics, and lazy-loading architecture have existing test/source evidence. This is not browser playthrough evidence.
+- [ ] **NOT VERIFIED** — browser preview: Vite preview started on port 4183, but the Codex in-app browser timed out. Browser version and viewport were unavailable; no browser retry was made.
+- [ ] **NOT VERIFIED** — 320px, 360px, 390px and desktop render; actual game interactions; keyboard-only navigation; 100%/200% zoom; browser Back/Forward; error recovery; screen-reader announcements.
+- [ ] **NOT VERIFIED** — actual offline service-worker install, reload, lazy-chunk fetch and Classic/Practice/Reverse play. Precache manifest inclusion is build-only evidence.
+- [ ] **NOT VERIFIED** — visual spot-check of current Syria art and comparison of Kyrgyzstan's simplified tunduk with the official construction plate.
+- [ ] **PENDING OWNER** — Afghanistan representation decision; retain the existing asset and no memory hook pending that decision.
+- [ ] **P2 FOLLOW-UP** — Honduras precise digital blue remains unresolved; do not change the current shade without authoritative evidence.
+- [ ] **PENDING OWNER QA** — complete [M18H phone checklist](context/M18H_FLAGS_OWNER_TEST_CHECKLIST.md) on a real phone and retain browser, keyboard, accessibility, artwork, and offline checks as open until performed.
+- **Release recommendation:** CONDITIONAL; no P0/P1 defect was reproduced, but browser/device/accessibility/offline release checks remain unverified.
+
 ## M18E-B Flags learning feedback
 
 - [x] Post-answer learning feedback and missing-hook fallback implemented; automated verification passed (see [M18E-B report](context/M18E_B_FLAGS_LEARNING_FEEDBACK.md)).

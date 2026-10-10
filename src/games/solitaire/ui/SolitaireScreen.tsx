@@ -323,8 +323,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   }
 
   return (
-    <div className={`zen-solitaire-table relative flex min-h-0 flex-col gap-4 ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
-      <GameToolbar className={settings.handedness === 'left' ? 'order-2' : ''}>
+    <div className={`zen-solitaire-table relative flex min-h-0 flex-col ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
+      <GameToolbar className={`zen-solitaire-toolbar ${settings.handedness === 'left' ? 'order-2' : ''}`}>
         <button type="button" onClick={requestNewGame} className="zen-game-button">
           New Game
         </button>
@@ -344,7 +344,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
           </button>
         ) : null}
         {!settings.calmStats ? (
-          <div className="ml-auto flex w-full min-w-0 flex-wrap justify-between gap-x-4 gap-y-1 text-lg font-semibold text-white sm:w-auto sm:justify-end">
+          <div className="zen-solitaire-stats">
             <span className="zen-game-stat">Moves {state.history.length}</span>
             {settings.timer ? (
               <span className="zen-game-stat">Time {formatTime(elapsedSeconds)}</span>
@@ -354,8 +354,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
       </GameToolbar>
 
       <div className="zen-card-row">
-        <div className="zen-top-card-row gap-4 md:gap-8">
-          <div className="flex gap-1 md:gap-3">
+        <div className="zen-top-card-row">
+          <div className="zen-top-card-group">
             <button
               type="button"
               onClick={deal}
@@ -391,7 +391,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
             </button>
           </div>
 
-          <div className="grid grid-cols-4 gap-1 md:gap-3">
+          <div className="zen-foundation-grid">
             {state.foundations.map((pile, index) => (
               <button
                 key={`f-${index}`}
@@ -414,9 +414,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         </div>
       </div>
 
-      <p id="solitaire-tableau-scroll-tip" className="text-sm text-stone-700 dark:text-stone-200">If all seven columns do not fit, swipe or scroll sideways to see the rest. Use Tab to reach each face-up card or empty column.</p>
-      <div className="zen-card-row" role="region" aria-label="Solitaire tableau" aria-describedby="solitaire-tableau-scroll-tip" tabIndex={0}>
-        <div className="zen-card-grid gap-1 md:gap-3">
+      <div className="zen-card-row" role="region" aria-label="Solitaire tableau" aria-description="Use Tab to reach each face-up card or empty column.">
+        <div className="zen-card-grid">
           {state.tableau.map((pile, index) => (
             <PileView
               key={`t-${index}`}
@@ -461,11 +460,11 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         >
           <div className="relative drop-shadow-xl">
             {dragging.cards.map((card, index) => (
-              <div key={card.id} className="absolute" style={{ top: `${index * ((settings.gamePieceScale === 'large') ? 56 : 48)}px` }}>
+              <div key={card.id} className="absolute" style={{ top: `calc(${index} * var(--zen-faceup-step))` }}>
                 <CardView card={card} largeCards={(settings.gamePieceScale === 'large')} />
               </div>
             ))}
-            <div style={{ height: `${(dragging.cards.length - 1) * ((settings.gamePieceScale === 'large') ? 56 : 48) + ((settings.gamePieceScale === 'large') ? 128 : 112)}px` }} />
+            <div style={{ height: `calc(${dragging.cards.length - 1} * var(--zen-faceup-step) + var(--zen-card-height))` }} />
           </div>
         </div>
       ) : null}

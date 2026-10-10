@@ -2,13 +2,17 @@ import type { DragEvent, TouchEvent } from 'react'
 import { useRef } from 'react'
 import type { Card } from '../model/types'
 import { describeSolitaireCard } from './cardAccessibility'
-import { CourtCardArt } from './CourtCardArt'
 
 const suitSymbol = {
   clubs: '♣',
   diamonds: '♦',
   hearts: '♥',
   spades: '♠',
+}
+
+const cardAsset = (card: Card) => {
+  const rank = card.rank === 'A' ? 'ace' : card.rank === 'J' ? 'jack' : card.rank === 'Q' ? 'queen' : card.rank === 'K' ? 'king' : card.rank
+  return `/cards/english-pattern/${rank}_of_${card.suit}.svg`
 }
 
 type Props = {
@@ -79,14 +83,10 @@ export const CardView = ({
   const suitColour = red ? 'zen-card-suit--red' : 'zen-card-suit--black'
   const content = (
     <>
+      <img className="zen-card-art" src={cardAsset(card)} alt="" draggable="false" aria-hidden="true" />
       <span className={`zen-card-corner zen-card-corner--top ${suitColour}`} aria-hidden="true">
         <span>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
       </span>
-      {card.rank === 'J' || card.rank === 'Q' || card.rank === 'K' ? (
-        <span className="zen-court-art" aria-hidden="true"><CourtCardArt rank={card.rank} suit={card.suit} /></span>
-      ) : (
-        <span className={`zen-card-center-suit ${suitColour}`} aria-hidden="true">{suitSymbol[card.suit]}</span>
-      )}
       <span className={`zen-card-corner zen-card-corner--bottom ${suitColour}`} aria-hidden="true">
         <span>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
       </span>
