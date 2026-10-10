@@ -1,17 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 180 120">
-<rect width="180" height="120" fill="#000"/>
-<rect width="180" height="80" fill="#fff"/>
-<rect width="180" height="40" fill="#ce1126"/>
-<g id="s" fill="#007a3d">
-<g id="f">
-<g id="t">
-<path d="M54,47v13h8" transform="rotate(18,54,47)" id="o"/>
-<use xlink:href="#o" x="-108" transform="scale(-1,1)"/>
-</g>
-<use xlink:href="#t" transform="rotate(72,54,60)"/>
-</g>
-<use xlink:href="#t" transform="rotate(-72,54,60)"/>
-<use xlink:href="#f" transform="rotate(144,54,60)"/>
-</g>
-<use xlink:href="#s" x="72"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <rect width="900" height="200" fill="#007a3d"/>
+  <rect y="200" width="900" height="200" fill="#fff"/>
+  <rect y="400" width="900" height="200" fill="#000"/>
+  <g fill="#ce1126">
+    <polygon points="270.00,254.00 280.33,285.79 313.75,285.79 286.71,305.43 297.04,337.21 270.00,317.57 242.96,337.21 253.29,305.43 226.25,285.79 259.67,285.79"/>
+    <polygon points="450.00,254.00 460.33,285.79 493.75,285.79 466.71,305.43 477.04,337.21 450.00,317.57 422.96,337.21 433.29,305.43 406.25,285.79 439.67,285.79"/>
+    <polygon points="630.00,254.00 640.33,285.79 673.75,285.79 646.71,305.43 657.04,337.21 630.00,317.57 602.96,337.21 613.29,305.43 586.25,285.79 619.67,285.79"/>
+  </g>
 </svg>

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -51,6 +52,30 @@ test('every country maps to one valid, self-contained SVG with no extra flag ass
     assert.deepEqual(stack, [], `${country.id} SVG elements must all be closed`)
   }
   assert.ok(aspectRatios.size > 20, 'national flag SVGs should retain their varied aspect ratios')
+})
+
+test('Syria and Kyrgyzstan assets match the reviewed designs; Honduras and Afghanistan remain controlled', () => {
+  const assetDirectory = fileURLToPath(new URL('../../../../public/flags/', import.meta.url))
+  const readAsset = (id: string) => readFileSync(`${assetDirectory}/${id}.svg`, 'utf8')
+  const syria = readAsset('sy')
+  assert.match(syria, /viewBox="0 0 900 600"/)
+  assert.deepEqual([...syria.matchAll(/<rect\b[^>]*fill="(#[\da-f]+)"/gi)].map(([, fill]) => fill?.toLowerCase()), ['#007a3d', '#fff', '#000'])
+  assert.equal([...syria.matchAll(/<polygon\b/g)].length, 3)
+  assert.ok([...syria.matchAll(/<polygon\b[^>]*points="([^"]+)"/g)].every(([, points]) => points?.split(/\s+/).length === 10))
+
+  const kyrgyzstan = readAsset('kg')
+  assert.match(kyrgyzstan, /viewBox="0 0 1000 600"/)
+  assert.equal([...kyrgyzstan.matchAll(/<polygon\b/g)].length, 40)
+  assert.match(kyrgyzstan, /fill="#ff0000"/)
+  assert.match(kyrgyzstan, /fill="#ffff00"/)
+  assert.match(kyrgyzstan, /<circle cx="500" cy="300" r="90"/)
+
+  const honduras = readAsset('hn')
+  assert.match(honduras, /fill="#0073cf"/i)
+  assert.equal([...honduras.matchAll(/<svg\b/g)].length, 1)
+
+  const afghanistan = readAsset('af')
+  assert.equal(createHash('sha256').update(afghanistan).digest('hex').toUpperCase(), 'DF9E4177D2CAB1874A2E3323CA5AEA20274CA5ED698A3452A3C797D97F9EEB71')
 })
 
 test('creates ten questions with unique correct countries and exactly one correct choice', () => {

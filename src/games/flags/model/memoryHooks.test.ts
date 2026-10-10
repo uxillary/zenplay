@@ -12,14 +12,22 @@ const previousCountryIds = [
   'sg', 'ph', 'tr', 'ke', 'ng', 'gh', 'et', 'ma', 'eg', 'ug', 'tz', 'us', 'cl', 'co', 'pe', 'uy', 'cu', 'bb', 'bs', 'ni',
   'au', 'nz', 'pg', 'ws', 'to',
 ]
+const previousC2CountryIds = [
+  'bw', 'na', 'ls', 'sz', 'mw', 'mz', 'ao', 'dz', 'tn', 'sn', 'ml', 'ne', 'cm', 'ci', 'bf', 'bj', 'tg', 'lr', 'sl', 'rw', 'bi', 'cd', 'mg',
+  'kh', 'la', 'mn', 'mm', 'bn', 'ir', 'iq', 'il', 'jo', 'kw', 'lb', 'om', 'qa', 'ae', 'ye', 'mv', 'kg',
+  'at', 'is', 'hr', 'ro', 'rs', 'ru', 'si', 'sk', 'be', 'nl',
+  'bo', 'ec', 'pa', 'cr', 'hn', 'sv', 'gt', 'py', 'tt', 'bz',
+  'ki', 'fm', 'pw', 'sb', 'vu',
+]
+const previousHookIds = [...previousCountryIds, ...previousC2CountryIds]
 
-test('the expanded library retains the previous 65 and adds 65 unique canonical IDs', () => {
-  assert.equal(FLAG_MEMORY_HOOKS.length, 130)
+test('the expanded library retains the previous 130 and adds 64 unique canonical IDs', () => {
+  assert.equal(FLAG_MEMORY_HOOKS.length, 194)
   assert.equal(new Set(FLAG_MEMORY_HOOKS.map(({ countryId }) => countryId)).size, FLAG_MEMORY_HOOKS.length)
   assert.ok(FLAG_MEMORY_HOOKS.every(({ countryId }) => countryIds.has(countryId)))
-  for (const id of previousCountryIds) assert.ok(getFlagMemoryHook(id), `retains ${id}`)
-  assert.equal(FLAG_MEMORY_HOOKS.length - previousCountryIds.length, 65)
-  for (const entry of FLAG_MEMORY_HOOKS.slice(previousCountryIds.length)) {
+  for (const id of previousHookIds) assert.ok(getFlagMemoryHook(id), `retains ${id}`)
+  assert.equal(FLAG_MEMORY_HOOKS.length - previousHookIds.length, 64)
+  for (const entry of FLAG_MEMORY_HOOKS.slice(previousHookIds.length)) {
     const wordCount = entry.hook.trim().split(/\s+/).length
     assert.ok(wordCount >= 10 && wordCount <= 25, `${entry.countryId} has ${wordCount} words`)
   }
@@ -39,7 +47,7 @@ test('hooks have valid categories, concise plain text, and well-formed source re
       assert.ok(source.title.trim().length > 0)
       const url = new URL(source.url)
       assert.equal(url.protocol, 'https:')
-      assert.ok(['www.fotw.info', 'www.gov.br', 'knowindia.india.gov.in', 'my.gov.sa', 'www.nationalarchives.gov.uk'].includes(url.hostname))
+      assert.ok(['www.fotw.info', 'www.gov.br', 'knowindia.india.gov.in', 'my.gov.sa', 'www.nationalarchives.gov.uk', 'www.gov.ie', 'govcms.gov.mt', 'presidencia.st', 'sana.sy', 'www.refworld.org', 'cbd.minjust.gov.kg', 'prg.kz'].includes(url.hostname))
       assert.ok(url.pathname.length > 1)
     }
     if (entry.explanation !== undefined) {
@@ -62,13 +70,15 @@ test('comparison country references resolve to canonical countries', () => {
   }
 })
 
-test('lookup returns reviewed content and safely omits missing or unknown countries', () => {
+test('lookup returns reviewed content and safely omits disputed or unknown countries', () => {
   assert.equal(getFlagMemoryHook('jp'), FLAG_MEMORY_HOOKS[0])
-  assert.equal(getFlagMemoryHook('ad'), undefined)
+  assert.equal(getFlagMemoryHook('af'), undefined)
+  assert.equal(getFlagMemoryHook('sy')?.hook, 'Syria’s green, white, and black bands carry three red five-pointed stars in a straight row.')
+  assert.equal(getFlagMemoryHook('kg')?.hook, 'Kyrgyzstan’s straight golden sun rays surround the red crossed bars of a tunduk on a red field.')
   assert.equal(getFlagMemoryHook('unknown'), undefined)
 })
 
-test('coverage report is deterministic, reaches 130 of 195, and grows in all five regions', () => {
+test('coverage report is deterministic, reaches 194 of 195, and accounts for all five regions', () => {
   const canonicalCount = COUNTRIES.length
   const hookIds = new Set(FLAG_MEMORY_HOOKS.map(({ countryId }) => countryId))
   const hooked = COUNTRIES.filter(({ id }) => hookIds.has(id))
@@ -83,19 +93,20 @@ test('coverage report is deterministic, reaches 130 of 195, and grows in all fiv
   const coveragePercent = Number((hooked.length / canonicalCount * 100).toFixed(2))
 
   assert.equal(canonicalCount, 195)
-  assert.equal(hooked.length, 130)
-  assert.equal(withoutHooks, 65)
-  assert.equal(coveragePercent, 66.67)
+  assert.equal(hooked.length, 194)
+  assert.equal(withoutHooks, 1)
+  assert.equal(coveragePercent, 99.49)
   assert.deepEqual(byRegion, {
-    Europe: { total: 44, withHooks: 26 },
-    Asia: { total: 48, withHooks: 35 },
-    Africa: { total: 54, withHooks: 34 },
-    Americas: { total: 35, withHooks: 24 },
-    Oceania: { total: 14, withHooks: 11 },
+    Europe: { total: 44, withHooks: 44 },
+    Asia: { total: 48, withHooks: 47 },
+    Africa: { total: 54, withHooks: 54 },
+    Americas: { total: 35, withHooks: 35 },
+    Oceania: { total: 14, withHooks: 14 },
   })
+  assert.deepEqual(COUNTRIES.filter(({ id }) => !hookIds.has(id)).map(({ id }) => id).sort(), ['af'])
   assert.deepEqual(
     Object.fromEntries(FLAG_MEMORY_HOOK_CATEGORIES.map((category) => [category, FLAG_MEMORY_HOOKS.filter((entry) => entry.category === category).length])),
-    { visual: 78, symbol: 40, comparison: 11, country: 1 },
+    { visual: 138, symbol: 42, comparison: 13, country: 1 },
   )
 })
 

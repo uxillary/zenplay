@@ -26,6 +26,28 @@ Complete the manual and release items against the production build and deploymen
 - [x] `npm run build`
 - [x] `git diff --check`
 
+## M18E-C3 Flags library and artwork audit
+
+- [x] Memory library expanded to 193/195 with documented Afghanistan and Syria hook exceptions; coverage and regional totals are tested (see [M18E-C3 final audit](context/M18E_C3_FLAGS_FINAL_LIBRARY_AUDIT.md)).
+- [x] All 195 country IDs map to unique, valid local SVGs; all viewBox dimensions parse and are positive.
+- [x] **P1 — Syria artwork correction:** completed in M18F; current three-star artwork and a supported learning hook are bundled locally.
+- [x] **P2 — Kyrgyzstan post-2023 artwork:** forty straight rays and the revised central symbol were applied in M18F; visual/device QA is still open below.
+- [ ] **Owner decision — Afghanistan:** choose which representation the quiz should teach; see [M18F decision note](context/M18F_AFGHANISTAN_FLAG_OWNER_DECISION.md).
+- [ ] **Honduras colour:** no authoritative digital colour value found; M18F retains the existing shade and hook.
+- [ ] Existing browser, device, screen-reader, and offline runtime checks remain **NOT VERIFIED**; complete the open items above before release.
+
+## M18F Flag asset remediation
+
+- [x] Syria artwork updated from current declaration and official usage sources; SVG structure and hook verified.
+- [x] Kyrgyzstan artwork updated from the 2023 technical specification; 5:3 proportion and 40 straight rays verified structurally.
+- [x] Honduras blue retained because official sources do not establish a precise digital value; Afghanistan asset preserved and no hook added.
+- [x] Attribution and provenance updated; PWA build glob includes local SVG assets.
+- [x] `npm test` (191 passed), `npm run typecheck`, `npm run lint`, `npm run build`, and `git diff --check` passed (details in [M18F report](context/M18F_FLAGS_ASSET_REMEDIATION.md)).
+- [x] Production build includes the corrected Syria and Kyrgyzstan SVGs in the 212-entry precache manifest.
+- [ ] Browser visual comparison of the two replacement assets — **NOT VERIFIED**; compare Kyrgyzstan's simplified tunduk with the revised government construction plate.
+- [ ] Actual offline runtime — **NOT VERIFIED**; build precache coverage does not verify browser service-worker operation.
+- [ ] Owner selects Afghanistan representation before labeling or changing that asset.
+
 ## Local production preview review
 
 - [x] Home, Settings, and install instructions reviewed
