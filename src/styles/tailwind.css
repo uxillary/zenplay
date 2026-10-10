@@ -185,8 +185,8 @@ main.zen-app-frame {
 
 .flags-flag-card__image {
   display: block;
-  width: min(100%, 27rem);
-  max-height: 17rem;
+  width: min(100%, 34rem);
+  max-height: 20rem;
   object-fit: contain;
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.16));
 }
@@ -198,6 +198,24 @@ main.zen-app-frame {
 .zen-choice-button.flags-screen__choice.is-selected { border-color: #8a3434; background: #fff0f0; text-decoration: underline; text-underline-offset: 0.2em; }
 .zen-choice-button.flags-screen__choice.is-correct { border-color: #286044; background: #edf7ee; }
 .flags-screen__feedback { min-height: 1.5em; font-size: 1.05rem; }
+.flags-screen__feedback-icon { display: inline-block; min-width: 1.5em; font-weight: 800; }
+.flags-screen__feedback--correct .flags-screen__feedback-icon { color: #286044; }
+.flags-screen__feedback--incorrect .flags-screen__feedback-icon { color: #8a3434; }
+.flags-screen__secondary-action { border-color: transparent; background: transparent; color: var(--zp-muted); box-shadow: none; }
+.flags-screen__secondary-action:hover { border-color: var(--zp-border); background: var(--zp-panel-alt); color: var(--zp-text); }
+.flags-learning { border: 1px solid var(--zp-border); border-radius: 0.9rem; background: var(--zp-panel-alt); padding: 0.55rem 0.9rem; color: var(--zp-text); }
+.flags-learning summary { display: flex; min-height: 2.75rem; align-items: center; gap: 0.65rem; cursor: pointer; font-weight: 700; }
+.flags-learning summary::marker { color: var(--zp-green); }
+.flags-learning__icon { display: inline-grid; width: 1.5rem; height: 1.5rem; flex: 0 0 auto; place-items: center; border-radius: 999px; background: var(--zp-panel); color: var(--zp-green); font-size: 1.05rem; }
+.flags-learning__content { padding: 0.25rem 0 0.5rem 2.15rem; font-size: 1.05rem; line-height: 1.55; overflow-wrap: anywhere; }
+.flags-learning__heading { margin-bottom: 0.25rem; font-size: 1rem; font-weight: 750; }
+.flags-learning__explanation { margin-top: 0.4rem; color: var(--zp-muted); }
+.flags-learning--prominent { display: flex; gap: 0.75rem; border-left: 4px solid var(--zp-green); padding: 0.8rem 1rem; }
+.flags-learning--prominent .flags-learning__icon { margin-top: 0.1rem; }
+.flags-learning--prominent .flags-learning__content { min-width: 0; padding: 0; }
+.dark .flags-learning__icon { background: var(--zp-panel); color: var(--zp-text); }
+.high-contrast .flags-learning { border: 2px solid currentColor; }
+.high-contrast .flags-screen__secondary-action { border-color: currentColor; color: inherit; }
 .dark .zen-choice-button.flags-screen__choice.is-selected { border-color: #fca5a5; background: #542f32; }
 .dark .zen-choice-button.flags-screen__choice.is-correct { border-color: #86efac; background: #263e30; }
 .high-contrast .zen-choice-button.flags-screen__choice.is-selected,

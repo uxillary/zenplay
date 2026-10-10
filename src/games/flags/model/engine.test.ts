@@ -270,7 +270,7 @@ test('setup exposes accessible mode and region choices and keeps configuration o
   assert.match(source, />Start game<\/button>/)
   assert.match(source, /End session and change setup/)
   assert.match(source, /Back to setup/)
-  assert.match(source, /This flag will come back for another try/)
+  assert.match(source, /You’ll see this flag again later/)
   assert.match(source, /of \$\{ROUND_LENGTH\} learned/)
   assert.match(source, /makeSession\(session\.mode, session\.region\)/)
 })

@@ -2,6 +2,12 @@
 
 Complete the manual and release items against the production build and deployment target. Do not mark a device check complete without testing that device.
 
+## M18E-B Flags learning feedback
+
+- [x] Post-answer learning feedback and missing-hook fallback implemented; automated verification passed (see [M18E-B report](context/M18E_B_FLAGS_LEARNING_FEEDBACK.md)).
+- [ ] Browser visual and interaction QA — **NOT VERIFIED**: preview started on fresh port 4182, but the in-app browser timed out. Check 390px, 360px, 320px, desktop, 200% zoom, all feedback variants, and a country without a hook.
+- [ ] Manual keyboard and screen-reader review — **NOT VERIFIED**; no screen reader session was performed.
+
 ## M18D Flags release gate
 
 - [x] Automated tests, typecheck, lint, production build, and diff whitespace check passed in the M18D checkout (see [M18D release-readiness report](context/M18D_FLAGS_RELEASE_READINESS.md)).

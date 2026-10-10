@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { continueFlagsPractice, continueFlagsRound, createFlagsGameState, createFlagsPracticeState, getReverseFlagOptionStatus, ROUND_LENGTH, submitFlagsAnswer, submitFlagsPracticeAnswer, type FlagsGameState, type FlagsPracticeState } from '../model/engine'
 import { FLAG_REGIONS, getCountriesForRegion, type FlagRegion } from '../model/countries'
+import { getFlagMemoryHook } from '../model/memoryHooks'
 import { FlagCard } from './FlagCard'
+import { FlagLearningFeedback } from './FlagLearningFeedback'
 
 type Props = { onBack: () => void }
 type Mode = 'classic' | 'practice' | 'reverse'
@@ -35,6 +37,7 @@ export const FlagsScreen = ({ onBack }: Props) => {
     ? session.game.complete
     : session ? session.game.index >= ROUND_LENGTH : false
   const feedback = game?.feedback ?? null
+  const learningHook = feedback ? getFlagMemoryHook(feedback.answer.id) : undefined
   const question = session?.mode === 'practice'
     ? session.game.question
     : session ? session.game.round[session.game.index] : undefined
@@ -107,7 +110,7 @@ export const FlagsScreen = ({ onBack }: Props) => {
   )
 
   if (complete) return (
-    <section className="flags-screen mx-auto w-full max-w-xl space-y-5" aria-labelledby="flags-results-title">
+    <section className="flags-screen mx-auto w-full max-w-2xl space-y-5" aria-labelledby="flags-results-title">
       <h2 ref={resultHeading} id="flags-results-title" data-screen-heading tabIndex={-1} className="text-2xl font-semibold">{session.mode === 'practice' ? 'Practice complete' : 'Round complete'}</h2>
       {session.mode !== 'practice' ? <>
         <p className="text-2xl font-semibold" role="status">{session.game.correctCount} of {ROUND_LENGTH} correct</p>
@@ -130,16 +133,16 @@ export const FlagsScreen = ({ onBack }: Props) => {
     : `Question ${session.game.index + 1} of ${ROUND_LENGTH}`
   const feedbackText = feedback
     ? feedback.correct
-      ? `Correct! ${feedback.answer.name}.`
+      ? `Correct! That's ${feedback.answer.name}.`
       : session.mode === 'reverse'
         ? `Not quite — that's ${feedback.answer.name}'s flag. You chose the flag of ${feedback.selected.name}.`
-        : `Not quite — that's the flag of ${feedback.answer.name}. You chose ${feedback.selected.name}.${session.mode === 'practice' ? ' This flag will come back for another try.' : ''}`
+        : `Not quite — that's ${feedback.answer.name}.${session.mode === 'practice' ? ' You’ll see this flag again later.' : ` You chose ${feedback.selected.name}.`}`
     : session.mode === 'practice'
       ? 'Choose the country that matches the flag. Missed flags will return for another try.'
       : 'Choose the country that matches the flag.'
 
   return (
-    <section className="flags-screen mx-auto w-full max-w-xl space-y-4" aria-labelledby="flags-question-title">
+    <section className="flags-screen mx-auto w-full max-w-2xl space-y-4" aria-labelledby="flags-question-title">
       <div className="flags-screen__progress" role="group" aria-label={session.mode === 'practice' ? 'Practice progress' : progressLabel}>
         {session.mode === 'practice' ? <span aria-live="polite">{progressLabel}</span> : <span aria-hidden="true">{session.game.index + 1} of {ROUND_LENGTH}</span>}
       </div>
@@ -190,13 +193,20 @@ export const FlagsScreen = ({ onBack }: Props) => {
           )
         })}
       </div>}
-      <p className="flags-screen__feedback" role="status" aria-live="polite" aria-atomic="true">{feedbackText}</p>
+      <p className={`flags-screen__feedback${feedback ? ` flags-screen__feedback--${feedback.correct ? 'correct' : 'incorrect'}` : ''}`} role="status" aria-live="polite" aria-atomic="true">
+        {feedback ? <span className="flags-screen__feedback-icon" aria-hidden="true">{feedback.correct ? '✓' : '↺'}</span> : null}{feedbackText}
+      </p>
+      {learningHook && feedback
+        ? session.mode === 'practice' && !feedback.correct
+          ? <FlagLearningFeedback hook={learningHook} prominent questionKey={questionToken} />
+          : <FlagLearningFeedback hook={learningHook} questionKey={questionToken} />
+        : null}
       {feedback ? <button ref={continueButton} type="button" className="zen-game-button zen-game-button--primary" onClick={next}>
         {session.mode !== 'practice'
           ? session.game.index === ROUND_LENGTH - 1 ? 'See results' : 'Next flag'
           : session.game.learnedIds.length === ROUND_LENGTH ? 'Finish practice' : 'Next flag'}
       </button> : null}
-      <button type="button" className="zen-game-button zen-game-button--small" onClick={endSession}>End session and change setup</button>
+      <button type="button" className="zen-game-button zen-game-button--small flags-screen__secondary-action" onClick={endSession}>End session and change setup</button>
     </section>
   )
 }
