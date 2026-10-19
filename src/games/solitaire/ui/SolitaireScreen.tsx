@@ -353,7 +353,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         ) : null}
       </GameToolbar>
 
-      <div className="zen-card-row">
+      <p className="zen-zoom-scroll-note" role="note">At high zoom, scroll or swipe horizontally to reach every pile.</p>
+      <div className="zen-card-row" role="region" aria-label="Stock, waste and foundations" aria-description="At high zoom, scroll horizontally to reach each pile.">
         <div className="zen-top-card-row">
           <div className="zen-top-card-group">
             <button
@@ -414,7 +415,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         </div>
       </div>
 
-      <div className="zen-card-row" role="region" aria-label="Solitaire tableau" aria-description="Use Tab to reach each face-up card or empty column.">
+      <div className="zen-card-row" role="region" aria-label="Solitaire tableau" aria-description="Use Tab to reach each face-up card or empty column. At high zoom, scroll horizontally to reach every column.">
         <div className="zen-card-grid">
           {state.tableau.map((pile, index) => (
             <PileView

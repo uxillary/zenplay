@@ -85,10 +85,10 @@ export const CardView = ({
     <>
       <img className="zen-card-art" src={cardAsset(card)} alt="" draggable="false" aria-hidden="true" />
       <span className={`zen-card-corner zen-card-corner--top ${suitColour}`} aria-hidden="true">
-        <span>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
+        <span className={card.rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
       </span>
       <span className={`zen-card-corner zen-card-corner--bottom ${suitColour}`} aria-hidden="true">
-        <span>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
+        <span className={card.rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
       </span>
     </>
   )

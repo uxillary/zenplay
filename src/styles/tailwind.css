@@ -364,6 +364,10 @@ button:focus-visible,
   white-space: nowrap;
 }
 
+.zen-zoom-scroll-note {
+  display: none;
+}
+
 @media (max-width: 767px) {
   main.zen-app-frame--solitaire {
     padding: 0;
@@ -402,6 +406,45 @@ button:focus-visible,
     flex-basis: 100%;
     justify-content: flex-start;
     font-size: 0.78rem;
+  }
+}
+
+/* Keep the cards readable at high browser zoom, and let the pile rows scroll. */
+@media (max-width: 300px) {
+  .zen-solitaire-table > * {
+    --zen-card-width: max(2.5rem, min(5.5rem, calc((100cqw - 6 * var(--zen-card-gap)) / 7)));
+  }
+
+  .zen-solitaire-table.zen-large-cards > * {
+    --zen-card-width: max(2.5rem, min(6.5rem, calc((100cqw - 6 * var(--zen-card-gap)) / 7)));
+  }
+
+  .zen-solitaire-table {
+    gap: 0.35rem;
+  }
+
+  .zen-solitaire-table > .zen-card-row {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .zen-solitaire-table .zen-top-card-row,
+  .zen-solitaire-table .zen-card-grid {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .zen-solitaire-table .zen-card-grid {
+    justify-content: start;
+  }
+
+  .zen-zoom-scroll-note {
+    display: block;
+    margin: 0;
+    padding-inline: 0.25rem;
+    color: #ffffff;
+    font-size: 0.75rem;
   }
 }
 
@@ -674,6 +717,12 @@ button:focus-visible,
 
 .zen-card-corner__suit {
   font-size: 0.95em;
+}
+
+.zen-card-corner__rank--double {
+  font-size: 0.88em;
+  letter-spacing: -0.06em;
+  white-space: nowrap;
 }
 
 .zen-card-suit--red {
