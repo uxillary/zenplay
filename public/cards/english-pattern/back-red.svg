@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="540" viewBox="0 0 360 540">
+  <defs>
+    <pattern id="lattice" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#862b37"/>
+      <path d="M16 0 32 16 16 32 0 16Z" fill="none" stroke="#ead5d5" stroke-width="2.6"/>
+      <path d="M16 5 27 16 16 27 5 16Z" fill="#a3454a" stroke="#fff1e9" stroke-width="1.5"/>
+      <path d="M16 11 21 16 16 21 11 16Z" fill="#f2e4dc"/>
+      <circle cx="0" cy="0" r="2.5" fill="#fff1e9"/>
+      <circle cx="32" cy="0" r="2.5" fill="#fff1e9"/>
+      <circle cx="0" cy="32" r="2.5" fill="#fff1e9"/>
+      <circle cx="32" cy="32" r="2.5" fill="#fff1e9"/>
+    </pattern>
+  </defs>
+  <rect x="1" y="1" width="358" height="538" rx="18" fill="#fff" stroke="#a9a9a9" stroke-width="2"/>
+  <rect x="15" y="15" width="330" height="510" rx="6" fill="url(#lattice)" stroke="#862b37" stroke-width="4"/>
+  <rect x="23" y="23" width="314" height="494" rx="2" fill="none" stroke="#fff1e9" stroke-width="3"/>
+  <rect x="30" y="30" width="300" height="480" rx="2" fill="none" stroke="#d5a5a8" stroke-width="2"/>
+  <path d="M180 202c34 24 51 44 51 68s-17 44-51 68c-34-24-51-44-51-68s17-44 51-68Z" fill="#862b37" stroke="#fff1e9" stroke-width="5"/>
+  <path d="M180 220c21 18 33 35 33 50s-12 32-33 50c-21-18-33-35-33-50s12-32 33-50Z" fill="none" stroke="#ead5d5" stroke-width="3"/>
+  <path d="M180 238 196 270 180 302 164 270Z" fill="#fff1e9"/>
+</svg>

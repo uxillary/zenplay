@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState, type DragEvent } from 'react'
-import type { AppSettings } from '../../../lib/settings'
+import type { AppSettings, SolitaireCardBack, SolitaireCardStyle, SolitaireTableTheme } from '../../../lib/settings'
 import { deleteActiveSave, saveActiveGame, createSessionId } from '../../../persistence/gameSave'
 import { readStatistics, recordGameCompleted, recordGameStarted } from '../../../persistence/statistics'
 import type { GameStatistics } from '../../../persistence/types'
@@ -21,6 +21,7 @@ type Props = {
   onSaveAvailabilityChange: (hasSave: boolean) => void
   onSaveFailure: () => void
   onSaveRecovery: () => void
+  onAppearanceChange: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void
 }
 
 type DragState = {
@@ -49,7 +50,7 @@ const reducer = (state: SolitaireState, action: Action): SolitaireState => {
 
 const cardCount = (count: number): string => `${count} ${count === 1 ? 'card' : 'cards'}`
 
-export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery }: Props) => {
+export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery, onAppearanceChange }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState)
   const [ready, setReady] = useState(false)
   const [gameDrawMode, setGameDrawMode] = useState(settings.drawMode)
@@ -323,7 +324,12 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   }
 
   return (
-    <div className={`zen-solitaire-table relative flex min-h-0 flex-col ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}>
+    <div
+      className={`zen-solitaire-table relative flex min-h-0 flex-col ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}
+      data-table-theme={settings.solitaireTableTheme}
+      data-card-style={settings.solitaireCardStyle}
+      data-card-back={settings.solitaireCardBack}
+    >
       <GameToolbar className={`zen-solitaire-toolbar ${settings.handedness === 'left' ? 'order-2' : ''}`}>
         <button type="button" onClick={requestNewGame} className="zen-game-button">
           New Game
@@ -508,6 +514,44 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
             <section><h3 className="font-bold">Foundations</h3><p>Build each foundation up by suit, starting with an Ace.</p></section>
             <section><h3 className="font-bold">Stock and waste</h3><p>Tap the stock to draw {gameDrawMode === 'three' ? 'up to three cards' : 'one card'}. When it is empty, tap it again to turn the waste back over.</p></section>
             <section><h3 className="font-bold">Controls</h3><p>Tap a card or stack, then tap a destination. With a keyboard, use Tab to reach a card or pile and Enter or Space to select it and a destination. Select it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
+            <section aria-labelledby="solitaire-appearance-title" className="space-y-3 border-t border-current/25 pt-3">
+              <h3 id="solitaire-appearance-title" className="font-bold">Appearance</h3>
+              <div className="zen-appearance-controls">
+                <label>Table colour
+                  <select value={settings.solitaireTableTheme} onChange={(event) => onAppearanceChange('solitaireTableTheme', event.target.value as SolitaireTableTheme)}>
+                    <option value="classic-green">Classic Green</option>
+                    <option value="midnight-blue">Midnight Blue</option>
+                    <option value="burgundy">Burgundy</option>
+                  </select>
+                </label>
+                <label>Card style
+                  <select value={settings.solitaireCardStyle} onChange={(event) => onAppearanceChange('solitaireCardStyle', event.target.value as SolitaireCardStyle)}>
+                    <option value="classic">Classic</option>
+                    <option value="large-print">Large Print</option>
+                  </select>
+                </label>
+                <label>Card back
+                  <select value={settings.solitaireCardBack} onChange={(event) => onAppearanceChange('solitaireCardBack', event.target.value as SolitaireCardBack)}>
+                    <option value="classic-blue">Classic Blue</option>
+                    <option value="traditional-red">Traditional Red</option>
+                    <option value="high-contrast">Simple High Contrast</option>
+                  </select>
+                </label>
+              </div>
+              <div
+                className="zen-appearance-preview"
+                data-table-theme={settings.solitaireTableTheme}
+                data-card-style={settings.solitaireCardStyle}
+                data-card-back={settings.solitaireCardBack}
+                role="img"
+                aria-label="Preview of Queen of Hearts, 10 of Spades and selected card back"
+              >
+                <CardView card={{ id: 'preview-queen', rank: 'Q', suit: 'hearts', faceUp: true }} />
+                <CardView card={{ id: 'preview-ten', rank: '10', suit: 'spades', faceUp: true }} />
+                <CardView card={{ id: 'preview-back', rank: 'A', suit: 'clubs', faceUp: false }} />
+              </div>
+              <p className="text-sm">Changes apply immediately and are saved on this device. High contrast is in Settings.</p>
+            </section>
             {!settings.simpleMode ? <section aria-labelledby="solitaire-statistics-title">
               <h3 id="solitaire-statistics-title" className="font-bold">Statistics</h3>
               {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · {statistics.totalMoves} moves in completed games{statistics.bestMoves === null ? '' : ` · best ${statistics.bestMoves} moves`}</p> : <p>Statistics are stored on this device.</p>}

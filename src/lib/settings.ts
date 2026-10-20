@@ -3,6 +3,9 @@ export type Handedness = 'left' | 'right'
 export type DrawMode = 'one' | 'three'
 export type UiScale = 'normal' | 'large' | 'extra-large'
 export type GamePieceScale = 'normal' | 'large'
+export type SolitaireTableTheme = 'classic-green' | 'midnight-blue' | 'burgundy'
+export type SolitaireCardStyle = 'classic' | 'large-print'
+export type SolitaireCardBack = 'classic-blue' | 'traditional-red' | 'high-contrast'
 
 export type AppSettings = {
   theme: ThemeMode
@@ -15,9 +18,12 @@ export type AppSettings = {
   calmStats: boolean
   timer: boolean
   drawMode: DrawMode
+  solitaireTableTheme: SolitaireTableTheme
+  solitaireCardStyle: SolitaireCardStyle
+  solitaireCardBack: SolitaireCardBack
 }
 
-export const SETTINGS_VERSION = 2
+export const SETTINGS_VERSION = 3
 const STORAGE_KEY = 'zenplay-settings'
 
 export const defaultSettings: AppSettings = {
@@ -31,6 +37,9 @@ export const defaultSettings: AppSettings = {
   calmStats: false,
   timer: true,
   drawMode: 'one',
+  solitaireTableTheme: 'classic-green',
+  solitaireCardStyle: 'classic',
+  solitaireCardBack: 'classic-blue',
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -62,6 +71,9 @@ export const parseSettings = (raw: string | null): AppSettings => {
       calmStats: typeof values.calmStats === 'boolean' ? values.calmStats : defaultSettings.calmStats,
       timer: typeof values.timer === 'boolean' ? values.timer : defaultSettings.timer,
       drawMode: oneOf(values.drawMode, ['one', 'three'] as const, defaultSettings.drawMode),
+      solitaireTableTheme: oneOf(values.solitaireTableTheme, ['classic-green', 'midnight-blue', 'burgundy'] as const, defaultSettings.solitaireTableTheme),
+      solitaireCardStyle: oneOf(values.solitaireCardStyle, ['classic', 'large-print'] as const, defaultSettings.solitaireCardStyle),
+      solitaireCardBack: oneOf(values.solitaireCardBack, ['classic-blue', 'traditional-red', 'high-contrast'] as const, defaultSettings.solitaireCardBack),
     }
   } catch {
     return { ...defaultSettings }
@@ -81,9 +93,9 @@ export const getEffectiveSettings = (
   ? { ...settings, uiScale: 'extra-large', gamePieceScale: 'large', highContrast: true, reducedMotion: true, calmStats: true }
   : { ...settings, reducedMotion: settings.reducedMotion || systemReducedMotion }
 
-export const loadSettings = (): AppSettings => {
+export const loadSettings = (storage: Pick<Storage, 'getItem'> = localStorage): AppSettings => {
   try {
-    return parseSettings(localStorage.getItem(STORAGE_KEY))
+    return parseSettings(storage.getItem(STORAGE_KEY))
   } catch {
     return { ...defaultSettings }
   }

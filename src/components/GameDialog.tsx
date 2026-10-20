@@ -14,7 +14,7 @@ export const GameDialog = ({ title, description, alert = false, onDismiss, child
 
   useEffect(() => {
     previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    dialogRef.current?.querySelector<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])')?.focus()
+    dialogRef.current?.querySelector<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')?.focus()
     return () => {
       const fallback = document.querySelector<HTMLElement>('.zen-game-button')
       if (previousFocus.current?.isConnected) previousFocus.current.focus()
@@ -30,7 +30,7 @@ export const GameDialog = ({ title, description, alert = false, onDismiss, child
     }
     if (event.key !== 'Tab') return
     const controls = [...(dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
     ) ?? [])]
     if (controls.length === 0) return
     const first = controls[0]
