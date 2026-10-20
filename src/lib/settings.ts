@@ -21,9 +21,11 @@ export type AppSettings = {
   solitaireTableTheme: SolitaireTableTheme
   solitaireCardStyle: SolitaireCardStyle
   solitaireCardBack: SolitaireCardBack
+  solitaireVerboseFeedback: boolean
+  solitaireShowPossibleMoves: boolean
 }
 
-export const SETTINGS_VERSION = 3
+export const SETTINGS_VERSION = 4
 const STORAGE_KEY = 'zenplay-settings'
 
 export const defaultSettings: AppSettings = {
@@ -40,6 +42,8 @@ export const defaultSettings: AppSettings = {
   solitaireTableTheme: 'classic-green',
   solitaireCardStyle: 'classic',
   solitaireCardBack: 'classic-blue',
+  solitaireVerboseFeedback: false,
+  solitaireShowPossibleMoves: false,
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -74,6 +78,8 @@ export const parseSettings = (raw: string | null): AppSettings => {
       solitaireTableTheme: oneOf(values.solitaireTableTheme, ['classic-green', 'midnight-blue', 'burgundy'] as const, defaultSettings.solitaireTableTheme),
       solitaireCardStyle: oneOf(values.solitaireCardStyle, ['classic', 'large-print'] as const, defaultSettings.solitaireCardStyle),
       solitaireCardBack: oneOf(values.solitaireCardBack, ['classic-blue', 'traditional-red', 'high-contrast'] as const, defaultSettings.solitaireCardBack),
+      solitaireVerboseFeedback: typeof values.solitaireVerboseFeedback === 'boolean' ? values.solitaireVerboseFeedback : defaultSettings.solitaireVerboseFeedback,
+      solitaireShowPossibleMoves: typeof values.solitaireShowPossibleMoves === 'boolean' ? values.solitaireShowPossibleMoves : defaultSettings.solitaireShowPossibleMoves,
     }
   } catch {
     return { ...defaultSettings }

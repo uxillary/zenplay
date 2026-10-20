@@ -86,7 +86,7 @@ export const PileView = ({
           <div
             key={card.id}
             className={`absolute ${motionEnabled ? 'zen-card-position' : ''} ${canDrop && index === cards.length - 1 ? 'zen-drop-target' : ''}`}
-            style={{ top: topOffsetFor(index) }}
+            style={{ top: topOffsetFor(index), zIndex: index }}
           >
           <CardView
             card={card}

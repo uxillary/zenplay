@@ -970,10 +970,10 @@ button:focus-visible,
 .zen-card-selected {
   border-radius: 0.375rem;
   box-shadow:
-    0 0 0 4px #facc15,
+    0 0 0 2px #f0d565,
     0 2px 4px rgb(0 0 0 / 0.3);
-  outline: 3px solid #14532d;
-  outline-offset: 2px;
+  outline: 1px solid #14532d;
+  outline-offset: 1px;
 }
 
 .high-contrast .zen-playing-card,
@@ -1020,10 +1020,6 @@ button:focus-visible,
 
 .zen-card-position {
   transition: top 140ms ease-out, opacity 120ms ease-out;
-}
-
-.zen-card-position:focus-within {
-  z-index: 2;
 }
 
 .zen-card-enter {

@@ -19,6 +19,8 @@ test('settings have readable, safe defaults', () => {
   assert.equal(defaultSettings.solitaireTableTheme, 'classic-green')
   assert.equal(defaultSettings.solitaireCardStyle, 'classic')
   assert.equal(defaultSettings.solitaireCardBack, 'classic-blue')
+  assert.equal(defaultSettings.solitaireVerboseFeedback, false)
+  assert.equal(defaultSettings.solitaireShowPossibleMoves, false)
 })
 
 test('legacy saved settings retain existing preferences and migrate card size', () => {
@@ -38,6 +40,17 @@ test('legacy saved settings retain existing preferences and migrate card size', 
   assert.equal(versionTwo.theme, 'light')
   assert.equal(versionTwo.drawMode, 'three')
   assert.equal(versionTwo.solitaireTableTheme, 'classic-green')
+  const versionThree = parseSettings(JSON.stringify({ version: 3, settings: {
+    solitaireTableTheme: 'burgundy', solitaireCardStyle: 'large-print', solitaireCardBack: 'traditional-red',
+    drawMode: 'three', timer: false,
+  } }))
+  assert.equal(versionThree.solitaireTableTheme, 'burgundy')
+  assert.equal(versionThree.solitaireCardStyle, 'large-print')
+  assert.equal(versionThree.solitaireCardBack, 'traditional-red')
+  assert.equal(versionThree.drawMode, 'three')
+  assert.equal(versionThree.timer, false)
+  assert.equal(versionThree.solitaireVerboseFeedback, false)
+  assert.equal(versionThree.solitaireShowPossibleMoves, false)
 })
 
 test('malformed and unsupported settings values fall back safely', () => {
@@ -49,6 +62,20 @@ test('malformed and unsupported settings values fall back safely', () => {
   assert.equal(invalidAppearance.solitaireTableTheme, 'classic-green')
   assert.equal(invalidAppearance.solitaireCardStyle, 'classic')
   assert.equal(invalidAppearance.solitaireCardBack, 'classic-blue')
+  const invalidAssistance = parseSettings(JSON.stringify({
+    solitaireVerboseFeedback: 'true', solitaireShowPossibleMoves: 1,
+  }))
+  assert.equal(invalidAssistance.solitaireVerboseFeedback, false)
+  assert.equal(invalidAssistance.solitaireShowPossibleMoves, false)
+})
+
+test('Solitaire assistance preferences persist independently', () => {
+  const verbose = parseSettings(serializeSettings({ ...defaultSettings, solitaireVerboseFeedback: true }))
+  assert.equal(verbose.solitaireVerboseFeedback, true)
+  assert.equal(verbose.solitaireShowPossibleMoves, false)
+  const highlighting = parseSettings(serializeSettings({ ...defaultSettings, solitaireShowPossibleMoves: true }))
+  assert.equal(highlighting.solitaireVerboseFeedback, false)
+  assert.equal(highlighting.solitaireShowPossibleMoves, true)
 })
 
 test('Solitaire appearance selections persist locally and leave the app theme alone', () => {
