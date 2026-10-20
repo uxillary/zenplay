@@ -1,6 +1,6 @@
 import type { DragEvent, TouchEvent } from 'react'
 import { useRef } from 'react'
-import type { Card, Suit } from '../model/types'
+import type { Card, Rank, Suit } from '../model/types'
 import { describeSolitaireCard } from './cardAccessibility'
 import { courtCardAsset, numberedPips, suitPaths } from './cardArtwork'
 
@@ -8,6 +8,13 @@ const SuitMark = ({ suit, className = '' }: { suit: Suit; className?: string }) 
   <svg className={className} viewBox="0 0 100 100" aria-hidden="true" focusable="false">
     <path d={suitPaths[suit]} fill="currentColor" />
   </svg>
+)
+
+const CornerIndex = ({ rank, suit, position, colour }: { rank: Rank; suit: Suit; position: 'top' | 'bottom'; colour: string }) => (
+  <span className={`zen-card-corner zen-card-corner--${position} ${colour}`} aria-hidden="true">
+    <span className={rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{rank}</span>
+    <SuitMark suit={suit} className="zen-card-corner__suit" />
+  </span>
 )
 
 type Props = {
@@ -98,12 +105,8 @@ export const CardView = ({
           ))}
         </svg>
       )}
-      <span className={`zen-card-corner zen-card-corner--top ${suitColour}`} aria-hidden="true">
-        <span className={card.rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{card.rank}</span><SuitMark suit={card.suit} className="zen-card-corner__suit" />
-      </span>
-      <span className={`zen-card-corner zen-card-corner--bottom ${suitColour}`} aria-hidden="true">
-        <span className={card.rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{card.rank}</span><SuitMark suit={card.suit} className="zen-card-corner__suit" />
-      </span>
+      <CornerIndex rank={card.rank} suit={card.suit} position="top" colour={suitColour} />
+      <CornerIndex rank={card.rank} suit={card.suit} position="bottom" colour={suitColour} />
     </>
   )
 

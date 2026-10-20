@@ -18,7 +18,7 @@
   --zp-focus: #14532d;
   --zp-danger: #9f3434;
   --zp-card-red: #b52d38;
-  --zp-card-ink: #242622;
+  --zp-card-ink: #171717;
   --zp-shadow: 0 8px 24px rgb(58 48 31 / 0.08);
   --zp-radius: 0.8rem;
   font-size: calc(100% * var(--zen-ui-scale));
@@ -358,7 +358,7 @@ button:focus-visible,
   --zen-card-gap: clamp(0.2rem, 0.8cqw, 0.75rem);
   --zen-card-width: min(5.5rem, calc((100cqw - 6 * var(--zen-card-gap)) / 7));
   --zen-card-height: calc(var(--zen-card-width) * 1.4);
-  --zen-faceup-step: max(1.85rem, calc(var(--zen-card-height) * 0.44));
+  --zen-faceup-step: max(2rem, calc(var(--zen-card-width) * 0.76));
   --zen-facedown-step: calc(var(--zen-card-height) * 0.23);
 }
 
@@ -367,7 +367,7 @@ button:focus-visible,
 }
 
 .zen-solitaire-table[data-card-style='large-print'] > * {
-  --zen-faceup-step: max(2.25rem, calc(var(--zen-card-height) * 0.55));
+  --zen-faceup-step: max(2.35rem, calc(var(--zen-card-width) * 0.82));
 }
 
 .zen-solitaire-toolbar {
@@ -899,14 +899,14 @@ button:focus-visible,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
-  min-width: 1em;
+  gap: 0.03em;
+  min-width: 0;
   padding: 1px;
   background: #fff;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(0.7rem, calc(var(--zen-card-width) * 0.26), 0.95rem);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(0.82rem, calc(var(--zen-card-width) * 0.32), 1.22rem);
   font-weight: 800;
-  line-height: 0.95;
+  line-height: 1;
 }
 
 .zen-card-corner--top {
@@ -922,24 +922,23 @@ button:focus-visible,
 
 .zen-card-corner__suit {
   display: block;
-  width: 0.88em;
-  height: 0.88em;
+  width: 1.02em;
+  height: 1.02em;
 }
 
 .zen-card-corner__rank--double {
-  font-size: 0.88em;
-  letter-spacing: -0.06em;
+  font-size: 0.9em;
+  letter-spacing: -0.08em;
   white-space: nowrap;
 }
 
 :is(.zen-solitaire-table, .zen-appearance-preview)[data-card-style='large-print'] .zen-card-corner {
-  width: min(2rem, 52%);
-  font-size: clamp(0.9rem, calc(var(--zen-card-width) * 0.32), 1.2rem);
+  font-size: clamp(0.98rem, calc(var(--zen-card-width) * 0.37), 1.4rem);
   font-weight: 900;
 }
 
 :is(.zen-solitaire-table, .zen-appearance-preview)[data-card-style='large-print'] .zen-card-corner__rank--double {
-  font-size: 0.82em;
+  font-size: 0.84em;
 }
 
 .zen-card-suit--red {

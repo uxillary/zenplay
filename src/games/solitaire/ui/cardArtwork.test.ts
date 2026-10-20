@@ -22,6 +22,7 @@ test('numbered faces use one pip system with traditional counts and room for cor
   assert.equal(numberedPips['2'][1].inverted, true)
   assert.equal(numberedPips['10'].filter((pip) => pip.inverted).length, 5)
   assert.equal(new Set(Object.values(suitPaths)).size, 4)
+  assert.equal((suitPaths.clubs.match(/[Mm]/g) ?? []).length, 1, 'club must use one filled silhouette')
 })
 
 test('only authentic court ranks map to the retained English-pattern assets', () => {
