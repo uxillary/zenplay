@@ -2,7 +2,7 @@
 
 ## Changes
 
-Solitaire's Rules dialog now includes an **Appearance** section with labelled table colour, card style and card back controls. Changes update the board and its small Queen, 10 and card-back preview immediately. The controls stay inside the existing dialog and do not change other games.
+Solitaire has labelled table colour, card style and card back controls in its **Appearance** dialog, reached from the in-game Menu. Changes update the board and its small Queen, 10 and card-back preview immediately. M19D separated Appearance from How to Play; the controls do not change other games.
 
 | Preference | Options | Default |
 | --- | --- | --- |

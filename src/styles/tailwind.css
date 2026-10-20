@@ -86,6 +86,10 @@ main.zen-app-frame {
   box-shadow: var(--zp-shadow);
 }
 
+.zen-app-panel--solitaire {
+  max-width: 60rem;
+}
+
 .zen-wordmark {
   color: var(--zp-green);
   font-size: 0.9rem;
@@ -367,26 +371,150 @@ button:focus-visible,
 }
 
 .zen-solitaire-toolbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
   gap: 0.3rem;
-  padding-bottom: 0.3rem;
+  padding-bottom: 0.35rem;
 }
 
-.zen-solitaire-toolbar .zen-game-button {
+.zen-solitaire-toolbar--left {
+  direction: rtl;
+}
+
+.zen-solitaire-toolbar--left > * {
+  direction: ltr;
+}
+
+.zen-solitaire-toolbar .zen-solitaire-action {
+  display: flex;
+  min-width: 0;
+  min-height: 3rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  border: 1px solid rgb(255 255 255 / 0.42);
+  border-radius: 0.45rem;
+  background: rgb(0 0 0 / 0.18);
+  padding: 0.25rem;
+  color: #ffffff;
+  font-size: 0.78rem;
+  line-height: 1.05;
+  text-align: center;
+  box-shadow: none;
+}
+
+.zen-solitaire-toolbar .zen-solitaire-action:hover,
+.zen-solitaire-toolbar .zen-solitaire-action:active {
+  background: rgb(0 0 0 / 0.32);
+  box-shadow: none;
+}
+
+.zen-solitaire-toolbar .zen-solitaire-action:disabled {
+  opacity: 0.6;
+}
+
+.zen-solitaire-action__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+}
+
+.zen-solitaire-context {
+  display: flex;
+  grid-column: 1 / -1;
+  min-width: 0;
   min-height: 2.5rem;
-  padding: 0.35rem 0.65rem;
-  font-size: clamp(0.85rem, 2.8vw, 1rem);
-  box-shadow: 0 1px 0 rgb(0 0 0 / 0.25);
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  padding: 0.1rem 0.25rem;
+  color: #ffffff;
+}
+
+.zen-solitaire-context--feedback {
+  justify-content: space-between;
+  border: 1px solid rgb(255 255 255 / 0.42);
+  background: rgb(0 0 0 / 0.25);
+}
+
+.zen-solitaire-context__text {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zen-solitaire-context--hint .zen-solitaire-context__text {
+  white-space: normal;
+}
+
+.zen-solitaire-context button,
+.zen-solitaire-dialog-close {
+  min-height: 2.5rem;
+  border: 0;
+  background: transparent;
+  padding: 0.2rem 0.35rem;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .zen-solitaire-stats {
   display: flex;
-  flex: 1 1 auto;
   justify-content: flex-end;
-  gap: 0.8rem;
-  color: #ffffff;
-  font-size: 0.85rem;
+  gap: 0.7rem;
+  font-size: 0.76rem;
   font-weight: 600;
+  line-height: 1.1;
   white-space: nowrap;
+}
+
+.zen-solitaire-menu {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.zen-solitaire-option-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+@media (min-width: 768px) {
+  .zen-app-panel--solitaire {
+    padding: 1rem;
+  }
+
+  .zen-solitaire-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .zen-solitaire-toolbar .zen-solitaire-action {
+    min-width: 6.5rem;
+    flex-direction: row;
+    gap: 0.4rem;
+    padding-inline: 0.7rem;
+    font-size: 0.95rem;
+  }
+
+  .zen-solitaire-context {
+    flex: 1 1 12rem;
+    margin-inline-start: auto;
+  }
+
+  .zen-solitaire-stats {
+    font-size: 0.85rem;
+  }
 }
 
 .zen-appearance-controls {
@@ -449,7 +577,18 @@ button:focus-visible,
   }
 
   .zen-app-panel--solitaire .zen-game-shell__header {
-    padding: 0.25rem 0.6rem 0.45rem;
+    gap: 0.55rem;
+    padding: 0.15rem 0.55rem 0.25rem;
+  }
+
+  .zen-app-panel--solitaire .zen-game-title {
+    font-size: 1.05rem;
+  }
+
+  .zen-app-panel--solitaire .zen-game-button--back {
+    min-height: 2.75rem;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.9rem;
   }
 
   .zen-app-panel--solitaire .zen-game-shell {
@@ -468,14 +607,17 @@ button:focus-visible,
   }
 
   .zen-solitaire-stats {
-    flex-basis: 100%;
-    justify-content: flex-start;
-    font-size: 0.78rem;
+    justify-content: flex-end;
   }
 }
 
 /* Keep the cards readable at high browser zoom, and let the pile rows scroll. */
 @media (max-width: 300px) {
+  .zen-appearance-preview {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .zen-solitaire-table > * {
     --zen-card-width: max(2.5rem, min(5.5rem, calc((100cqw - 6 * var(--zen-card-gap)) / 7)));
   }
@@ -809,10 +951,20 @@ button:focus-visible,
 }
 
 .zen-card-placeholder {
-  display: block;
+  display: grid;
+  place-items: center;
   border: 1px solid rgb(244 239 226 / 0.76);
   background: rgb(0 0 0 / 0.16);
+  color: rgb(255 255 255 / 0.78);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.1rem, calc(var(--zen-card-width) * 0.36), 1.6rem);
+  font-weight: 700;
   box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.08);
+}
+
+.zen-solitaire-table :where(.zen-card-button, .zen-card-face, .zen-empty-pile):focus-visible {
+  outline-color: #ffeb58;
+  outline-offset: -3px;
 }
 
 .zen-card-selected {
@@ -852,6 +1004,7 @@ button:focus-visible,
 
 .high-contrast .zen-solitaire-table :where(.zen-card-button, .zen-card-face, .zen-empty-pile):focus-visible {
   outline-color: #ffe45c;
+  outline-offset: -4px;
   box-shadow: 0 0 0 3px #111111;
 }
 
@@ -867,6 +1020,10 @@ button:focus-visible,
 
 .zen-card-position {
   transition: top 140ms ease-out, opacity 120ms ease-out;
+}
+
+.zen-card-position:focus-within {
+  z-index: 2;
 }
 
 .zen-card-enter {

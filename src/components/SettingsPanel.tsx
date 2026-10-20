@@ -91,7 +91,7 @@ export const SettingsPanel = ({ settings, onChange }: Props) => (
           <button type="button" aria-pressed={settings.drawMode === 'one'} onClick={() => onChange('drawMode', 'one')} className={`zen-choice-button ${settings.drawMode === 'one' ? 'is-selected' : ''}`}>Draw one</button>
           <button type="button" aria-pressed={settings.drawMode === 'three'} onClick={() => onChange('drawMode', 'three')} className={`zen-choice-button ${settings.drawMode === 'three' ? 'is-selected' : ''}`}>Draw three</button>
         </div>
-        <p className="text-sm">The new setting applies to your next stock action.</p>
+        <p className="text-sm">The new setting applies when you start a new game. A resumed game keeps its original draw mode.</p>
       </div>
     </section>
 

@@ -26,6 +26,7 @@ type Props = {
   onDragEnd?: () => void
   largeCards?: boolean
   placeholder?: boolean
+  placeholderLabel?: 'A' | 'K'
   ghosted?: boolean
   animate?: boolean
 }
@@ -51,6 +52,7 @@ export const CardView = ({
   onDragEnd,
   largeCards,
   placeholder,
+  placeholderLabel,
   ghosted,
   animate,
 }: Props) => {
@@ -70,7 +72,7 @@ export const CardView = ({
   }
 
   if (placeholder) {
-    return <div className={`zen-card-placeholder ${size}`} aria-hidden />
+    return <div className={`zen-card-placeholder ${size}`} aria-hidden>{placeholderLabel}</div>
   }
 
   if (!card) return null

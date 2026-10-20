@@ -11,7 +11,7 @@ import { findFoundationMove, findHint, getAutoFinishPlan, getTopCard, isValidMov
 import type { Card, Location, Move, SolitaireState, StockDrawCount } from '../model/types'
 import { CardView } from './CardView'
 import { PileView } from './PileView'
-import { describeSolitaireCard } from './cardAccessibility'
+import { describeSelectedSolitaireCard, describeSolitaireCard } from './cardAccessibility'
 import { GameToolbar } from '../../../components/GameToolbar'
 import { GameDialog } from '../../../components/GameDialog'
 
@@ -21,8 +21,10 @@ type Props = {
   onSaveAvailabilityChange: (hasSave: boolean) => void
   onSaveFailure: () => void
   onSaveRecovery: () => void
-  onAppearanceChange: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void
+  onSettingChange: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void
 }
+
+type SolitaireDialog = 'menu' | 'rules' | 'appearance' | 'options' | null
 
 type DragState = {
   location: Location
@@ -50,7 +52,16 @@ const reducer = (state: SolitaireState, action: Action): SolitaireState => {
 
 const cardCount = (count: number): string => `${count} ${count === 1 ? 'card' : 'cards'}`
 
-export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery, onAppearanceChange }: Props) => {
+const ToolbarIcon = ({ name }: { name: 'new' | 'undo' | 'hint' | 'menu' }) => (
+  <svg className="zen-solitaire-action__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    {name === 'new' ? <><rect x="7" y="3" width="13" height="17" rx="2" /><path d="M4 7v12a2 2 0 0 0 2 2h10M11 8h5m-2.5-2.5v5" /></> : null}
+    {name === 'undo' ? <><path d="M9 6 4 11l5 5" /><path d="M4 11h10a6 6 0 1 1-5.2 9" /></> : null}
+    {name === 'hint' ? <><path d="M9 17h6m-5 3h4M9 14c-1.2-1.1-2-2.4-2-4a5 5 0 0 1 10 0c0 1.6-.8 2.9-2 4l-.8 2h-4.4z" /></> : null}
+    {name === 'menu' ? <><path d="M4 6h16M4 12h16M4 18h16" /></> : null}
+  </svg>
+)
+
+export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, onSaveFailure, onSaveRecovery, onSettingChange }: Props) => {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState)
   const [ready, setReady] = useState(false)
   const [gameDrawMode, setGameDrawMode] = useState(settings.drawMode)
@@ -61,7 +72,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [hint, setHint] = useState<SolitaireHint | null>(null)
   const [hintMessage, setHintMessage] = useState('')
-  const [showRules, setShowRules] = useState(false)
+  const [activeDialog, setActiveDialog] = useState<SolitaireDialog>(null)
+  const [actionMessage, setActionMessage] = useState('')
   const [statistics, setStatistics] = useState<GameStatistics | null>(null)
   const [pendingAction, setPendingAction] = useState(false)
   const [pageVisible, setPageVisible] = useState(() => document.visibilityState === 'visible')
@@ -110,9 +122,15 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   }, [gameDrawMode, onSaveAvailabilityChange, onSaveFailure, ready, state])
 
   useEffect(() => {
-    if (!showRules) return
+    if (activeDialog !== 'options') return
     void readStatistics('solitaire').then(setStatistics)
-  }, [showRules])
+  }, [activeDialog])
+
+  useEffect(() => {
+    if (!actionMessage) return undefined
+    const timeoutId = window.setTimeout(() => setActionMessage(''), 3200)
+    return () => window.clearTimeout(timeoutId)
+  }, [actionMessage])
 
   useEffect(() => {
     const updateVisibility = () => setPageVisible(document.visibilityState === 'visible')
@@ -158,6 +176,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
     setElapsedSeconds(0)
     setHint(null)
     setHintMessage('')
+    setActionMessage('')
     setPendingAction(false)
     clearSelection()
   }
@@ -171,9 +190,11 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   }
 
   const undoMove = () => {
+    if (state.history.length === 0) return
     dispatch({ type: 'undo' })
     setHint(null)
     setHintMessage('')
+    setActionMessage(`Last move undone. ${state.history.length - 1} moves remaining.`)
     clearSelection()
   }
 
@@ -222,6 +243,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
 
   const startWasteDrag = (event: DragEvent<HTMLElement>) => {
     if (state.waste.length === 0) return
+    dismissHint()
     const card = state.waste[state.waste.length - 1]
     setSelected({ location: { type: 'waste' }, cardId: card.id })
     setDragging({ location: { type: 'waste' }, cardId: card.id, cards: [card], x: event.clientX, y: event.clientY })
@@ -229,6 +251,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   }
 
   const startTableauDrag = (index: number, cardId: string, event: DragEvent<HTMLElement>) => {
+    dismissHint()
     const cardIndex = state.tableau[index].findIndex((card) => card.id === cardId)
     const cards = cardIndex >= 0 ? state.tableau[index].slice(cardIndex) : []
     setSelected({ location: { type: 'tableau', index }, cardId })
@@ -244,6 +267,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
       return
     }
     stopDragging()
+    setActionMessage('')
     setInvalidMove(true)
   }
 
@@ -251,6 +275,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
     if (!isValidMove(state, move)) return false
     dispatch({ type: 'move', move })
     dismissHint()
+    setActionMessage('')
     setInvalidMove(false)
     clearSelection()
     return true
@@ -261,22 +286,28 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
     const move = findFoundationMove(state, location, cardId)
     if (move) {
       applyLegalMove(move)
+    } else {
+      setInvalidMove(true)
     }
   }
 
   const autoFinish = () => {
     autoFinishPlan?.forEach((move) => dispatch({ type: 'move', move }))
+    setActiveDialog(null)
+    setActionMessage('Cards moved to the foundations.')
     dismissHint()
     clearSelection()
   }
 
   const deal = () => {
     dispatch({ type: 'deal', drawCount: gameDrawMode === 'three' ? 3 : 1 })
+    setActionMessage('')
     dismissHint()
     clearSelection()
   }
 
   const showHint = () => {
+    setActionMessage('')
     const suggestion = findHint(state)
     setHint(suggestion)
     setHintMessage(suggestion ? '' : 'No move found.')
@@ -323,6 +354,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
     return `Try moving ${describeSolitaireCard(card)} to ${target}.`
   }
 
+  const selectedDescription = describeSelectedSolitaireCard(selected, state)
+
   return (
     <div
       className={`zen-solitaire-table relative flex min-h-0 flex-col ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}
@@ -330,33 +363,44 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
       data-card-style={settings.solitaireCardStyle}
       data-card-back={settings.solitaireCardBack}
     >
-      <GameToolbar className={`zen-solitaire-toolbar ${settings.handedness === 'left' ? 'order-2' : ''}`}>
-        <button type="button" onClick={requestNewGame} className="zen-game-button">
-          New Game
+      <GameToolbar className={`zen-solitaire-toolbar ${settings.handedness === 'left' ? 'zen-solitaire-toolbar--left' : ''}`}>
+        <button type="button" onClick={requestNewGame} className="zen-game-button zen-solitaire-action">
+          <ToolbarIcon name="new" /><span>New Game</span>
         </button>
-        <button type="button" onClick={undoMove} disabled={state.history.length === 0} className="zen-game-button">
-          Undo
+        <button type="button" onClick={undoMove} disabled={state.history.length === 0} className="zen-game-button zen-solitaire-action">
+          <ToolbarIcon name="undo" /><span>Undo</span>
         </button>
-        <button type="button" onClick={showHint} className="zen-game-button">
-          Hint
+        <button type="button" onClick={showHint} className="zen-game-button zen-solitaire-action">
+          <ToolbarIcon name="hint" /><span>Hint</span>
         </button>
-        <button type="button" onClick={() => setShowRules(true)} className="zen-game-button">
-          Rules
+        <button type="button" onClick={() => setActiveDialog('menu')} className="zen-game-button zen-solitaire-action" aria-haspopup="dialog" aria-expanded={activeDialog === 'menu'}>
+          <ToolbarIcon name="menu" /><span>Menu</span>
         </button>
-        {selected ? <button type="button" onClick={clearSelection} className="zen-game-button">Cancel selection</button> : null}
-        {autoFinishPlan ? (
-          <button type="button" onClick={autoFinish} className="zen-game-button">
-            Auto-finish
-          </button>
-        ) : null}
-        {!settings.calmStats ? (
-          <div className="zen-solitaire-stats">
-            <span className="zen-game-stat">Moves {state.history.length}</span>
-            {settings.timer ? (
-              <span className="zen-game-stat">Time {formatTime(elapsedSeconds)}</span>
-            ) : null}
-          </div>
-        ) : null}
+        <div className={`zen-solitaire-context ${invalidMove || hint || hintMessage || (selectedDescription && !dragging) || actionMessage ? 'zen-solitaire-context--feedback' : ''} ${hint || hintMessage ? 'zen-solitaire-context--hint' : ''}`}>
+          {invalidMove ? (
+            <>
+              <span role="alert" className="zen-solitaire-context__text">That move is not allowed. Choose another pile.</span>
+              {selected ? <button type="button" onClick={clearSelection}>Cancel</button> : null}
+            </>
+          ) : hint || hintMessage ? (
+            <>
+              <span role="status" className="zen-solitaire-context__text">{hintDescription()}</span>
+              {hint ? <button type="button" onClick={dismissHint}>Dismiss</button> : null}
+            </>
+          ) : selectedDescription && !dragging ? (
+            <>
+              <span role="status" className="zen-solitaire-context__text">{selectedDescription}</span>
+              <button type="button" onClick={clearSelection}>Cancel</button>
+            </>
+          ) : actionMessage ? (
+            <span role="status" className="zen-solitaire-context__text">{actionMessage}</span>
+          ) : !settings.calmStats ? (
+            <div className="zen-solitaire-stats">
+              <span className="zen-game-stat">Moves {state.history.length}</span>
+              {settings.timer ? <span className="zen-game-stat">Time {formatTime(elapsedSeconds)}</span> : null}
+            </div>
+          ) : null}
+        </div>
       </GameToolbar>
 
       <p className="zen-zoom-scroll-note" role="note">At high zoom, scroll or swipe horizontally to reach every pile.</p>
@@ -413,7 +457,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
                 aria-label={`Foundation ${getTopCard(pile)?.suit ?? `column ${index + 1}`}, ${describeSolitaireCard(getTopCard(pile))}`}
               >
                 <div className={`${canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''} ${hintDestination({ type: 'foundation', index }) ? 'zen-hint-destination' : ''}`}>
-                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
+                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} placeholderLabel="A" largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
                 </div>
               </button>
             ))}
@@ -454,8 +498,6 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         </div>
       </div>
 
-      {invalidMove ? <div role="status" aria-live="polite" className="zen-game-message">That card cannot go there.</div> : null}
-
       {dragging ? (
         <div
           className="pointer-events-none fixed z-50"
@@ -473,13 +515,6 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
             ))}
             <div style={{ height: `calc(${dragging.cards.length - 1} * var(--zen-faceup-step) + var(--zen-card-height))` }} />
           </div>
-        </div>
-      ) : null}
-
-      {hint || hintMessage ? (
-        <div className="zen-game-message flex flex-wrap items-center justify-between gap-3">
-          <span role="status" aria-live="polite">{hintDescription()}</span>
-          {hint ? <button type="button" onClick={dismissHint} className="zen-game-button">Dismiss hint</button> : null}
         </div>
       ) : null}
 
@@ -506,58 +541,98 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         </GameDialog>
       ) : null}
 
-      {showRules ? (
-        <GameDialog title="How to play Solitaire" onDismiss={() => setShowRules(false)}>
-          <div className="max-h-[65vh] space-y-3 overflow-y-auto text-base leading-relaxed">
+      {activeDialog === 'menu' ? (
+        <GameDialog title="Solitaire menu" onDismiss={() => setActiveDialog(null)}>
+          <div className="zen-solitaire-menu">
+            <button type="button" onClick={() => setActiveDialog('rules')} className="zen-game-button">How to Play</button>
+            <button type="button" onClick={() => setActiveDialog('appearance')} className="zen-game-button">Appearance</button>
+            <button type="button" onClick={() => setActiveDialog('options')} className="zen-game-button">Game Options</button>
+            {autoFinishPlan ? <button type="button" onClick={autoFinish} className="zen-game-button">Auto-finish cards</button> : null}
+            {selected ? <button type="button" onClick={() => { clearSelection(); setActiveDialog(null) }} className="zen-game-button">Cancel selection</button> : null}
+          </div>
+          <button type="button" onClick={() => setActiveDialog(null)} className="zen-solitaire-dialog-close">Close menu</button>
+        </GameDialog>
+      ) : null}
+
+      {activeDialog === 'rules' ? (
+        <GameDialog title="How to Play" onDismiss={() => setActiveDialog(null)} focusHeading>
+          <div className="zen-solitaire-dialog-content space-y-3 text-base leading-relaxed">
             <section><h3 className="font-bold">Goal</h3><p>Move all 52 cards to the four foundations, building each suit from Ace to King.</p></section>
             <section><h3 className="font-bold">Tableau</h3><p>Build columns down in alternating red and black. Move a face-up card or a correctly ordered face-up stack. Only a King may start an empty column.</p></section>
             <section><h3 className="font-bold">Foundations</h3><p>Build each foundation up by suit, starting with an Ace.</p></section>
             <section><h3 className="font-bold">Stock and waste</h3><p>Tap the stock to draw {gameDrawMode === 'three' ? 'up to three cards' : 'one card'}. When it is empty, tap it again to turn the waste back over.</p></section>
             <section><h3 className="font-bold">Controls</h3><p>Tap a card or stack, then tap a destination. With a keyboard, use Tab to reach a card or pile and Enter or Space to select it and a destination. Select it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
-            <section aria-labelledby="solitaire-appearance-title" className="space-y-3 border-t border-current/25 pt-3">
-              <h3 id="solitaire-appearance-title" className="font-bold">Appearance</h3>
-              <div className="zen-appearance-controls">
-                <label>Table colour
-                  <select value={settings.solitaireTableTheme} onChange={(event) => onAppearanceChange('solitaireTableTheme', event.target.value as SolitaireTableTheme)}>
-                    <option value="classic-green">Classic Green</option>
-                    <option value="midnight-blue">Midnight Blue</option>
-                    <option value="burgundy">Burgundy</option>
-                  </select>
-                </label>
-                <label>Card style
-                  <select value={settings.solitaireCardStyle} onChange={(event) => onAppearanceChange('solitaireCardStyle', event.target.value as SolitaireCardStyle)}>
-                    <option value="classic">Classic</option>
-                    <option value="large-print">Large Print</option>
-                  </select>
-                </label>
-                <label>Card back
-                  <select value={settings.solitaireCardBack} onChange={(event) => onAppearanceChange('solitaireCardBack', event.target.value as SolitaireCardBack)}>
-                    <option value="classic-blue">Classic Blue</option>
-                    <option value="traditional-red">Traditional Red</option>
-                    <option value="high-contrast">Simple High Contrast</option>
-                  </select>
-                </label>
-              </div>
-              <div
-                className="zen-appearance-preview"
-                data-table-theme={settings.solitaireTableTheme}
-                data-card-style={settings.solitaireCardStyle}
-                data-card-back={settings.solitaireCardBack}
-                role="img"
-                aria-label="Preview of Queen of Hearts, 10 of Spades and selected card back"
-              >
-                <CardView card={{ id: 'preview-queen', rank: 'Q', suit: 'hearts', faceUp: true }} />
-                <CardView card={{ id: 'preview-ten', rank: '10', suit: 'spades', faceUp: true }} />
-                <CardView card={{ id: 'preview-back', rank: 'A', suit: 'clubs', faceUp: false }} />
-              </div>
-              <p className="text-sm">Changes apply immediately and are saved on this device. High contrast is in Settings.</p>
-            </section>
-            {!settings.simpleMode ? <section aria-labelledby="solitaire-statistics-title">
-              <h3 id="solitaire-statistics-title" className="font-bold">Statistics</h3>
-              {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · {statistics.totalMoves} moves in completed games{statistics.bestMoves === null ? '' : ` · best ${statistics.bestMoves} moves`}</p> : <p>Statistics are stored on this device.</p>}
-            </section> : null}
           </div>
-          <button type="button" onClick={() => setShowRules(false)} className="zen-game-button">Close Rules</button>
+          <button type="button" onClick={() => setActiveDialog(null)} className="zen-game-button">Close How to Play</button>
+        </GameDialog>
+      ) : null}
+
+      {activeDialog === 'appearance' ? (
+        <GameDialog title="Appearance" onDismiss={() => setActiveDialog(null)}>
+          <div className="space-y-3">
+            <div className="zen-appearance-controls">
+              <label>Table colour
+                <select value={settings.solitaireTableTheme} onChange={(event) => onSettingChange('solitaireTableTheme', event.target.value as SolitaireTableTheme)}>
+                  <option value="classic-green">Classic Green</option>
+                  <option value="midnight-blue">Midnight Blue</option>
+                  <option value="burgundy">Burgundy</option>
+                </select>
+              </label>
+              <label>Card style
+                <select value={settings.solitaireCardStyle} onChange={(event) => onSettingChange('solitaireCardStyle', event.target.value as SolitaireCardStyle)}>
+                  <option value="classic">Classic</option>
+                  <option value="large-print">Large Print</option>
+                </select>
+              </label>
+              <label>Card back
+                <select value={settings.solitaireCardBack} onChange={(event) => onSettingChange('solitaireCardBack', event.target.value as SolitaireCardBack)}>
+                  <option value="classic-blue">Classic Blue</option>
+                  <option value="traditional-red">Traditional Red</option>
+                  <option value="high-contrast">Simple High Contrast</option>
+                </select>
+              </label>
+            </div>
+            <div
+              className="zen-appearance-preview"
+              data-table-theme={settings.solitaireTableTheme}
+              data-card-style={settings.solitaireCardStyle}
+              data-card-back={settings.solitaireCardBack}
+              role="img"
+              aria-label="Preview of Queen of Hearts, 10 of Spades and selected card back"
+            >
+              <CardView card={{ id: 'preview-queen', rank: 'Q', suit: 'hearts', faceUp: true }} />
+              <CardView card={{ id: 'preview-ten', rank: '10', suit: 'spades', faceUp: true }} />
+              <CardView card={{ id: 'preview-back', rank: 'A', suit: 'clubs', faceUp: false }} />
+            </div>
+            <p className="text-sm">Changes apply immediately and are saved on this device. High contrast is in Settings.</p>
+          </div>
+          <button type="button" onClick={() => setActiveDialog(null)} className="zen-game-button">Close Appearance</button>
+        </GameDialog>
+      ) : null}
+
+      {activeDialog === 'options' ? (
+        <GameDialog title="Game Options" onDismiss={() => setActiveDialog(null)}>
+          <div className="space-y-3">
+            <fieldset className="space-y-2">
+              <legend className="font-semibold">Cards drawn from stock in new games</legend>
+              <div className="zen-solitaire-option-choices">
+                <button type="button" aria-pressed={settings.drawMode === 'one'} onClick={() => onSettingChange('drawMode', 'one')} className={`zen-choice-button ${settings.drawMode === 'one' ? 'is-selected' : ''}`}>Draw one</button>
+                <button type="button" aria-pressed={settings.drawMode === 'three'} onClick={() => onSettingChange('drawMode', 'three')} className={`zen-choice-button ${settings.drawMode === 'three' ? 'is-selected' : ''}`}>Draw three</button>
+              </div>
+              <p className="text-sm">This game uses draw {gameDrawMode === 'three' ? 'three' : 'one'}. A new choice applies when you start a new game.</p>
+            </fieldset>
+            {settings.simpleMode ? <p>Simple Mode hides move counts and statistics. Change Simple Mode in Settings.</p> : (
+              <>
+                <label className="zen-toggle-row">Show timer<input type="checkbox" checked={settings.timer} onChange={(event) => onSettingChange('timer', event.target.checked)} /></label>
+                <label className="zen-toggle-row">Hide move and time counts<input type="checkbox" checked={settings.calmStats} onChange={(event) => onSettingChange('calmStats', event.target.checked)} /></label>
+                <section aria-labelledby="solitaire-statistics-title">
+                  <h3 id="solitaire-statistics-title" className="font-semibold">Statistics</h3>
+                  {statistics ? <p>{statistics.gamesStarted} games started · {statistics.gamesCompleted} completed · {statistics.totalMoves} moves in completed games{statistics.bestMoves === null ? '' : ` · best ${statistics.bestMoves} moves`}</p> : <p>Statistics are stored on this device.</p>}
+                </section>
+              </>
+            )}
+          </div>
+          <button type="button" onClick={() => setActiveDialog(null)} className="zen-game-button">Close Game Options</button>
         </GameDialog>
       ) : null}
     </div>
