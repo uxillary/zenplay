@@ -78,6 +78,19 @@ test('Solitaire assistance preferences persist independently', () => {
   assert.equal(highlighting.solitaireShowPossibleMoves, true)
 })
 
+test('an explicitly saved verbose preference survives reload and can be switched off', () => {
+  let stored: string | null = null
+  const storage = {
+    getItem: () => stored,
+    setItem: (_key: string, value: string) => { stored = value },
+  }
+  assert.equal(loadSettings(storage).solitaireVerboseFeedback, false)
+  assert.equal(saveSettings({ ...defaultSettings, solitaireVerboseFeedback: true }, storage), true)
+  assert.equal(loadSettings(storage).solitaireVerboseFeedback, true)
+  assert.equal(saveSettings({ ...loadSettings(storage), solitaireVerboseFeedback: false }, storage), true)
+  assert.equal(loadSettings(storage).solitaireVerboseFeedback, false)
+})
+
 test('Solitaire appearance selections persist locally and leave the app theme alone', () => {
   let stored: string | null = null
   const storage = {

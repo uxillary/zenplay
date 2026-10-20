@@ -12,6 +12,8 @@ import type { Card, Location, Move, SolitaireState, StockDrawCount } from '../mo
 import { CardView } from './CardView'
 import { PileView } from './PileView'
 import { describeSelectedSolitaireCard, describeSolitaireCard } from './cardAccessibility'
+import { foundationGuideSuits } from './cardArtwork'
+import { ACTION_FEEDBACK_MS, INVALID_FEEDBACK_MS, resolveFeedback } from './feedback'
 import { GameToolbar } from '../../../components/GameToolbar'
 import { GameDialog } from '../../../components/GameDialog'
 
@@ -128,9 +130,15 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
 
   useEffect(() => {
     if (!actionMessage) return undefined
-    const timeoutId = window.setTimeout(() => setActionMessage(''), 3200)
+    const timeoutId = window.setTimeout(() => setActionMessage(''), ACTION_FEEDBACK_MS)
     return () => window.clearTimeout(timeoutId)
   }, [actionMessage])
+
+  useEffect(() => {
+    if (!invalidMove) return undefined
+    const timeoutId = window.setTimeout(() => setInvalidMove(false), INVALID_FEEDBACK_MS)
+    return () => window.clearTimeout(timeoutId)
+  }, [invalidMove])
 
   useEffect(() => {
     const updateVisibility = () => setPageVisible(document.visibilityState === 'visible')
@@ -345,7 +353,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
     hint?.type === 'move' && sameLocation(hint.move.to, location)
 
   const hintDescription = (): string => {
-    if (hint?.type === 'deal') return 'Try drawing from the stock.'
+    if (hint?.type === 'deal') return 'Draw from the stock.'
     if (hint?.type !== 'move') return hintMessage
     const card = hint.move.from.type === 'waste'
       ? getTopCard(state.waste)
@@ -353,16 +361,23 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         ? state.tableau[hint.move.from.index]?.find((item) => item.id === hint.move.cardId)
         : undefined
     const target = hint.move.to.type === 'tableau'
-      ? `tableau column ${hint.move.to.index + 1}`
+      ? `column ${hint.move.to.index + 1}`
       : hint.move.to.type === 'foundation'
         ? `foundation ${hint.move.to.index + 1}`
         : 'waste pile'
-    return `Try moving ${describeSolitaireCard(card)} to ${target}.`
+    return `Move ${describeSolitaireCard(card)} to ${target}.`
   }
 
   const selectedDescription = describeSelectedSolitaireCard(selected, state)
-  const showRoutineFeedback = settings.solitaireVerboseFeedback && !dragging
-  const visibleRoutineFeedback = showRoutineFeedback && (selectedDescription || actionMessage)
+  const foundationGuides = foundationGuideSuits(state.foundations)
+  const feedback = resolveFeedback({
+    verbose: settings.solitaireVerboseFeedback,
+    invalid: invalidMove,
+    hasHint: Boolean(hint || hintMessage),
+    selectedDescription,
+    actionMessage,
+    dragging: Boolean(dragging),
+  })
 
   return (
     <div
@@ -384,23 +399,23 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         <button type="button" onClick={() => setActiveDialog('menu')} className="zen-game-button zen-solitaire-action" aria-haspopup="dialog" aria-expanded={activeDialog === 'menu'}>
           <ToolbarIcon name="menu" /><span>Menu</span>
         </button>
-        <div className={`zen-solitaire-context ${invalidMove || hint || hintMessage || visibleRoutineFeedback ? 'zen-solitaire-context--feedback' : ''} ${hint || hintMessage ? 'zen-solitaire-context--hint' : ''}`}>
-          {invalidMove ? (
+        <div className={`zen-solitaire-context ${feedback.mode !== 'stats' ? 'zen-solitaire-context--feedback' : ''}`}>
+          {feedback.mode === 'invalid' ? (
             <>
               <span role="alert" className="zen-solitaire-context__text">That move is not allowed. Choose another pile.</span>
               {selected ? <button type="button" onClick={clearSelection}>Cancel</button> : null}
             </>
-          ) : hint || hintMessage ? (
+          ) : feedback.mode === 'hint' ? (
             <>
               <span role="status" className="zen-solitaire-context__text">{hintDescription()}</span>
-              {hint ? <button type="button" onClick={dismissHint}>Dismiss</button> : null}
+              <button type="button" onClick={dismissHint}>Dismiss</button>
             </>
-          ) : showRoutineFeedback && selectedDescription ? (
+          ) : feedback.mode === 'selection' ? (
             <>
               <span role="status" className="zen-solitaire-context__text">{selectedDescription}</span>
               <button type="button" onClick={clearSelection}>Cancel</button>
             </>
-          ) : showRoutineFeedback && actionMessage ? (
+          ) : feedback.mode === 'action' ? (
             <span role="status" className="zen-solitaire-context__text">{actionMessage}</span>
           ) : !settings.calmStats ? (
             <div className="zen-solitaire-stats">
@@ -411,9 +426,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         </div>
       </GameToolbar>
       <div role="status" aria-live="polite" className="sr-only">
-        {!settings.solitaireVerboseFeedback && !invalidMove && !hint && !hintMessage
-          ? (selectedDescription && !dragging ? selectedDescription : actionMessage)
-          : ''}
+        {feedback.screenReaderOnly}
       </div>
 
       <p className="zen-zoom-scroll-note" role="note">At high zoom, scroll or swipe horizontally to reach every pile.</p>
@@ -467,10 +480,10 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
                   attemptMove({ type: 'foundation', index })
                 }}
                 className="zen-card-button"
-                aria-label={`Foundation ${getTopCard(pile)?.suit ?? `column ${index + 1}`}, ${describeSolitaireCard(getTopCard(pile))}`}
+                aria-label={pile.length ? `Foundation ${getTopCard(pile)?.suit}, ${describeSolitaireCard(getTopCard(pile))}` : `Foundation column ${index + 1}, empty, accepts any Ace`}
               >
                 <div className={`${settings.solitaireShowPossibleMoves && canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''} ${hintDestination({ type: 'foundation', index }) ? 'zen-hint-destination' : ''}`}>
-                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} placeholderLabel="A" largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
+                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} placeholderKind="foundation" placeholderSuit={foundationGuides[index]} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
                 </div>
               </button>
             ))}
@@ -572,7 +585,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
           <div className="zen-solitaire-dialog-content space-y-3 text-base leading-relaxed">
             <section><h3 className="font-bold">Goal</h3><p>Move all 52 cards to the four foundations, building each suit from Ace to King.</p></section>
             <section><h3 className="font-bold">Tableau</h3><p>Build columns down in alternating red and black. Move a face-up card or a correctly ordered face-up stack. Only a King may start an empty column.</p></section>
-            <section><h3 className="font-bold">Foundations</h3><p>Build each foundation up by suit, starting with an Ace.</p></section>
+            <section><h3 className="font-bold">Foundations</h3><p>Build each foundation up by suit, starting with an Ace. Empty suit symbols show suits still needed; any Ace may start any empty foundation.</p></section>
             <section><h3 className="font-bold">Stock and waste</h3><p>Tap the stock to draw {gameDrawMode === 'three' ? 'up to three cards' : 'one card'}. When it is empty, tap it again to turn the waste back over.</p></section>
             <section><h3 className="font-bold">Controls</h3><p>Tap a card or stack, then tap a destination. With a keyboard, use Tab to reach a card or pile and Enter or Space to select it and a destination. Select it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
           </div>
@@ -635,11 +648,11 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
               <p className="text-sm">This game uses draw {gameDrawMode === 'three' ? 'three' : 'one'}. A new choice applies when you start a new game.</p>
             </fieldset>
             <div>
-              <label className="zen-toggle-row">Verbose feedback<input type="checkbox" checked={settings.solitaireVerboseFeedback} onChange={(event) => onSettingChange('solitaireVerboseFeedback', event.target.checked)} /></label>
+              <label className="zen-toggle-row"><span>Verbose feedback: {settings.solitaireVerboseFeedback ? 'On' : 'Off'}</span><input type="checkbox" checked={settings.solitaireVerboseFeedback} onChange={(event) => onSettingChange('solitaireVerboseFeedback', event.target.checked)} /></label>
               <p className="text-sm">Show card selections and completed actions in the toolbar. Screen-reader announcements remain on when this is off.</p>
             </div>
             <div>
-              <label className="zen-toggle-row">Show possible moves<input type="checkbox" checked={settings.solitaireShowPossibleMoves} onChange={(event) => onSettingChange('solitaireShowPossibleMoves', event.target.checked)} /></label>
+              <label className="zen-toggle-row"><span>Show possible moves: {settings.solitaireShowPossibleMoves ? 'On' : 'Off'}</span><input type="checkbox" checked={settings.solitaireShowPossibleMoves} onChange={(event) => onSettingChange('solitaireShowPossibleMoves', event.target.checked)} /></label>
               <p className="text-sm">Outline legal destinations after selecting a card. The Hint button works separately.</p>
             </div>
             {settings.simpleMode ? <p>Simple Mode hides move counts and statistics. Change Simple Mode in Settings.</p> : (

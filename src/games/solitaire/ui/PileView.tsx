@@ -61,7 +61,7 @@ export const PileView = ({
         className={`zen-empty-pile ${canDrop ? 'zen-drop-target' : ''} ${hintedDestination ? 'zen-hint-destination' : ''}`}
         aria-label={ariaLabel}
       >
-        <CardView placeholder placeholderLabel="K" largeCards={largeCards} />
+        <CardView placeholder placeholderKind="tableau" largeCards={largeCards} />
       </button>
     )
   }

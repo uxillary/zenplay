@@ -4,6 +4,8 @@
 
 The 52 card faces come from Dmitry Fomin's *English pattern playing cards deck.svg*, published on Wikimedia Commons as the creator's own work under the **CC0 1.0 Universal Public Domain Dedication**. Commons identifies the author and licence on the [deck page](https://commons.wikimedia.org/wiki/File:English_pattern_playing_cards_deck.svg); CC0 permits copying, adapting and redistribution without attribution requirements ([licence deed](https://creativecommons.org/publicdomain/zero/1.0/)). ZenPlay credits the artist here as a courtesy and does not imply endorsement.
 
+Current asset note: M19F replaced the 40 numbered face files with one reusable SVG pip system rendered by `CardView`. The twelve CC0 court portraits remain unchanged. This section records the original M19B deck provenance; see `M19F_SOLITAIRE_VISUAL_CONSISTENCY.md` for the current numbered-card implementation.
+
 Each card face in `public/cards/english-pattern/` is an individual SVG extracted from the corresponding card group in that complete deck. The source has 13 ranks across four suits, including mirrored English-pattern Jacks, Queens and Kings and traditional pip layouts. The deck art is used unchanged. `back.svg` is a new ZenPlay design: a symmetric blue lattice and rosette with a white frame.
 
 ## Implementation

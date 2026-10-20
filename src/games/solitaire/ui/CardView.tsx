@@ -1,19 +1,14 @@
 import type { DragEvent, TouchEvent } from 'react'
 import { useRef } from 'react'
-import type { Card } from '../model/types'
+import type { Card, Suit } from '../model/types'
 import { describeSolitaireCard } from './cardAccessibility'
+import { courtCardAsset, numberedPips, suitPaths } from './cardArtwork'
 
-const suitSymbol = {
-  clubs: '♣',
-  diamonds: '♦',
-  hearts: '♥',
-  spades: '♠',
-}
-
-const cardAsset = (card: Card) => {
-  const rank = card.rank === 'A' ? 'ace' : card.rank === 'J' ? 'jack' : card.rank === 'Q' ? 'queen' : card.rank === 'K' ? 'king' : card.rank
-  return `/cards/english-pattern/${rank}_of_${card.suit}.svg`
-}
+const SuitMark = ({ suit, className = '' }: { suit: Suit; className?: string }) => (
+  <svg className={className} viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <path d={suitPaths[suit]} fill="currentColor" />
+  </svg>
+)
 
 type Props = {
   card?: Card
@@ -26,7 +21,8 @@ type Props = {
   onDragEnd?: () => void
   largeCards?: boolean
   placeholder?: boolean
-  placeholderLabel?: 'A' | 'K'
+  placeholderKind?: 'foundation' | 'tableau'
+  placeholderSuit?: Suit | null
   ghosted?: boolean
   animate?: boolean
 }
@@ -52,7 +48,8 @@ export const CardView = ({
   onDragEnd,
   largeCards,
   placeholder,
-  placeholderLabel,
+  placeholderKind,
+  placeholderSuit,
   ghosted,
   animate,
 }: Props) => {
@@ -72,7 +69,10 @@ export const CardView = ({
   }
 
   if (placeholder) {
-    return <div className={`zen-card-placeholder ${size}`} aria-hidden>{placeholderLabel}</div>
+    return <div className={`zen-card-placeholder ${size} ${placeholderKind ? `zen-card-placeholder--${placeholderKind}` : ''}`} aria-hidden="true">
+      {placeholderKind === 'foundation' && placeholderSuit ? <SuitMark suit={placeholderSuit} className="zen-card-placeholder__suit" /> : null}
+      {placeholderKind === 'tableau' ? <span className="zen-card-placeholder__king">K</span> : null}
+    </div>
   }
 
   if (!card) return null
@@ -83,14 +83,26 @@ export const CardView = ({
 
   const red = card.suit === 'hearts' || card.suit === 'diamonds'
   const suitColour = red ? 'zen-card-suit--red' : 'zen-card-suit--black'
+  const courtAsset = courtCardAsset(card)
   const content = (
     <>
-      <img className="zen-card-art" src={cardAsset(card)} alt="" draggable="false" aria-hidden="true" />
+      {courtAsset ? <img className="zen-card-art" src={courtAsset} alt="" draggable="false" aria-hidden="true" /> : (
+        <svg className={`zen-card-art ${suitColour}`} viewBox="0 0 360 540" aria-hidden="true" focusable="false">
+          {(card.rank === 'J' || card.rank === 'Q' || card.rank === 'K' ? [] : numberedPips[card.rank]).map((pip, index) => (
+            <path
+              key={index}
+              d={suitPaths[card.suit]}
+              fill="currentColor"
+              transform={`translate(${pip.x} ${pip.y}) rotate(${pip.inverted ? 180 : 0}) scale(${(pip.size ?? 64) / 100}) translate(-50 -50)`}
+            />
+          ))}
+        </svg>
+      )}
       <span className={`zen-card-corner zen-card-corner--top ${suitColour}`} aria-hidden="true">
-        <span className={card.rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
+        <span className={card.rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{card.rank}</span><SuitMark suit={card.suit} className="zen-card-corner__suit" />
       </span>
       <span className={`zen-card-corner zen-card-corner--bottom ${suitColour}`} aria-hidden="true">
-        <span className={card.rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{card.rank}</span><span className="zen-card-corner__suit">{suitSymbol[card.suit]}</span>
+        <span className={card.rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{card.rank}</span><SuitMark suit={card.suit} className="zen-card-corner__suit" />
       </span>
     </>
   )
