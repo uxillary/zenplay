@@ -54,6 +54,17 @@ body {
   color: var(--zp-text);
 }
 
+/* Tableau height changes must not change the document's usable width. */
+html:has(.zen-app-frame--solitaire) {
+  scrollbar-gutter: stable;
+}
+
+@supports not (scrollbar-gutter: stable) {
+  html:has(.zen-app-frame--solitaire) {
+    overflow-y: scroll;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -322,6 +333,7 @@ button:focus-visible,
   --zen-felt: #19633f;
   --zen-felt-border: #174b32;
   --zen-card-back-image: url('/cards/english-pattern/back.svg');
+  overflow-anchor: none;
   container-type: inline-size;
   width: 100%;
   max-width: 56.25rem;
