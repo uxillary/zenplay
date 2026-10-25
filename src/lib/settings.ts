@@ -5,6 +5,7 @@ export type UiScale = 'normal' | 'large' | 'extra-large'
 export type GamePieceScale = 'normal' | 'large'
 export type SolitaireTableTheme = 'classic-green' | 'midnight-blue' | 'burgundy'
 export type SolitaireCardStyle = 'classic' | 'large-print'
+export type SolitaireCardFaces = 'simplified' | 'traditional'
 export type SolitaireCardBack = 'classic-blue' | 'traditional-red' | 'high-contrast'
 
 export type AppSettings = {
@@ -20,12 +21,13 @@ export type AppSettings = {
   drawMode: DrawMode
   solitaireTableTheme: SolitaireTableTheme
   solitaireCardStyle: SolitaireCardStyle
+  solitaireCardFaces: SolitaireCardFaces
   solitaireCardBack: SolitaireCardBack
   solitaireVerboseFeedback: boolean
   solitaireShowPossibleMoves: boolean
 }
 
-export const SETTINGS_VERSION = 4
+export const SETTINGS_VERSION = 5
 const STORAGE_KEY = 'zenplay-settings'
 
 export const defaultSettings: AppSettings = {
@@ -41,6 +43,7 @@ export const defaultSettings: AppSettings = {
   drawMode: 'one',
   solitaireTableTheme: 'classic-green',
   solitaireCardStyle: 'classic',
+  solitaireCardFaces: 'simplified',
   solitaireCardBack: 'classic-blue',
   solitaireVerboseFeedback: false,
   solitaireShowPossibleMoves: false,
@@ -77,6 +80,7 @@ export const parseSettings = (raw: string | null): AppSettings => {
       drawMode: oneOf(values.drawMode, ['one', 'three'] as const, defaultSettings.drawMode),
       solitaireTableTheme: oneOf(values.solitaireTableTheme, ['classic-green', 'midnight-blue', 'burgundy'] as const, defaultSettings.solitaireTableTheme),
       solitaireCardStyle: oneOf(values.solitaireCardStyle, ['classic', 'large-print'] as const, defaultSettings.solitaireCardStyle),
+      solitaireCardFaces: oneOf(values.solitaireCardFaces, ['simplified', 'traditional'] as const, defaultSettings.solitaireCardFaces),
       solitaireCardBack: oneOf(values.solitaireCardBack, ['classic-blue', 'traditional-red', 'high-contrast'] as const, defaultSettings.solitaireCardBack),
       solitaireVerboseFeedback: typeof values.solitaireVerboseFeedback === 'boolean' ? values.solitaireVerboseFeedback : defaultSettings.solitaireVerboseFeedback,
       solitaireShowPossibleMoves: typeof values.solitaireShowPossibleMoves === 'boolean' ? values.solitaireShowPossibleMoves : defaultSettings.solitaireShowPossibleMoves,

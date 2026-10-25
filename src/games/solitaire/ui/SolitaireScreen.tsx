@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState, type DragEvent } from 'react'
-import type { AppSettings, SolitaireCardBack, SolitaireCardStyle, SolitaireTableTheme } from '../../../lib/settings'
+import type { AppSettings, SolitaireCardBack, SolitaireCardFaces, SolitaireCardStyle, SolitaireTableTheme } from '../../../lib/settings'
 import { deleteActiveSave, saveActiveGame, createSessionId } from '../../../persistence/gameSave'
 import { readStatistics, recordGameCompleted, recordGameStarted } from '../../../persistence/statistics'
 import type { GameStatistics } from '../../../persistence/types'
@@ -384,6 +384,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
       className={`zen-solitaire-table relative flex min-h-0 flex-col ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}
       data-table-theme={settings.solitaireTableTheme}
       data-card-style={settings.solitaireCardStyle}
+      data-card-faces={settings.solitaireCardFaces}
       data-card-back={settings.solitaireCardBack}
     >
       <GameToolbar className={`zen-solitaire-toolbar ${settings.handedness === 'left' ? 'zen-solitaire-toolbar--left' : ''}`}>
@@ -439,7 +440,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
               className={`zen-card-button ${hint?.type === 'deal' ? 'zen-hint-source' : ''}`}
               aria-label={`Stock, ${cardCount(state.stock.length)} remaining${gameDrawMode === 'three' ? ', draw three' : ', draw one'}`}
             >
-              <CardView card={getTopCard(state.stock)} placeholder={state.stock.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
+              <CardView card={getTopCard(state.stock)} placeholder={state.stock.length === 0} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} cardFaces={settings.solitaireCardFaces} />
             </button>
             <button
               type="button"
@@ -454,6 +455,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
             >
               <CardView
                 card={getTopCard(state.waste)}
+                cardFaces={settings.solitaireCardFaces}
                 placeholder={state.waste.length === 0}
                 largeCards={(settings.gamePieceScale === 'large')}
                 selected={selected?.location.type === 'waste'}
@@ -483,7 +485,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
                 aria-label={pile.length ? `Foundation ${getTopCard(pile)?.suit}, ${describeSolitaireCard(getTopCard(pile))}` : `Foundation column ${index + 1}, empty, accepts any Ace`}
               >
                 <div className={`${settings.solitaireShowPossibleMoves && canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''} ${hintDestination({ type: 'foundation', index }) ? 'zen-hint-destination' : ''}`}>
-                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} placeholderKind="foundation" placeholderSuit={foundationGuides[index]} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} />
+                  <CardView card={getTopCard(pile)} placeholder={pile.length === 0} placeholderKind="foundation" placeholderSuit={foundationGuides[index]} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} cardFaces={settings.solitaireCardFaces} />
                 </div>
               </button>
             ))}
@@ -500,6 +502,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
               columnIndex={index}
               ariaLabel={`Tableau column ${index + 1}, ${cardCount(pile.length)}, ${describeSolitaireCard(getTopCard(pile))}`}
               largeCards={(settings.gamePieceScale === 'large')}
+              cardFaces={settings.solitaireCardFaces}
               selectedCardId={selected?.cardId}
               canDrop={settings.solitaireShowPossibleMoves && canDrop({ type: 'tableau', index })}
               onEmptyClick={() => attemptMove({ type: 'tableau', index })}
@@ -536,7 +539,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
           <div className="relative drop-shadow-xl">
             {dragging.cards.map((card, index) => (
               <div key={card.id} className="absolute" style={{ top: `calc(${index} * var(--zen-faceup-step))`, zIndex: index }}>
-                <CardView card={card} largeCards={(settings.gamePieceScale === 'large')} />
+                <CardView card={card} largeCards={(settings.gamePieceScale === 'large')} cardFaces={settings.solitaireCardFaces} />
               </div>
             ))}
             <div style={{ height: `calc(${dragging.cards.length - 1} * var(--zen-faceup-step) + var(--zen-card-height))` }} />
@@ -610,6 +613,12 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
                   <option value="large-print">Large Print</option>
                 </select>
               </label>
+              <label>Card faces
+                <select value={settings.solitaireCardFaces} onChange={(event) => onSettingChange('solitaireCardFaces', event.target.value as SolitaireCardFaces)}>
+                  <option value="simplified">Simplified</option>
+                  <option value="traditional">Traditional</option>
+                </select>
+              </label>
               <label>Card back
                 <select value={settings.solitaireCardBack} onChange={(event) => onSettingChange('solitaireCardBack', event.target.value as SolitaireCardBack)}>
                   <option value="classic-blue">Classic Blue</option>
@@ -622,12 +631,13 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
               className="zen-appearance-preview"
               data-table-theme={settings.solitaireTableTheme}
               data-card-style={settings.solitaireCardStyle}
+              data-card-faces={settings.solitaireCardFaces}
               data-card-back={settings.solitaireCardBack}
               role="img"
               aria-label="Preview of Queen of Hearts, 10 of Spades and selected card back"
             >
-              <CardView card={{ id: 'preview-queen', rank: 'Q', suit: 'hearts', faceUp: true }} />
-              <CardView card={{ id: 'preview-ten', rank: '10', suit: 'spades', faceUp: true }} />
+              <CardView card={{ id: 'preview-queen', rank: 'Q', suit: 'hearts', faceUp: true }} cardFaces={settings.solitaireCardFaces} />
+              <CardView card={{ id: 'preview-ten', rank: '10', suit: 'spades', faceUp: true }} cardFaces={settings.solitaireCardFaces} />
               <CardView card={{ id: 'preview-back', rank: 'A', suit: 'clubs', faceUp: false }} />
             </div>
             <p className="text-sm">Changes apply immediately and are saved on this device. High contrast is in Settings.</p>

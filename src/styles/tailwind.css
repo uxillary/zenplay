@@ -944,6 +944,11 @@ button:focus-visible,
   white-space: nowrap;
 }
 
+.zen-card-face--simplified .zen-card-corner {
+  font-size: clamp(1rem, calc(var(--zen-card-width) * 0.38), 1.45rem);
+  font-weight: 900;
+}
+
 :is(.zen-solitaire-table, .zen-appearance-preview)[data-card-style='large-print'] .zen-card-corner {
   font-size: clamp(0.98rem, calc(var(--zen-card-width) * 0.37), 1.4rem);
   font-weight: 900;

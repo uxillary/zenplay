@@ -18,6 +18,7 @@ test('settings have readable, safe defaults', () => {
   assert.equal(defaultSettings.simpleMode, false)
   assert.equal(defaultSettings.solitaireTableTheme, 'classic-green')
   assert.equal(defaultSettings.solitaireCardStyle, 'classic')
+  assert.equal(defaultSettings.solitaireCardFaces, 'simplified')
   assert.equal(defaultSettings.solitaireCardBack, 'classic-blue')
   assert.equal(defaultSettings.solitaireVerboseFeedback, false)
   assert.equal(defaultSettings.solitaireShowPossibleMoves, false)
@@ -35,6 +36,7 @@ test('legacy saved settings retain existing preferences and migrate card size', 
   assert.equal(migrated.timer, false)
   assert.equal(migrated.solitaireTableTheme, 'classic-green')
   assert.equal(migrated.solitaireCardStyle, 'classic')
+  assert.equal(migrated.solitaireCardFaces, 'simplified')
   assert.equal(migrated.solitaireCardBack, 'classic-blue')
   const versionTwo = parseSettings(JSON.stringify({ version: 2, settings: { theme: 'light', drawMode: 'three' } }))
   assert.equal(versionTwo.theme, 'light')
@@ -61,12 +63,30 @@ test('malformed and unsupported settings values fall back safely', () => {
   }))
   assert.equal(invalidAppearance.solitaireTableTheme, 'classic-green')
   assert.equal(invalidAppearance.solitaireCardStyle, 'classic')
+  assert.equal(invalidAppearance.solitaireCardFaces, 'simplified')
   assert.equal(invalidAppearance.solitaireCardBack, 'classic-blue')
   const invalidAssistance = parseSettings(JSON.stringify({
     solitaireVerboseFeedback: 'true', solitaireShowPossibleMoves: 1,
   }))
   assert.equal(invalidAssistance.solitaireVerboseFeedback, false)
   assert.equal(invalidAssistance.solitaireShowPossibleMoves, false)
+})
+
+test('Solitaire card faces default, validate, persist and switch independently of Large Print', () => {
+  let stored: string | null = null
+  const storage = {
+    getItem: () => stored,
+    setItem: (_key: string, value: string) => { stored = value },
+  }
+  assert.equal(loadSettings(storage).solitaireCardFaces, 'simplified')
+  assert.equal(parseSettings(JSON.stringify({ solitaireCardFaces: 'invalid' })).solitaireCardFaces, 'simplified')
+  const classic = { ...defaultSettings, solitaireCardStyle: 'large-print' as const, solitaireCardFaces: 'traditional' as const }
+  assert.equal(saveSettings(classic, storage), true)
+  assert.deepEqual(loadSettings(storage), classic)
+  const switched = { ...loadSettings(storage), solitaireCardFaces: 'simplified' as const }
+  assert.equal(saveSettings(switched, storage), true)
+  assert.equal(loadSettings(storage).solitaireCardStyle, 'large-print')
+  assert.equal(loadSettings(storage).solitaireCardFaces, 'simplified')
 })
 
 test('Solitaire assistance preferences persist independently', () => {

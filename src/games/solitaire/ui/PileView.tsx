@@ -1,5 +1,6 @@
 import type { DragEvent } from 'react'
 import type { Card } from '../model/types'
+import type { SolitaireCardFaces } from '../../../lib/settings'
 import { CardView } from './CardView'
 
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
   hintedCardId?: string
   hintedDestination?: boolean
   motionEnabled: boolean
+  cardFaces: SolitaireCardFaces
 }
 
 export const PileView = ({
@@ -42,6 +44,7 @@ export const PileView = ({
   hintedCardId,
   hintedDestination,
   motionEnabled,
+  cardFaces,
 }: Props) => {
   const topOffsetFor = (index: number) => {
     const faceUpCount = cards.slice(0, index).filter((card) => card.faceUp).length
@@ -90,6 +93,7 @@ export const PileView = ({
           >
           <CardView
             card={card}
+            cardFaces={cardFaces}
             selected={selectedCardId === card.id}
             hinted={hintedCardId === card.id}
             largeCards={largeCards}

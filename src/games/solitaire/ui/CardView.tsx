@@ -1,5 +1,6 @@
 import type { DragEvent, TouchEvent } from 'react'
 import { useRef } from 'react'
+import type { SolitaireCardFaces } from '../../../lib/settings'
 import type { Card, Rank, Suit } from '../model/types'
 import { describeSolitaireCard } from './cardAccessibility'
 import { courtCardAsset, numberedPips, suitPaths } from './cardArtwork'
@@ -32,6 +33,7 @@ type Props = {
   placeholderSuit?: Suit | null
   ghosted?: boolean
   animate?: boolean
+  cardFaces?: SolitaireCardFaces
 }
 
 const hideNativeDragPreview = (event: DragEvent<HTMLElement>) => {
@@ -59,6 +61,7 @@ export const CardView = ({
   placeholderSuit,
   ghosted,
   animate,
+  cardFaces = 'simplified',
 }: Props) => {
   const lastTapAt = useRef(0)
   const size = largeCards ? 'zen-playing-card--large' : 'zen-playing-card--standard'
@@ -94,8 +97,10 @@ export const CardView = ({
   const content = (
     <>
       {courtAsset ? <img className="zen-card-art" src={courtAsset} alt="" draggable="false" aria-hidden="true" /> : (
-        <svg className={`zen-card-art ${suitColour}`} viewBox="0 0 360 540" aria-hidden="true" focusable="false">
-          {(card.rank === 'J' || card.rank === 'Q' || card.rank === 'K' ? [] : numberedPips[card.rank]).map((pip, index) => (
+        <svg className={`zen-card-art ${suitColour}`} viewBox="0 0 360 540" aria-hidden="true" focusable="false" data-face-layout={cardFaces}>
+          {(cardFaces === 'simplified'
+            ? [{ x: 180, y: 270, size: 200 }]
+            : numberedPips[card.rank as keyof typeof numberedPips]).map((pip, index) => (
             <path
               key={index}
               d={suitPaths[card.suit]}
@@ -123,7 +128,7 @@ export const CardView = ({
         onDrag={onDrag}
         onDragEnd={onDragEnd}
         onTouchEnd={handleTouchEnd}
-        className={`${baseCardClass} zen-card-face ${selected ? 'zen-card-selected' : ''}`}
+        className={`${baseCardClass} zen-card-face ${cardFaces === 'simplified' && !courtAsset ? 'zen-card-face--simplified' : ''} ${selected ? 'zen-card-selected' : ''}`}
       >
         {content}
       </div>
@@ -151,7 +156,7 @@ export const CardView = ({
         onDoubleClick?.()
       }}
       onTouchEnd={handleTouchEnd}
-      className={`${baseCardClass} zen-card-face ${selected ? 'zen-card-selected' : ''}`}
+      className={`${baseCardClass} zen-card-face ${cardFaces === 'simplified' && !courtAsset ? 'zen-card-face--simplified' : ''} ${selected ? 'zen-card-selected' : ''}`}
       aria-label={`${describeSolitaireCard(card)}${selected ? ', selected' : ''}${hinted ? ', suggested move' : ''}`}
       aria-pressed={Boolean(selected)}
     >
