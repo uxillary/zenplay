@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>M19G.1 mobile Solitaire card composition prototype</title>
+  <style>
+    :root { font-family: Arial, Helvetica, sans-serif; color: #17251f; background: #edf1ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    h2 { margin: 0 0 4px; font-size: 18px; }
+    p { margin: 0 0 14px; line-height: 1.45; }
+    .note { max-width: 800px; font-size: 14px; }
+    .phones { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+    .phone { width: var(--viewport); flex: none; border: 1px solid #9aaa9f; border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 3px 14px #183a2826; }
+    .phone header { padding: 12px; background: #f7faf7; border-bottom: 1px solid #d7e3d9; }
+    .phone header p { margin: 2px 0 0; font-size: 12px; }
+    .felt { padding: 8px 6px 18px; background: #19633f; color: white; }
+    .column-head, .comparison { display: grid; grid-template-columns: 58px 1fr 1fr; gap: 8px; align-items: center; }
+    .column-head { margin: 0 0 5px; font-size: 11px; font-weight: 700; text-align: center; }
+    .comparison { min-height: calc(var(--card-height) + 12px); padding: 6px 0; border-top: 1px solid #ffffff30; }
+    .comparison .name { font-size: 12px; font-weight: 700; line-height: 1.2; }
+    .comparison .cell { display: grid; place-items: center; }
+    .card { position: relative; overflow: hidden; display: block; width: var(--card-width); height: var(--card-height); border: 1px solid #bab7ae; border-radius: 4px; background: #fff; box-shadow: 0 1px 3px #0003; color: var(--ink); }
+    .card.red { --ink: #bd2029; }
+    .card.black { --ink: #171717; }
+    .old-art { width: 100%; height: 100%; display: block; object-fit: contain; }
+    .index { position: absolute; z-index: 2; top: 1px; left: 1px; display: flex; flex-direction: column; align-items: center; gap: .03em; padding: 1px; background: #fff; color: var(--ink); font-size: clamp(16px, calc(var(--card-width) * .38), 23.2px); font-weight: 900; line-height: 1; }
+    .index .rank.ten { font-size: .9em; letter-spacing: -.08em; white-space: nowrap; }
+    .index svg { width: 1.02em; height: 1.02em; }
+    .old .index.bottom { top: auto; left: auto; right: 1px; bottom: 1px; transform: rotate(180deg); }
+    .new .index { font-size: clamp(16px, calc(var(--card-width) * .42), 23px); }
+    .new .index .rank.ten { font-size: .82em; letter-spacing: -.09em; }
+    .new .index svg { width: .68em; height: .68em; margin-top: 1px; }
+    .new .hero-suit { position: absolute; right: 2px; bottom: 2px; width: 70%; height: auto; aspect-ratio: 1; overflow: visible; color: var(--ink); }
+    .new.court .court-art { position: absolute; display: block; width: 132%; height: 132%; max-width: none; top: -15%; left: -12%; object-fit: contain; }
+    .stack-title { margin: 16px 0 5px; font-size: 12px; font-weight: 700; }
+    .stacks { display: flex; justify-content: space-around; gap: 10px; }
+    .stack { position: relative; width: var(--card-width); height: calc(var(--card-height) + 3 * var(--step)); }
+    .stack .card { position: absolute; left: 0; top: calc(var(--i) * var(--step)); }
+    .stack-label { margin-top: 4px; text-align: center; font-size: 11px; }
+    footer { max-width: 800px; padding: 14px 0 20px; font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>M19G.1 · Mobile Solitaire card composition</h1>
+  <p class="note">Design comparison at the card dimensions derived from ZenPlay’s seven-column mobile board. Left is the current M19G Simplified face; right is the proposed one-index composition. The court uses the existing English-pattern SVG, scaled and positioned without editing the asset.</p>
+  <main class="phones" id="phones"></main>
+  <footer>Prototype only. The live deck, settings and gameplay have not been changed. Court framing is a non-destructive CSS crop of the approved double-ended artwork; the lower mirrored portion may be partly hidden. Review the retained upper face and suit detail before approving this treatment.</footer>
+  <script>
+    const suits = {
+      hearts: 'M50 89C42 81 10 59 10 35 10 14 35 8 50 27 65 8 90 14 90 35 90 59 58 81 50 89Z',
+      diamonds: 'M50 5 92 50 50 95 8 50Z',
+      clubs: 'M35 92Q46 80 43 68C32 78 14 72 10 59 5 43 18 31 34 34 27 22 35 7 50 7 65 7 73 22 66 34 82 31 95 43 90 59 86 72 68 78 57 68Q54 80 65 92Z',
+      spades: 'M50 7C39 23 10 40 10 59c0 18 23 24 35 7-1 12-5 19-14 25h38c-9-6-13-13-14-25 12 17 35 11 35-7C90 40 61 23 50 7Z'
+    };
+    const cards = [
+      ['7', 'hearts', '♥'], ['10', 'spades', '♠'], ['A', 'diamonds', '♦'],
+      ['4', 'clubs', '♣'], ['J', 'spades', '♠'], ['Q', 'hearts', '♥'], ['K', 'diamonds', '♦']
+    ];
+    const courtNames = { J: 'jack', Q: 'queen', K: 'king' };
+    const suitSvg = (suit, className = '') => `<svg class="${className}" viewBox="0 0 100 100" aria-hidden="true"><path d="${suits[suit]}" fill="currentColor"/></svg>`;
+    const index = (rank, suit, bottom = false) => `<span class="index${bottom ? ' bottom' : ''}"><span class="rank${rank === '10' ? ' ten' : ''}">${rank}</span>${suitSvg(suit)}</span>`;
+    const asset = (rank, suit) => `../public/cards/english-pattern/${courtNames[rank]}_of_${suit}.svg`;
+    const card = (rank, suit, mode) => {
+      const court = Boolean(courtNames[rank]);
+      const colour = suit === 'hearts' || suit === 'diamonds' ? 'red' : 'black';
+      const artwork = court
+        ? `<img class="${mode === 'old' ? 'old-art' : 'court-art'}" src="${asset(rank, suit)}" alt="">`
+        : mode === 'old'
+          ? `<svg class="old-art" viewBox="0 0 360 540" aria-hidden="true"><path d="${suits[suit]}" fill="currentColor" transform="translate(180 270) scale(2) translate(-50 -50)"/></svg>`
+          : suitSvg(suit, 'hero-suit');
+      return `<div class="card ${mode} ${colour}${court ? ' court' : ''}" aria-label="${rank} of ${suit}">${artwork}${index(rank, suit)}${mode === 'old' ? index(rank, suit, true) : ''}</div>`;
+    };
+    const stack = mode => `<div><div class="stack">${[['K','diamonds'],['Q','hearts'],['J','spades'],['10','spades']].map(([rank,suit], i) => `<div style="--i:${i}">${card(rank,suit,mode)}</div>`).join('')}</div><div class="stack-label">${mode === 'old' ? 'M19G' : 'M19G.1'}</div></div>`;
+    const phone = viewport => {
+      // Board: 1px borders, 6px horizontal padding, 3.2px minimum gaps across seven columns.
+      const width = (viewport - 2 - 12 - 6 * 3.2) / 7;
+      const step = Math.max(32, width * .76);
+      return `<section class="phone" style="--viewport:${viewport}px;--card-width:${width}px;--card-height:${width * 1.4}px;--step:${step}px">
+        <header><h2>${viewport}px viewport</h2><p>${width.toFixed(1)} × ${(width * 1.4).toFixed(1)}px cards · 7-column board</p></header>
+        <div class="felt"><div class="column-head"><span>Card</span><span>M19G</span><span>M19G.1 proposal</span></div>
+        ${cards.map(([rank, suit, symbol]) => `<div class="comparison"><div class="name">${rank}${symbol}</div><div class="cell">${card(rank, suit, 'old')}</div><div class="cell">${card(rank, suit, 'new')}</div></div>`).join('')}
+        <div class="stack-title">Tableau overlap · ${step.toFixed(1)}px exposed step</div><div class="stacks">${stack('old')}${stack('new')}</div></div>
+      </section>`;
+    };
+    document.getElementById('phones').innerHTML = phone(320) + phone(390);
+  </script>
+</body>
+</html>
