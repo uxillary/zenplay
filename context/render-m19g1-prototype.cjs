@@ -17,11 +17,12 @@ const pip = (suit, x, y, size) => `<path d="${suits[suit]}" transform="translate
 function corner(rank, suit, width, height, proposed, bottom = false) {
   const font = proposed ? Math.max(16, Math.min(width * .42, 23)) : Math.max(16, Math.min(width * .38, 23.2))
   const rankFont = rank === '10' && !proposed ? font * .9 : font
-  const suitSize = font * (proposed ? .6 : 1.02)
+  const suitSize = font * (proposed ? .7 : 1.02)
   const blockWidth = Math.min(width - 2, Math.max(rank === '10' ? rankFont * 1.3 : font * .95, suitSize) + 3)
-  const content = `${proposed ? '' : `<rect width="${blockWidth}" height="${font + suitSize + 4}" fill="white"/>`}
+  const hasBacking = !proposed || ['J', 'Q', 'K'].includes(rank)
+  const content = `${hasBacking ? `<rect width="${blockWidth}" height="${font + suitSize + (proposed ? 5 : 4)}" rx="${proposed ? 2 : 0}" fill="white"/>` : ''}
     <text x="${rank === '10' ? 1.5 : blockWidth / 2}" y="${rankFont * .91 + 1}" font-family="Arial" font-size="${rankFont}" font-weight="900" letter-spacing="${rank === '10' && proposed ? '-.12em' : 'normal'}" text-anchor="${rank === '10' ? 'start' : 'middle'}" fill="currentColor">${rank}</text>
-    ${pip(suit, (blockWidth - suitSize) / 2, font + 2, suitSize)}`
+    ${pip(suit, (blockWidth - suitSize) / 2, font + (proposed ? 3 : 2), suitSize)}`
   return bottom
     ? `<g transform="translate(${width} ${height}) rotate(180) translate(-2 -2)">${content}</g>`
     : `<g transform="translate(2 2)">${content}</g>`
@@ -90,7 +91,7 @@ async function main() {
       }
     }
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${viewport}" height="${canvasHeight}">${parts.join('')}</svg>`
-    const output = path.join(__dirname, `M19G1_MOBILE_CARD_PROTOTYPE_APPROVAL_${viewport}.png`)
+    const output = path.join(__dirname, `M19G1_MOBILE_CARD_PROTOTYPE_FINAL_REVIEW_${viewport}.png`)
     await sharp(Buffer.from(svg)).png().toFile(output)
     console.log(`${viewport}px: ${width.toFixed(1)} × ${height.toFixed(1)}px cards; ${output}`)
   }

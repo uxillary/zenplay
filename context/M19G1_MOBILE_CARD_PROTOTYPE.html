@@ -32,7 +32,8 @@
     .old .index.bottom { top: auto; left: auto; right: 1px; bottom: 1px; transform: rotate(180deg); }
     .new .index { background: transparent; font-size: clamp(16px, calc(var(--card-width) * .42), 23px); }
     .new .index .rank.ten { font-size: 1em; letter-spacing: -.12em; }
-    .new .index svg { width: .6em; height: .6em; margin-top: 1px; }
+    .new .index svg { width: .7em; height: .7em; margin-top: 2px; }
+    .new.court .index { background: #fff; border-radius: 2px; }
     .new .hero-suit { position: absolute; right: 2px; bottom: 2px; width: 70%; height: auto; aspect-ratio: 1; overflow: visible; color: var(--ink); }
     .court-window { position: absolute; display: block; overflow: hidden; }
     .portrait .court-window { left: 24%; top: 32%; width: 74%; height: 65%; }
@@ -48,7 +49,7 @@
   <h1>M19G.1 · Mobile Solitaire card composition</h1>
   <p class="note">M19G beside the proposed Simplified composition at dimensions derived from ZenPlay’s seven-column mobile board. The proposed courts use B · Portrait, framed from the approved English-pattern SVGs without altering their artwork.</p>
   <main class="phones" id="phones"></main>
-  <footer>Prototype only. The original court SVG assets, live deck, settings and gameplay remain unchanged. The proposed corner indices have transparent backgrounds; the portrait window sits below and to the right of the index.</footer>
+  <footer>Prototype only. The original court SVG assets, live deck, settings and gameplay remain unchanged. Numbered-card indices have transparent backgrounds. Court indices have a fitted white backing to separate them from the portrait artwork.</footer>
   <script>
     const suits = {
       hearts: 'M50 89C42 81 10 59 10 35 10 14 35 8 50 27 65 8 90 14 90 35 90 59 58 81 50 89Z',
