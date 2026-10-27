@@ -11,6 +11,14 @@ const SuitMark = ({ suit, className = '' }: { suit: Suit; className?: string }) 
   </svg>
 )
 
+// The source corner pips vary in width by suit and share SVG groups with the portrait.
+const courtIndexMaskRight: Record<Suit, number> = {
+  spades: 128,
+  hearts: 112,
+  diamonds: 122,
+  clubs: 118,
+}
+
 const CornerIndex = ({ rank, suit, position, colour }: { rank: Rank; suit: Suit; position: 'top' | 'bottom'; colour: string }) => (
   <span className={`zen-card-corner zen-card-corner--${position} ${colour}`} aria-hidden="true">
     <span className={rank === '10' ? 'zen-card-corner__rank--double' : undefined}>{rank}</span>
@@ -99,8 +107,9 @@ export const CardView = ({
   const content = (
     <>
       {courtAsset ? (simplified ? (
-        <svg className="zen-card-portrait" viewBox="85 30 245 280" aria-hidden="true" focusable="false">
+        <svg className="zen-card-portrait" viewBox="70 0 280 345" aria-hidden="true" focusable="false">
           <image href={courtAsset} x="0" y="0" width="360" height="540" />
+          <path d={`M70 0H${courtIndexMaskRight[card.suit]}V145H70Z`} fill="#fff" />
         </svg>
       ) : <img className="zen-card-art" src={courtAsset} alt="" draggable="false" aria-hidden="true" />) : simplified ? (
         <SuitMark suit={card.suit} className={`zen-card-hero-suit ${suitColour}`} />

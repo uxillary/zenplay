@@ -78,15 +78,19 @@ test('simplified faces use one corner index and approved artwork; traditional fa
       assert.match(classic, /zen-card-corner--bottom/)
     }
     for (const rank of ['J', 'Q', 'K'] as const) {
-      const simple = renderToStaticMarkup(createElement(CardView, { card: card(rank, 'hearts'), cardFaces: 'simplified' }))
-      const classic = renderToStaticMarkup(createElement(CardView, { card: card(rank, 'hearts'), cardFaces: 'traditional' }))
-      const asset = `/cards/english-pattern/${{ J: 'jack', Q: 'queen', K: 'king' }[rank]}_of_hearts.svg`
-      assert.match(simple, /zen-card-face--simplified-court/)
-      assert.match(simple, /zen-card-portrait[^>]*viewBox="85 30 245 280"/)
-      assert.match(simple, new RegExp(`<image href="${asset}"`))
-      assert.doesNotMatch(simple, /zen-card-corner--bottom/)
-      assert.match(classic, new RegExp(`<img[^>]*src="${asset}"`))
-      assert.match(classic, /zen-card-corner--bottom/)
+      for (const [suit, maskRight] of Object.entries({ spades: 128, hearts: 112, diamonds: 122, clubs: 118 }) as [Suit, number][]) {
+        const simple = renderToStaticMarkup(createElement(CardView, { card: card(rank, suit), cardFaces: 'simplified' }))
+        const classic = renderToStaticMarkup(createElement(CardView, { card: card(rank, suit), cardFaces: 'traditional' }))
+        const asset = `/cards/english-pattern/${{ J: 'jack', Q: 'queen', K: 'king' }[rank]}_of_${suit}.svg`
+        assert.match(simple, /zen-card-face--simplified-court/)
+        assert.match(simple, /zen-card-portrait[^>]*viewBox="70 0 280 345"/)
+        assert.match(simple, new RegExp(`<image href="${asset}"`))
+        assert.match(simple, new RegExp(`<path d="M70 0H${maskRight}V145H70Z" fill="#fff"`))
+        assert.doesNotMatch(simple, /zen-card-corner--bottom/)
+        assert.match(classic, new RegExp(`<img[^>]*src="${asset}"`))
+        assert.doesNotMatch(classic, /zen-card-portrait|M70 0H/)
+        assert.match(classic, /zen-card-corner--bottom/)
+      }
     }
     const interactive = renderToStaticMarkup(createElement(CardView, {
       card: card('10', 'spades'),
