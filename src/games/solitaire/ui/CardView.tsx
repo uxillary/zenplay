@@ -94,13 +94,19 @@ export const CardView = ({
   const red = card.suit === 'hearts' || card.suit === 'diamonds'
   const suitColour = red ? 'zen-card-suit--red' : 'zen-card-suit--black'
   const courtAsset = courtCardAsset(card)
+  const simplified = cardFaces === 'simplified'
+  const faceLayoutClass = simplified ? `zen-card-face--simplified ${courtAsset ? 'zen-card-face--simplified-court' : ''}` : ''
   const content = (
     <>
-      {courtAsset ? <img className="zen-card-art" src={courtAsset} alt="" draggable="false" aria-hidden="true" /> : (
-        <svg className={`zen-card-art ${suitColour}`} viewBox="0 0 360 540" aria-hidden="true" focusable="false" data-face-layout={cardFaces}>
-          {(cardFaces === 'simplified'
-            ? [{ x: 180, y: 270, size: 200 }]
-            : numberedPips[card.rank as keyof typeof numberedPips]).map((pip, index) => (
+      {courtAsset ? (simplified ? (
+        <svg className="zen-card-portrait" viewBox="85 30 245 280" aria-hidden="true" focusable="false">
+          <image href={courtAsset} x="0" y="0" width="360" height="540" />
+        </svg>
+      ) : <img className="zen-card-art" src={courtAsset} alt="" draggable="false" aria-hidden="true" />) : simplified ? (
+        <SuitMark suit={card.suit} className={`zen-card-hero-suit ${suitColour}`} />
+      ) : (
+        <svg className={`zen-card-art ${suitColour}`} viewBox="0 0 360 540" aria-hidden="true" focusable="false" data-face-layout="traditional">
+          {numberedPips[card.rank as keyof typeof numberedPips].map((pip, index) => (
             <path
               key={index}
               d={suitPaths[card.suit]}
@@ -111,7 +117,7 @@ export const CardView = ({
         </svg>
       )}
       <CornerIndex rank={card.rank} suit={card.suit} position="top" colour={suitColour} />
-      <CornerIndex rank={card.rank} suit={card.suit} position="bottom" colour={suitColour} />
+      {!simplified ? <CornerIndex rank={card.rank} suit={card.suit} position="bottom" colour={suitColour} /> : null}
     </>
   )
 
@@ -128,7 +134,7 @@ export const CardView = ({
         onDrag={onDrag}
         onDragEnd={onDragEnd}
         onTouchEnd={handleTouchEnd}
-        className={`${baseCardClass} zen-card-face ${cardFaces === 'simplified' && !courtAsset ? 'zen-card-face--simplified' : ''} ${selected ? 'zen-card-selected' : ''}`}
+        className={`${baseCardClass} zen-card-face ${faceLayoutClass} ${selected ? 'zen-card-selected' : ''}`}
       >
         {content}
       </div>
@@ -156,7 +162,7 @@ export const CardView = ({
         onDoubleClick?.()
       }}
       onTouchEnd={handleTouchEnd}
-      className={`${baseCardClass} zen-card-face ${cardFaces === 'simplified' && !courtAsset ? 'zen-card-face--simplified' : ''} ${selected ? 'zen-card-selected' : ''}`}
+      className={`${baseCardClass} zen-card-face ${faceLayoutClass} ${selected ? 'zen-card-selected' : ''}`}
       aria-label={`${describeSolitaireCard(card)}${selected ? ', selected' : ''}${hinted ? ', suggested move' : ''}`}
       aria-pressed={Boolean(selected)}
     >

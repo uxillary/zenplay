@@ -51,34 +51,51 @@ test('placeholder rendering shows a guide suit or small King without exposing de
     assert.match(foundation, /aria-hidden="true"/)
     assert.match(tableau, /zen-card-placeholder__king">K</)
     assert.doesNotMatch(tableau, /zen-card-placeholder__suit/)
-    assert.equal((numbered.match(/<path /g) ?? []).length, 3)
+    assert.equal((numbered.match(/<path /g) ?? []).length, 2)
     assert.equal((traditional.match(/<path /g) ?? []).length, 12)
-    assert.match(numbered, /data-face-layout="simplified"/)
+    assert.match(numbered, /zen-card-hero-suit/)
     assert.match(traditional, /data-face-layout="traditional"/)
-    assert.equal((numbered.match(/zen-card-corner__rank--double/g) ?? []).length, 2)
+    assert.equal((numbered.match(/zen-card-corner__rank--double/g) ?? []).length, 1)
+    assert.doesNotMatch(numbered, /zen-card-corner--bottom/)
     assert.doesNotMatch(numbered, /<img/)
   } finally {
     await vite.close()
   }
 })
 
-test('simplified numbered faces have one central suit while courts keep their artwork in both modes', async () => {
+test('simplified faces use one corner index and approved artwork; traditional faces retain both indices and pips', async () => {
   const vite = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true }, appType: 'custom' })
   try {
     const { CardView } = await vite.ssrLoadModule('/src/games/solitaire/ui/CardView.tsx')
     for (const [rank, suit] of [['7', 'spades'], ['10', 'hearts'], ['4', 'clubs'], ['A', 'diamonds']] as const) {
       const simple = renderToStaticMarkup(createElement(CardView, { card: card(rank, suit), cardFaces: 'simplified' }))
       const classic = renderToStaticMarkup(createElement(CardView, { card: card(rank, suit), cardFaces: 'traditional' }))
-      assert.equal((simple.match(/<path /g) ?? []).length, 3, `${rank} of ${suit} needs one central path and two indices`)
+      assert.equal((simple.match(/<path /g) ?? []).length, 2, `${rank} of ${suit} needs one lower-right suit and one corner suit`)
       assert.equal((classic.match(/<path /g) ?? []).length, numberedPips[rank].length + 2)
       assert.match(simple, /zen-card-face--simplified/)
+      assert.match(simple, /zen-card-hero-suit/)
+      assert.doesNotMatch(simple, /zen-card-corner--bottom/)
+      assert.match(classic, /zen-card-corner--bottom/)
     }
     for (const rank of ['J', 'Q', 'K'] as const) {
       const simple = renderToStaticMarkup(createElement(CardView, { card: card(rank, 'hearts'), cardFaces: 'simplified' }))
       const classic = renderToStaticMarkup(createElement(CardView, { card: card(rank, 'hearts'), cardFaces: 'traditional' }))
-      assert.equal(simple, classic)
-      assert.match(simple, new RegExp(`/cards/english-pattern/${{ J: 'jack', Q: 'queen', K: 'king' }[rank]}_of_hearts.svg`))
+      const asset = `/cards/english-pattern/${{ J: 'jack', Q: 'queen', K: 'king' }[rank]}_of_hearts.svg`
+      assert.match(simple, /zen-card-face--simplified-court/)
+      assert.match(simple, /zen-card-portrait[^>]*viewBox="85 30 245 280"/)
+      assert.match(simple, new RegExp(`<image href="${asset}"`))
+      assert.doesNotMatch(simple, /zen-card-corner--bottom/)
+      assert.match(classic, new RegExp(`<img[^>]*src="${asset}"`))
+      assert.match(classic, /zen-card-corner--bottom/)
     }
+    const interactive = renderToStaticMarkup(createElement(CardView, {
+      card: card('10', 'spades'),
+      cardFaces: 'simplified',
+      onClick: () => {},
+    }))
+    assert.match(interactive, /<button type="button"/)
+    assert.match(interactive, /aria-label="10 of Spades"/)
+    assert.match(interactive, /aria-pressed="false"/)
   } finally {
     await vite.close()
   }

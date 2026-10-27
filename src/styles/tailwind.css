@@ -378,8 +378,16 @@ button:focus-visible,
   --zen-card-width: min(6.5rem, calc((100cqw - 6 * var(--zen-card-gap)) / 7));
 }
 
+.zen-solitaire-table[data-card-faces='simplified'] > * {
+  --zen-faceup-step: max(2.35rem, calc(var(--zen-card-width) * 0.86));
+}
+
 .zen-solitaire-table[data-card-style='large-print'] > * {
   --zen-faceup-step: max(2.35rem, calc(var(--zen-card-width) * 0.82));
+}
+
+.zen-solitaire-table[data-card-faces='simplified'][data-card-style='large-print'] > * {
+  --zen-faceup-step: max(2.35rem, calc(var(--zen-card-width) * 0.88));
 }
 
 .zen-solitaire-toolbar {
@@ -905,6 +913,30 @@ button:focus-visible,
   user-select: none;
 }
 
+.zen-card-hero-suit {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  display: block;
+  width: 70%;
+  height: auto;
+  aspect-ratio: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.zen-card-portrait {
+  position: absolute;
+  left: 24%;
+  top: 32%;
+  display: block;
+  width: 74%;
+  height: 65%;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
 .zen-card-corner {
   position: absolute;
   z-index: 1;
@@ -945,8 +977,25 @@ button:focus-visible,
 }
 
 .zen-card-face--simplified .zen-card-corner {
-  font-size: clamp(1rem, calc(var(--zen-card-width) * 0.38), 1.45rem);
+  background: transparent;
+  font-size: clamp(1rem, calc(var(--zen-card-width) * 0.42), 1.4375rem);
   font-weight: 900;
+}
+
+.zen-card-face--simplified .zen-card-corner__rank--double {
+  font-size: 1em;
+  letter-spacing: -0.12em;
+}
+
+.zen-card-face--simplified .zen-card-corner__suit {
+  width: 0.7em;
+  height: 0.7em;
+  margin-top: 2px;
+}
+
+.zen-card-face--simplified-court .zen-card-corner {
+  border-radius: 2px;
+  background: #fff;
 }
 
 :is(.zen-solitaire-table, .zen-appearance-preview)[data-card-style='large-print'] .zen-card-corner {
@@ -956,6 +1005,14 @@ button:focus-visible,
 
 :is(.zen-solitaire-table, .zen-appearance-preview)[data-card-style='large-print'] .zen-card-corner__rank--double {
   font-size: 0.84em;
+}
+
+:is(.zen-solitaire-table, .zen-appearance-preview)[data-card-style='large-print'] .zen-card-face--simplified .zen-card-corner {
+  font-size: clamp(1.05rem, calc(var(--zen-card-width) * 0.44), 1.55rem);
+}
+
+:is(.zen-solitaire-table, .zen-appearance-preview)[data-card-style='large-print'] .zen-card-face--simplified .zen-card-corner__rank--double {
+  font-size: 1em;
 }
 
 .zen-card-suit--red {
