@@ -20,6 +20,9 @@
     .column-head, .comparison { display: grid; grid-template-columns: 58px 1fr 1fr; gap: 8px; align-items: center; }
     .column-head { margin: 0 0 5px; font-size: 11px; font-weight: 700; text-align: center; }
     .comparison { min-height: calc(var(--card-height) + 12px); padding: 6px 0; border-top: 1px solid #ffffff30; }
+    .court-head, .comparison.court-row { grid-template-columns: 32px repeat(4, minmax(0, 1fr)); gap: 3px; }
+    .court-head { margin-top: 13px; }
+    .court-head span { overflow-wrap: anywhere; }
     .comparison .name { font-size: 12px; font-weight: 700; line-height: 1.2; }
     .comparison .cell { display: grid; place-items: center; }
     .card { position: relative; overflow: hidden; display: block; width: var(--card-width); height: var(--card-height); border: 1px solid #bab7ae; border-radius: 4px; background: #fff; box-shadow: 0 1px 3px #0003; color: var(--ink); }
@@ -34,7 +37,12 @@
     .new .index .rank.ten { font-size: .82em; letter-spacing: -.09em; }
     .new .index svg { width: .68em; height: .68em; margin-top: 1px; }
     .new .hero-suit { position: absolute; right: 2px; bottom: 2px; width: 70%; height: auto; aspect-ratio: 1; overflow: visible; color: var(--ink); }
-    .new.court .court-art { position: absolute; display: block; width: 132%; height: 132%; max-width: none; top: -15%; left: -12%; object-fit: contain; }
+    .court-art { position: absolute; display: block; max-width: none; }
+    .full .court-art { inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .full .erase-bottom { position: absolute; z-index: 1; right: 0; bottom: 0; width: 28%; height: 29%; background: #fff; }
+    .court-window { position: absolute; display: block; overflow: hidden; }
+    .portrait .court-window { left: 21%; top: 30%; width: 77%; height: 67%; }
+    .tight .court-window { left: 26%; top: 28%; width: 72%; height: 68%; }
     .stack-title { margin: 16px 0 5px; font-size: 12px; font-weight: 700; }
     .stacks { display: flex; justify-content: space-around; gap: 10px; }
     .stack { position: relative; width: var(--card-width); height: calc(var(--card-height) + 3 * var(--step)); }
@@ -45,9 +53,9 @@
 </head>
 <body>
   <h1>M19G.1 · Mobile Solitaire card composition</h1>
-  <p class="note">Design comparison at the card dimensions derived from ZenPlay’s seven-column mobile board. Left is the current M19G Simplified face; right is the proposed one-index composition. The court uses the existing English-pattern SVG, scaled and positioned without editing the asset.</p>
+  <p class="note">Design comparison at the card dimensions derived from ZenPlay’s seven-column mobile board. Numbered cards retain the one-index proposal. Courts compare the current M19G face with three framings of the approved, unchanged English-pattern SVG.</p>
   <main class="phones" id="phones"></main>
-  <footer>Prototype only. The live deck, settings and gameplay have not been changed. Court framing is a non-destructive CSS crop of the approved double-ended artwork; the lower mirrored portion may be partly hidden. Review the retained upper face and suit detail before approving this treatment.</footer>
+  <footer><strong>Court choices:</strong> A keeps the double-ended figure at its original size and covers the built-in lower index. B shows the upper portrait and more clothing detail. C shows a larger face with less of the costume and props. B and C place the portrait below the corner index and omit the mirrored lower figure. The original SVG assets, live deck, settings and gameplay remain unchanged.</footer>
   <script>
     const suits = {
       hearts: 'M50 89C42 81 10 59 10 35 10 14 35 8 50 27 65 8 90 14 90 35 90 59 58 81 50 89Z',
@@ -67,11 +75,13 @@
       const court = Boolean(courtNames[rank]);
       const colour = suit === 'hearts' || suit === 'diamonds' ? 'red' : 'black';
       const artwork = court
-        ? `<img class="${mode === 'old' ? 'old-art' : 'court-art'}" src="${asset(rank, suit)}" alt="">`
+        ? mode === 'portrait' || mode === 'tight'
+          ? `<svg class="court-window" viewBox="${mode === 'portrait' ? '85 30 245 280' : '115 45 190 220'}" aria-hidden="true"><image href="${asset(rank, suit)}" x="0" y="0" width="360" height="540"/></svg>`
+          : `<img class="${mode === 'old' ? 'old-art' : 'court-art'}" src="${asset(rank, suit)}" alt="">${mode === 'full' ? '<span class="erase-bottom"></span>' : ''}`
         : mode === 'old'
           ? `<svg class="old-art" viewBox="0 0 360 540" aria-hidden="true"><path d="${suits[suit]}" fill="currentColor" transform="translate(180 270) scale(2) translate(-50 -50)"/></svg>`
           : suitSvg(suit, 'hero-suit');
-      return `<div class="card ${mode} ${colour}${court ? ' court' : ''}" aria-label="${rank} of ${suit}">${artwork}${index(rank, suit)}${mode === 'old' ? index(rank, suit, true) : ''}</div>`;
+      return `<div class="card ${mode === 'old' ? 'old' : 'new'} ${mode} ${colour}${court ? ' court' : ''}" aria-label="${rank} of ${suit}">${artwork}${index(rank, suit)}${mode === 'old' ? index(rank, suit, true) : ''}</div>`;
     };
     const stack = mode => `<div><div class="stack">${[['K','diamonds'],['Q','hearts'],['J','spades'],['10','spades']].map(([rank,suit], i) => `<div style="--i:${i}">${card(rank,suit,mode)}</div>`).join('')}</div><div class="stack-label">${mode === 'old' ? 'M19G' : 'M19G.1'}</div></div>`;
     const phone = viewport => {
@@ -80,8 +90,10 @@
       const step = Math.max(32, width * .76);
       return `<section class="phone" style="--viewport:${viewport}px;--card-width:${width}px;--card-height:${width * 1.4}px;--step:${step}px">
         <header><h2>${viewport}px viewport</h2><p>${width.toFixed(1)} × ${(width * 1.4).toFixed(1)}px cards · 7-column board</p></header>
-        <div class="felt"><div class="column-head"><span>Card</span><span>M19G</span><span>M19G.1 proposal</span></div>
-        ${cards.map(([rank, suit, symbol]) => `<div class="comparison"><div class="name">${rank}${symbol}</div><div class="cell">${card(rank, suit, 'old')}</div><div class="cell">${card(rank, suit, 'new')}</div></div>`).join('')}
+        <div class="felt"><div class="column-head"><span>Card</span><span>M19G</span><span>Numbered proposal</span></div>
+        ${cards.filter(([rank]) => !courtNames[rank]).map(([rank, suit, symbol]) => `<div class="comparison"><div class="name">${rank}${symbol}</div><div class="cell">${card(rank, suit, 'old')}</div><div class="cell">${card(rank, suit, 'new')}</div></div>`).join('')}
+        <div class="column-head court-head"><span></span><span>M19G</span><span>A · full</span><span>B · portrait</span><span>C · tight</span></div>
+        ${cards.filter(([rank]) => courtNames[rank]).map(([rank, suit, symbol]) => `<div class="comparison court-row"><div class="name">${rank}${symbol}</div><div class="cell">${card(rank, suit, 'old')}</div><div class="cell">${card(rank, suit, 'full')}</div><div class="cell">${card(rank, suit, 'portrait')}</div><div class="cell">${card(rank, suit, 'tight')}</div></div>`).join('')}
         <div class="stack-title">Tableau overlap · ${step.toFixed(1)}px exposed step</div><div class="stacks">${stack('old')}${stack('new')}</div></div>
       </section>`;
     };
