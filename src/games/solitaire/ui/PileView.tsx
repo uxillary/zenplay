@@ -1,4 +1,4 @@
-import type { DragEvent } from 'react'
+import type { PointerEvent } from 'react'
 import type { Card } from '../model/types'
 import type { SolitaireCardFaces } from '../../../lib/settings'
 import { CardView } from './CardView'
@@ -9,14 +9,15 @@ type Props = {
   ariaLabel: string
   onCardClick: (card: Card) => void
   onCardDoubleClick: (card: Card) => void
-  onCardDragStart: (card: Card, event: DragEvent<HTMLElement>) => void
-  onCardDrag: (event: DragEvent<HTMLElement>) => void
-  onCardDragEnd: () => void
+  onCardPointerDown: (card: Card, event: PointerEvent<HTMLElement>) => void
+  onCardPointerMove: (event: PointerEvent<HTMLElement>) => void
+  onCardPointerUp: (event: PointerEvent<HTMLElement>) => void
+  onCardPointerCancel: (event: PointerEvent<HTMLElement>) => void
   onPileClick?: () => void
-  onPileDrop?: () => void
   selectedCardId?: string
   largeCards: boolean
   canDrop?: boolean
+  dragHover?: boolean
   onEmptyClick?: () => void
   draggingCardId?: string
   hintedCardId?: string
@@ -31,14 +32,15 @@ export const PileView = ({
   ariaLabel,
   onCardClick,
   onCardDoubleClick,
-  onCardDragStart,
-  onCardDrag,
-  onCardDragEnd,
+  onCardPointerDown,
+  onCardPointerMove,
+  onCardPointerUp,
+  onCardPointerCancel,
   onPileClick,
-  onPileDrop,
   selectedCardId,
   largeCards,
   canDrop,
+  dragHover,
   onEmptyClick,
   draggingCardId,
   hintedCardId,
@@ -56,12 +58,8 @@ export const PileView = ({
       <button
         type="button"
         onClick={onEmptyClick}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          event.preventDefault()
-          onPileDrop?.()
-        }}
-        className={`zen-empty-pile ${canDrop ? 'zen-drop-target' : ''} ${hintedDestination ? 'zen-hint-destination' : ''}`}
+        data-solitaire-drop={`tableau:${columnIndex}`}
+        className={`zen-empty-pile ${canDrop ? 'zen-drop-target' : ''} ${dragHover ? 'zen-drag-hover' : ''} ${hintedDestination ? 'zen-hint-destination' : ''}`}
         aria-label={ariaLabel}
       >
         <CardView placeholder placeholderKind="tableau" largeCards={largeCards} />
@@ -71,13 +69,9 @@ export const PileView = ({
 
   return (
     <div
-      className={`zen-pile-column relative ${hintedDestination ? 'zen-hint-destination' : ''}`}
+      className={`zen-pile-column relative ${dragHover ? 'zen-drag-hover' : ''} ${hintedDestination ? 'zen-hint-destination' : ''}`}
       onClick={onPileClick}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault()
-        onPileDrop?.()
-      }}
+      data-solitaire-drop={`tableau:${columnIndex}`}
       role="group"
       aria-label={ariaLabel || `Tableau column ${columnIndex + 1}`}
     >
@@ -99,9 +93,11 @@ export const PileView = ({
             largeCards={largeCards}
             onClick={() => onCardClick(card)}
             onDoubleClick={() => onCardDoubleClick(card)}
-            onDragStart={card.faceUp ? (event) => onCardDragStart(card, event) : undefined}
-            onDrag={onCardDrag}
-            onDragEnd={onCardDragEnd}
+            onPointerDown={card.faceUp ? (event) => onCardPointerDown(card, event) : undefined}
+            onPointerMove={onCardPointerMove}
+            onPointerUp={onCardPointerUp}
+            onPointerCancel={onCardPointerCancel}
+            onLostPointerCapture={onCardPointerCancel}
             ghosted={ghosted}
             animate={motionEnabled}
           />

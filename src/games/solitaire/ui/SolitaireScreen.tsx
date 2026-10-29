@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useReducer, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import { createPortal } from 'react-dom'
 import type { AppSettings, SolitaireCardBack, SolitaireCardFaces, SolitaireCardStyle, SolitaireTableTheme } from '../../../lib/settings'
 import { deleteActiveSave, saveActiveGame, createSessionId } from '../../../persistence/gameSave'
 import { readStatistics, recordGameCompleted, recordGameStarted } from '../../../persistence/statistics'
@@ -16,6 +17,7 @@ import { foundationGuideSuits } from './cardArtwork'
 import { ACTION_FEEDBACK_MS, INVALID_FEEDBACK_MS, resolveFeedback } from './feedback'
 import { GameToolbar } from '../../../components/GameToolbar'
 import { GameDialog } from '../../../components/GameDialog'
+import { canStartDragPointer, crossedDragThreshold, legalDropMove, shouldSuppressDraggedClick } from './dragGesture'
 
 type Props = {
   settings: AppSettings
@@ -34,7 +36,34 @@ type DragState = {
   cards: Card[]
   x: number
   y: number
+  width: number
+  height: number
+  step: string
 } | null
+
+type PointerGesture = {
+  pointerId: number
+  startX: number
+  startY: number
+  grabX: number
+  grabY: number
+  location: Location
+  cardId: string
+  cards: Card[]
+  width: number
+  height: number
+  step: string
+  started: boolean
+}
+
+const dropLocationAt = (x: number, y: number): Location | null => {
+  const target = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-solitaire-drop]')
+  const value = target?.dataset.solitaireDrop
+  if (!value) return null
+  const [type, rawIndex] = value.split(':')
+  const index = Number(rawIndex)
+  return (type === 'tableau' || type === 'foundation') && Number.isInteger(index) ? { type, index } : null
+}
 
 type Action =
   | { type: 'move'; move: Move }
@@ -80,6 +109,12 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   const [pendingAction, setPendingAction] = useState(false)
   const [pageVisible, setPageVisible] = useState(() => document.visibilityState === 'visible')
   const [dragging, setDragging] = useState<DragState>(null)
+  const [dropHover, setDropHover] = useState<Location | null>(null)
+  const pointerGesture = useRef<PointerGesture | null>(null)
+  const dragFrame = useRef<number | null>(null)
+  const latestPointer = useRef<{ x: number; y: number } | null>(null)
+  const suppressNextClick = useRef(false)
+  const clickSuppressionTimeout = useRef<number | null>(null)
   const motionEnabled = !settings.reducedMotion
   const autoFinishPlan = useMemo(() => getAutoFinishPlan(state), [state])
 
@@ -147,25 +182,43 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
   }, [])
 
   useEffect(() => {
+    const suppressDraggedClick = (event: MouseEvent) => {
+      if (shouldSuppressDraggedClick(event.detail, suppressNextClick.current)) {
+        suppressNextClick.current = false
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+    document.addEventListener('click', suppressDraggedClick, true)
+    return () => document.removeEventListener('click', suppressDraggedClick, true)
+  }, [])
+
+  useEffect(() => () => {
+    if (dragFrame.current !== null) cancelAnimationFrame(dragFrame.current)
+    if (clickSuppressionTimeout.current !== null) clearTimeout(clickSuppressionTimeout.current)
+  }, [])
+
+  useEffect(() => {
     if (!ready || !settings.timer || settings.calmStats || isWin(state) || !pageVisible) return undefined
     const intervalId = window.setInterval(() => setElapsedSeconds((current) => current + 1), 1000)
     return () => window.clearInterval(intervalId)
   }, [pageVisible, ready, settings.calmStats, settings.timer, state])
 
   const destinations = useMemo(() => {
-    if (!selected) return [] as Location[]
+    const source = dragging ?? selected
+    if (!source) return [] as Location[]
     const all: Location[] = [
       ...state.tableau.map((_, index) => ({ type: 'tableau', index }) as Location),
       ...state.foundations.map((_, index) => ({ type: 'foundation', index }) as Location),
     ]
     return all.filter((to) =>
       isValidMove(state, {
-        from: selected.location,
+        from: source.location,
         to,
-        cardId: selected.cardId,
+        cardId: source.cardId,
       }),
     )
-  }, [selected, state])
+  }, [dragging, selected, state])
 
   const canDrop = (target: Location): boolean => destinations.some((destination) => sameLocation(destination, target))
 
@@ -173,6 +226,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
     setSelected(null)
     setInvalidMove(false)
     setDragging(null)
+    setDropHover(null)
+    pointerGesture.current = null
   }
 
   const startNewGame = () => {
@@ -242,34 +297,76 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
     dismissHint()
   }
 
-  const updateDragPosition = (event: DragEvent<HTMLElement>) => {
-    if (event.clientX === 0 && event.clientY === 0) return
-    setDragging((current) => (current ? { ...current, x: event.clientX, y: event.clientY } : current))
+  const beginPointer = (location: Location, cardId: string, cards: Card[], event: PointerEvent<HTMLElement>) => {
+    if (pointerGesture.current || !cards.length || !canStartDragPointer(event.pointerType, event.button)) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const step = getComputedStyle(event.currentTarget).getPropertyValue('--zen-faceup-step').trim()
+    pointerGesture.current = {
+      pointerId: event.pointerId, startX: event.clientX, startY: event.clientY,
+      grabX: event.clientX - rect.left, grabY: event.clientY - rect.top,
+      location, cardId, cards, width: rect.width, height: rect.height, step, started: false,
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
   }
 
-  const stopDragging = () => {
+  const suppressCompatibilityClick = () => {
+    suppressNextClick.current = true
+    if (clickSuppressionTimeout.current !== null) clearTimeout(clickSuppressionTimeout.current)
+    clickSuppressionTimeout.current = window.setTimeout(() => { suppressNextClick.current = false }, 80)
+  }
+
+  const movePointer = (event: PointerEvent<HTMLElement>) => {
+    const gesture = pointerGesture.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+    if (!gesture.started && !crossedDragThreshold(gesture.startX, gesture.startY, event.clientX, event.clientY)) return
+    if (!gesture.started) {
+      gesture.started = true
+      dismissHint()
+      setSelected(null)
+      setActionMessage('')
+      setInvalidMove(false)
+    }
+    latestPointer.current = { x: event.clientX, y: event.clientY }
+    if (dragFrame.current === null) dragFrame.current = requestAnimationFrame(() => {
+      dragFrame.current = null
+      const point = latestPointer.current
+      if (pointerGesture.current !== gesture || !point) return
+      setDragging({
+        location: gesture.location, cardId: gesture.cardId, cards: gesture.cards,
+        x: point.x - gesture.grabX, y: point.y - gesture.grabY,
+        width: gesture.width, height: gesture.height, step: gesture.step,
+      })
+      setDropHover(dropLocationAt(point.x, point.y))
+    })
+  }
+
+  const endPointer = (event: PointerEvent<HTMLElement>, cancelled = false) => {
+    const gesture = pointerGesture.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+    pointerGesture.current = null
+    if (dragFrame.current !== null) cancelAnimationFrame(dragFrame.current)
+    dragFrame.current = null
+    latestPointer.current = null
+    if (!gesture.started) {
+      if (!cancelled && event.pointerType === 'touch') {
+        suppressCompatibilityClick()
+        if (gesture.location.type === 'waste') toggleWasteSelection()
+        else if (gesture.location.type === 'tableau') {
+          const card = state.tableau[gesture.location.index].find((item) => item.id === gesture.cardId)
+          if (card) handleTableauCardClick(gesture.location.index, card)
+        }
+      }
+      return
+    }
+    suppressCompatibilityClick()
+    const to = cancelled ? null : dropLocationAt(event.clientX, event.clientY)
+    const move = legalDropMove(state, gesture.location, gesture.cardId, to)
+    if (move) applyLegalMove(move)
     setDragging(null)
+    setDropHover(null)
   }
 
-  const startWasteDrag = (event: DragEvent<HTMLElement>) => {
-    if (state.waste.length === 0) return
-    dismissHint()
-    const card = state.waste[state.waste.length - 1]
-    setSelected({ location: { type: 'waste' }, cardId: card.id })
-    setActionMessage('')
-    setDragging({ location: { type: 'waste' }, cardId: card.id, cards: [card], x: event.clientX, y: event.clientY })
-    setInvalidMove(false)
-  }
-
-  const startTableauDrag = (index: number, cardId: string, event: DragEvent<HTMLElement>) => {
-    dismissHint()
-    const cardIndex = state.tableau[index].findIndex((card) => card.id === cardId)
-    const cards = cardIndex >= 0 ? state.tableau[index].slice(cardIndex) : []
-    setSelected({ location: { type: 'tableau', index }, cardId })
-    setActionMessage('')
-    setDragging({ location: { type: 'tableau', index }, cardId, cards, x: event.clientX, y: event.clientY })
-    setInvalidMove(false)
-  }
+  const cancelPointer = (event: PointerEvent<HTMLElement>) => endPointer(event, true)
 
   const attemptMove = (to: Location) => {
     dismissHint()
@@ -278,7 +375,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
     if (applyLegalMove(move)) {
       return
     }
-    stopDragging()
+    setDragging(null)
     setActionMessage('')
     setInvalidMove(true)
   }
@@ -381,7 +478,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
 
   return (
     <div
-      className={`zen-solitaire-table relative flex min-h-0 flex-col ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}
+      className={`zen-solitaire-table relative flex min-h-0 flex-col ${dragging ? 'zen-is-dragging' : ''} ${(settings.gamePieceScale === 'large') ? 'zen-large-cards' : ''} ${settings.reducedMotion ? 'motion-reduce' : ''}`}
       data-table-theme={settings.solitaireTableTheme}
       data-card-style={settings.solitaireCardStyle}
       data-card-faces={settings.solitaireCardFaces}
@@ -461,9 +558,14 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
                 selected={selected?.location.type === 'waste'}
                 hinted={hintSource({ type: 'waste' }, getTopCard(state.waste)?.id ?? '')}
                 onDoubleClick={state.waste.length > 0 ? () => attemptFoundationMove({ type: 'waste' }, state.waste[state.waste.length - 1].id) : undefined}
-                onDragStart={state.waste.length > 0 ? startWasteDrag : undefined}
-                onDrag={updateDragPosition}
-                onDragEnd={stopDragging}
+                onPointerDown={state.waste.length > 0 ? (event) => {
+                  const card = state.waste[state.waste.length - 1]
+                  beginPointer({ type: 'waste' }, card.id, [card], event)
+                } : undefined}
+                onPointerMove={movePointer}
+                onPointerUp={endPointer}
+                onPointerCancel={cancelPointer}
+                onLostPointerCapture={cancelPointer}
                 ghosted={dragging?.location.type === 'waste'}
                 animate={motionEnabled}
               />
@@ -476,15 +578,11 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
                 key={`f-${index}`}
                 type="button"
                 onClick={() => attemptMove({ type: 'foundation', index })}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={(event) => {
-                  event.preventDefault()
-                  attemptMove({ type: 'foundation', index })
-                }}
-                className="zen-card-button"
+                data-solitaire-drop={`foundation:${index}`}
+                className={`zen-card-button ${dragging && dropHover?.type === 'foundation' && dropHover.index === index && canDrop({ type: 'foundation', index }) ? 'zen-drag-hover' : ''}`}
                 aria-label={pile.length ? `Foundation ${getTopCard(pile)?.suit}, ${describeSolitaireCard(getTopCard(pile))}` : `Foundation column ${index + 1}, empty, accepts any Ace`}
               >
-                <div className={`${settings.solitaireShowPossibleMoves && canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''} ${hintDestination({ type: 'foundation', index }) ? 'zen-hint-destination' : ''}`}>
+                <div className={`${(dragging || settings.solitaireShowPossibleMoves) && canDrop({ type: 'foundation', index }) ? 'zen-drop-target' : ''} ${hintDestination({ type: 'foundation', index }) ? 'zen-hint-destination' : ''}`}>
                   <CardView card={getTopCard(pile)} placeholder={pile.length === 0} placeholderKind="foundation" placeholderSuit={foundationGuides[index]} largeCards={(settings.gamePieceScale === 'large')} animate={motionEnabled} cardFaces={settings.solitaireCardFaces} />
                 </div>
               </button>
@@ -504,13 +602,17 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
               largeCards={(settings.gamePieceScale === 'large')}
               cardFaces={settings.solitaireCardFaces}
               selectedCardId={selected?.cardId}
-              canDrop={settings.solitaireShowPossibleMoves && canDrop({ type: 'tableau', index })}
+              canDrop={dragging ? canDrop({ type: 'tableau', index }) : settings.solitaireShowPossibleMoves && canDrop({ type: 'tableau', index })}
+              dragHover={!!dragging && dropHover?.type === 'tableau' && dropHover.index === index && canDrop({ type: 'tableau', index })}
               onEmptyClick={() => attemptMove({ type: 'tableau', index })}
               onPileClick={() => attemptMove({ type: 'tableau', index })}
-              onPileDrop={() => attemptMove({ type: 'tableau', index })}
-              onCardDragStart={(card, event) => startTableauDrag(index, card.id, event)}
-              onCardDrag={updateDragPosition}
-              onCardDragEnd={stopDragging}
+              onCardPointerDown={(card, event) => {
+                const cardIndex = pile.findIndex((item) => item.id === card.id)
+                beginPointer({ type: 'tableau', index }, card.id, pile.slice(cardIndex), event)
+              }}
+              onCardPointerMove={movePointer}
+              onCardPointerUp={endPointer}
+              onCardPointerCancel={cancelPointer}
               onCardDoubleClick={(card) => {
                 if (!card.faceUp) return
                 attemptFoundationMove({ type: 'tableau', index }, card.id)
@@ -527,13 +629,16 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
         </div>
       </div>
 
-      {dragging ? (
+      {dragging ? createPortal((
+        <div className="zen-drag-layer" style={{
+          '--zen-card-width': `${dragging.width}px`,
+          '--zen-card-height': `${dragging.height}px`,
+          '--zen-faceup-step': dragging.step,
+        } as CSSProperties}>
         <div
-          className="pointer-events-none fixed z-50"
+          className="absolute left-0 top-0"
           style={{
-            left: 0,
-            top: 0,
-            transform: `translate3d(${dragging.x + 14}px, ${dragging.y + 14}px, 0)`,
+            transform: `translate3d(${dragging.x}px, ${dragging.y}px, 0)`,
           }}
         >
           <div className="relative drop-shadow-xl">
@@ -545,7 +650,8 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
             <div style={{ height: `calc(${dragging.cards.length - 1} * var(--zen-faceup-step) + var(--zen-card-height))` }} />
           </div>
         </div>
-      ) : null}
+        </div>
+      ), document.body) : null}
 
       {isWin(state) ? (
         <GameDialog title="You did it." description="All cards are safely in the foundations.">

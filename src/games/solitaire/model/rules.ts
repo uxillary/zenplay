@@ -8,7 +8,10 @@ const topFaceUpSlice = (pile: Card[], cardId: string): Card[] => {
   const idx = pile.findIndex((card) => card.id === cardId)
   if (idx < 0) return []
   const slice = pile.slice(idx)
-  return slice.every((card) => card.faceUp) ? slice : []
+  return slice.every((card, index) => card.faceUp && (index === 0 || (
+    isRed(slice[index - 1].suit) !== isRed(card.suit) &&
+    rankIndex(slice[index - 1].rank) - rankIndex(card.rank) === 1
+  ))) ? slice : []
 }
 
 export const getTopCard = (pile: Card[]): Card | undefined => pile[pile.length - 1]

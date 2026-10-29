@@ -1,4 +1,4 @@
-import type { DragEvent, TouchEvent } from 'react'
+import type { PointerEvent, TouchEvent } from 'react'
 import { useRef } from 'react'
 import type { SolitaireCardFaces } from '../../../lib/settings'
 import type { Card, Rank, Suit } from '../model/types'
@@ -32,9 +32,11 @@ type Props = {
   hinted?: boolean
   onClick?: () => void
   onDoubleClick?: () => void
-  onDragStart?: (event: DragEvent<HTMLElement>) => void
-  onDrag?: (event: DragEvent<HTMLElement>) => void
-  onDragEnd?: () => void
+  onPointerDown?: (event: PointerEvent<HTMLElement>) => void
+  onPointerMove?: (event: PointerEvent<HTMLElement>) => void
+  onPointerUp?: (event: PointerEvent<HTMLElement>) => void
+  onPointerCancel?: (event: PointerEvent<HTMLElement>) => void
+  onLostPointerCapture?: (event: PointerEvent<HTMLElement>) => void
   largeCards?: boolean
   placeholder?: boolean
   placeholderKind?: 'foundation' | 'tableau'
@@ -44,25 +46,17 @@ type Props = {
   cardFaces?: SolitaireCardFaces
 }
 
-const hideNativeDragPreview = (event: DragEvent<HTMLElement>) => {
-  const preview = document.createElement('div')
-  preview.style.width = '1px'
-  preview.style.height = '1px'
-  preview.style.opacity = '0'
-  document.body.append(preview)
-  event.dataTransfer.setDragImage(preview, 0, 0)
-  window.setTimeout(() => preview.remove(), 0)
-}
-
 export const CardView = ({
   card,
   selected,
   hinted,
   onClick,
   onDoubleClick,
-  onDragStart,
-  onDrag,
-  onDragEnd,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onLostPointerCapture,
   largeCards,
   placeholder,
   placeholderKind,
@@ -72,9 +66,16 @@ export const CardView = ({
   cardFaces = 'simplified',
 }: Props) => {
   const lastTapAt = useRef(0)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const touchDragged = useRef(false)
   const size = largeCards ? 'zen-playing-card--large' : 'zen-playing-card--standard'
   const baseCardClass = `zen-playing-card ${size} transition-opacity duration-150 ${ghosted ? 'opacity-35' : 'opacity-100'} ${animate ? 'zen-card-enter' : ''} ${hinted ? 'zen-hint-source' : ''}`
   const handleTouchEnd = (event: TouchEvent<HTMLElement>) => {
+    if (touchDragged.current) {
+      touchDragged.current = false
+      lastTapAt.current = 0
+      return
+    }
     if (!onDoubleClick) return
     const now = window.performance.now()
     if (now - lastTapAt.current < 320) {
@@ -84,6 +85,18 @@ export const CardView = ({
       return
     }
     lastTapAt.current = now
+  }
+  const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType === 'touch') {
+      touchStart.current = { x: event.clientX, y: event.clientY }
+      touchDragged.current = false
+    }
+    onPointerDown?.(event)
+  }
+  const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType === 'touch' && touchStart.current &&
+      Math.hypot(event.clientX - touchStart.current.x, event.clientY - touchStart.current.y) >= 7) touchDragged.current = true
+    onPointerMove?.(event)
   }
 
   if (placeholder) {
@@ -133,17 +146,13 @@ export const CardView = ({
   if (!onClick) {
     return (
       <div
-        draggable={Boolean(onDragStart)}
-        onDragStart={(event) => {
-          if (!onDragStart) return
-          event.dataTransfer.effectAllowed = 'move'
-          hideNativeDragPreview(event)
-          onDragStart(event)
-        }}
-        onDrag={onDrag}
-        onDragEnd={onDragEnd}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onLostPointerCapture={onLostPointerCapture}
         onTouchEnd={handleTouchEnd}
-        className={`${baseCardClass} zen-card-face ${faceLayoutClass} ${selected ? 'zen-card-selected' : ''}`}
+        className={`${baseCardClass} zen-card-face ${faceLayoutClass} ${selected ? 'zen-card-selected' : ''} ${onPointerDown ? 'zen-card-draggable' : ''}`}
       >
         {content}
       </div>
@@ -153,15 +162,11 @@ export const CardView = ({
   return (
     <button
       type="button"
-      draggable={Boolean(onDragStart)}
-      onDragStart={(event) => {
-        if (!onDragStart) return
-        event.dataTransfer.effectAllowed = 'move'
-        hideNativeDragPreview(event)
-        onDragStart(event)
-      }}
-      onDrag={onDrag}
-      onDragEnd={onDragEnd}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onLostPointerCapture={onLostPointerCapture}
       onClick={(event) => {
         event.stopPropagation()
         onClick()
@@ -171,7 +176,7 @@ export const CardView = ({
         onDoubleClick?.()
       }}
       onTouchEnd={handleTouchEnd}
-      className={`${baseCardClass} zen-card-face ${faceLayoutClass} ${selected ? 'zen-card-selected' : ''}`}
+      className={`${baseCardClass} zen-card-face ${faceLayoutClass} ${selected ? 'zen-card-selected' : ''} ${onPointerDown ? 'zen-card-draggable' : ''}`}
       aria-label={`${describeSolitaireCard(card)}${selected ? ', selected' : ''}${hinted ? ', suggested move' : ''}`}
       aria-pressed={Boolean(selected)}
     >
