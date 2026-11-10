@@ -3,7 +3,7 @@ import test from 'node:test'
 import { applyMove, undo } from '../model/engine.ts'
 import { serializeSolitaireState } from '../model/persistence.ts'
 import type { Card, SolitaireState } from '../model/types.ts'
-import { canStartDragPointer, crossedDragThreshold, legalDropMove, shouldSuppressDraggedClick } from './dragGesture.ts'
+import { canStartDragPointer, crossedDragThreshold, isRepeatedCardTap, legalDropMove, shouldSuppressDraggedClick } from './dragGesture.ts'
 
 const card = (id: string, rank: Card['rank'], suit: Card['suit']): Card => ({ id, rank, suit, faceUp: true })
 const game = (): SolitaireState => ({
@@ -15,6 +15,14 @@ const game = (): SolitaireState => ({
 })
 const from = { type: 'tableau' as const, index: 0 }
 const to = { type: 'tableau' as const, index: 1 }
+
+test('double-tap requires two completed taps on the same card', () => {
+  assert.equal(isRepeatedCardTap(null, 'clubs-A', 100), false)
+  assert.equal(isRepeatedCardTap({ cardId: 'clubs-A', at: 100 }, 'clubs-A', 200), true)
+  assert.equal(isRepeatedCardTap({ cardId: 'clubs-A', at: 100 }, 'hearts-A', 200), false)
+  assert.equal(isRepeatedCardTap({ cardId: 'clubs-A', at: 100 }, 'clubs-A', 420), false)
+  assert.equal(isRepeatedCardTap(null, 'clubs-A', 200), false, 'cancellation clears the preceding tap')
+})
 
 test('touch and primary mouse can begin a drag, but secondary mouse cannot', () => {
   assert.equal(canStartDragPointer('touch', 0), true)

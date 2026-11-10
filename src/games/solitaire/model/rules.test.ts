@@ -316,6 +316,21 @@ test('auto-finish is unavailable when a tableau choice remains', () => {
   assert.equal(canAutoComplete(game), false)
 })
 
+test('auto-finish completes a full-deck endgame despite redundant King moves to empty columns', () => {
+  const suits = ['clubs', 'diamonds', 'hearts', 'spades'] as const
+  const game = state({
+    tableau: [...suits.map((suit) => [card('K', suit)]), [], [], []],
+    foundations: suits.map((suit) => RANKS.slice(0, 12).map((rank) => card(rank, suit))),
+  })
+  const plan = getAutoFinishPlan(game)
+  assert.equal(plan?.length, 4)
+  const finished = plan?.reduce((current, move) => {
+    assert.equal(isValidMove(current, move), true)
+    return applyMove(current, move)
+  }, game)
+  assert.ok(finished && isWin(finished))
+})
+
 test('hint prioritizes a legal move that exposes a hidden tableau card', () => {
   const four = card('4', 'clubs')
   const game = state({

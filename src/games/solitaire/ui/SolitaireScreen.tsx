@@ -630,7 +630,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
       </div>
 
       {dragging ? createPortal((
-        <div className="zen-drag-layer" style={{
+        <div className="zen-drag-layer" data-card-style={settings.solitaireCardStyle} aria-hidden="true" style={{
           '--zen-card-width': `${dragging.width}px`,
           '--zen-card-height': `${dragging.height}px`,
           '--zen-faceup-step': dragging.step,
@@ -696,7 +696,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
             <section><h3 className="font-bold">Tableau</h3><p>Build columns down in alternating red and black. Move a face-up card or a correctly ordered face-up stack. Only a King may start an empty column.</p></section>
             <section><h3 className="font-bold">Foundations</h3><p>Build each foundation up by suit, starting with an Ace. Empty suit symbols show suits still needed; any Ace may start any empty foundation.</p></section>
             <section><h3 className="font-bold">Stock and waste</h3><p>Tap the stock to draw {gameDrawMode === 'three' ? 'up to three cards' : 'one card'}. When it is empty, tap it again to turn the waste back over.</p></section>
-            <section><h3 className="font-bold">Controls</h3><p>Tap a card or stack, then tap a destination. With a keyboard, use Tab to reach a card or pile and Enter or Space to select it and a destination. Select it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
+            <section><h3 className="font-bold">Controls</h3><p>Drag a face-up card or stack to a destination, or tap it and then tap a destination. With a keyboard, use Tab to reach a card or pile and Enter or Space to select it and a destination. Select it again to cancel. Double-tap a suitable card to send it to a foundation. Use Undo to take back your last move or stock action.</p></section>
           </div>
           <button type="button" onClick={() => setActiveDialog(null)} className="zen-game-button">Close How to Play</button>
         </GameDialog>

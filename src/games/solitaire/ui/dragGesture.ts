@@ -3,6 +3,9 @@ import type { Location, Move, SolitaireState } from '../model/types.ts'
 
 export const DRAG_THRESHOLD = 7
 
+export const isRepeatedCardTap = (previous: { cardId: string; at: number } | null, cardId: string, at: number): boolean =>
+  previous !== null && previous.cardId === cardId && at >= previous.at && at - previous.at < 320
+
 export const canStartDragPointer = (pointerType: string, button: number): boolean =>
   pointerType !== 'mouse' || button === 0
 

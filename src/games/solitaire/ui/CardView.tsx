@@ -4,6 +4,7 @@ import type { SolitaireCardFaces } from '../../../lib/settings'
 import type { Card, Rank, Suit } from '../model/types'
 import { describeSolitaireCard } from './cardAccessibility'
 import { courtCardAsset, numberedPips, suitPaths } from './cardArtwork'
+import { crossedDragThreshold, isRepeatedCardTap } from './dragGesture'
 
 const SuitMark = ({ suit, className = '' }: { suit: Suit; className?: string }) => (
   <svg className={className} viewBox="0 0 100 100" aria-hidden="true" focusable="false">
@@ -65,7 +66,7 @@ export const CardView = ({
   animate,
   cardFaces = 'simplified',
 }: Props) => {
-  const lastTapAt = useRef(0)
+  const lastTap = useRef<{ cardId: string; at: number } | null>(null)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
   const touchDragged = useRef(false)
   const size = largeCards ? 'zen-playing-card--large' : 'zen-playing-card--standard'
@@ -73,18 +74,27 @@ export const CardView = ({
   const handleTouchEnd = (event: TouchEvent<HTMLElement>) => {
     if (touchDragged.current) {
       touchDragged.current = false
-      lastTapAt.current = 0
+      lastTap.current = null
       return
     }
-    if (!onDoubleClick) return
+    if (!onDoubleClick || !card) return
     const now = window.performance.now()
-    if (now - lastTapAt.current < 320) {
+    if (isRepeatedCardTap(lastTap.current, card.id, now)) {
       event.preventDefault()
       onDoubleClick()
-      lastTapAt.current = 0
+      lastTap.current = null
       return
     }
-    lastTapAt.current = now
+    lastTap.current = { cardId: card.id, at: now }
+  }
+  const resetTouch = () => {
+    lastTap.current = null
+    touchStart.current = null
+    touchDragged.current = false
+  }
+  const handlePointerCancel = (event: PointerEvent<HTMLElement>) => {
+    resetTouch()
+    onPointerCancel?.(event)
   }
   const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
     if (event.pointerType === 'touch') {
@@ -95,7 +105,7 @@ export const CardView = ({
   }
   const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
     if (event.pointerType === 'touch' && touchStart.current &&
-      Math.hypot(event.clientX - touchStart.current.x, event.clientY - touchStart.current.y) >= 7) touchDragged.current = true
+      crossedDragThreshold(touchStart.current.x, touchStart.current.y, event.clientX, event.clientY)) touchDragged.current = true
     onPointerMove?.(event)
   }
 
@@ -149,7 +159,8 @@ export const CardView = ({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
+        onPointerCancel={handlePointerCancel}
+        onTouchCancel={resetTouch}
         onLostPointerCapture={onLostPointerCapture}
         onTouchEnd={handleTouchEnd}
         className={`${baseCardClass} zen-card-face ${faceLayoutClass} ${selected ? 'zen-card-selected' : ''} ${onPointerDown ? 'zen-card-draggable' : ''}`}
@@ -165,7 +176,8 @@ export const CardView = ({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
+      onPointerCancel={handlePointerCancel}
+      onTouchCancel={resetTouch}
       onLostPointerCapture={onLostPointerCapture}
       onClick={(event) => {
         event.stopPropagation()

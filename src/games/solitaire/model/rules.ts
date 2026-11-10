@@ -100,7 +100,8 @@ export const getAutoFinishPlan = (state: SolitaireState): Move[] | null => {
 
   while (remainingCards > 0) {
     const current: SolitaireState = { ...state, tableau, foundations, stock: [], waste: [] }
-    if (findObviousMoves(current).some((move) => move.to.type === 'tableau')) return null
+    // Repositioning a King in an empty column does not change a finishable endgame.
+    if (findObviousMoves(current).some((move) => move.to.type === 'tableau' && tableau[move.to.index].length > 0)) return null
 
     const nextMove = tableau.flatMap((pile, index) => {
       const card = getTopCard(pile)

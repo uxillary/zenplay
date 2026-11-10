@@ -2,6 +2,13 @@
 
 Complete the manual and release items against the production build and deployment target. Do not mark a device check complete without testing that device.
 
+## M19I Solitaire mobile acceptance (10 November 2026)
+
+- [x] **PASS** — 213 tests, typecheck, lint, production build and diff whitespace check; see [acceptance report](context/M19I_SOLITAIRE_MOBILE_ACCEPTANCE.md).
+- [x] **PASS — local Edge** — 320/360/390/404/430px, tablet and desktop; actual touch sequences, keyboard moves, long-stack drag/cancel/Undo, settings/save restoration, Auto-finish and screenshots.
+- [ ] **PENDING OWNER** — [Android checklist](context/M19I_OWNER_ANDROID_CHECKLIST.md), installed PWA, actual browser zoom and assistive-technology testing.
+- **Recommendation: CONDITIONAL.** Local development-browser evidence does not establish physical-device or deployed-build acceptance.
+
 ## M18H final Flags QA (10 October 2026)
 
 - [x] **PASS** — production build and automated checks: 192 tests, typecheck, lint, build, and `git diff --check`; see [M18H final QA](context/M18H_FLAGS_FINAL_QA.md).

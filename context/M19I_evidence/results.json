@@ -1,0 +1,246 @@
+[
+  {
+    "browser": "Edg/157.0.4341.42"
+  },
+  {
+    "width": 320,
+    "before": {
+      "viewport": 320,
+      "page": 320,
+      "x": 0,
+      "width": 320,
+      "cardWidth": 41.359375,
+      "cardHeight": 57.921875,
+      "scrollY": 0
+    },
+    "menu": {
+      "viewport": 320,
+      "page": 320,
+      "x": 0,
+      "width": 320,
+      "cardWidth": 41.359375,
+      "cardHeight": 57.921875,
+      "scrollY": 0
+    },
+    "result": "PASS"
+  },
+  {
+    "width": 360,
+    "before": {
+      "viewport": 360,
+      "page": 360,
+      "x": 0,
+      "width": 360,
+      "cardWidth": 47.078125,
+      "cardHeight": 65.921875,
+      "scrollY": 0
+    },
+    "menu": {
+      "viewport": 360,
+      "page": 360,
+      "x": 0,
+      "width": 360,
+      "cardWidth": 47.078125,
+      "cardHeight": 65.921875,
+      "scrollY": 0
+    },
+    "result": "PASS"
+  },
+  {
+    "width": 390,
+    "before": {
+      "viewport": 390,
+      "page": 390,
+      "x": 0,
+      "width": 390,
+      "cardWidth": 51.296875,
+      "cardHeight": 71.8125,
+      "scrollY": 0
+    },
+    "menu": {
+      "viewport": 390,
+      "page": 390,
+      "x": 0,
+      "width": 390,
+      "cardWidth": 51.296875,
+      "cardHeight": 71.8125,
+      "scrollY": 0
+    },
+    "result": "PASS"
+  },
+  {
+    "width": 404,
+    "before": {
+      "viewport": 404,
+      "page": 404,
+      "x": 0,
+      "width": 404,
+      "cardWidth": 53.234375,
+      "cardHeight": 74.53125,
+      "scrollY": 0
+    },
+    "menu": {
+      "viewport": 404,
+      "page": 404,
+      "x": 0,
+      "width": 404,
+      "cardWidth": 53.234375,
+      "cardHeight": 74.53125,
+      "scrollY": 0
+    },
+    "result": "PASS"
+  },
+  {
+    "width": 430,
+    "before": {
+      "viewport": 430,
+      "page": 430,
+      "x": 0,
+      "width": 430,
+      "cardWidth": 56.71875,
+      "cardHeight": 79.40625,
+      "scrollY": 0
+    },
+    "menu": {
+      "viewport": 430,
+      "page": 430,
+      "x": 0,
+      "width": 430,
+      "cardWidth": 56.71875,
+      "cardHeight": 79.40625,
+      "scrollY": 0
+    },
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "before": {
+      "viewport": 768,
+      "page": 753,
+      "x": 41,
+      "width": 671,
+      "cardWidth": 87.90625,
+      "cardHeight": 123.078125,
+      "scrollY": 0
+    },
+    "menu": {
+      "viewport": 768,
+      "page": 753,
+      "x": 41,
+      "width": 671,
+      "cardWidth": 87.90625,
+      "cardHeight": 123.078125,
+      "scrollY": 0
+    },
+    "result": "PASS"
+  },
+  {
+    "width": 1280,
+    "before": {
+      "viewport": 1280,
+      "page": 1265,
+      "x": 182.5,
+      "width": 900,
+      "cardWidth": 88,
+      "cardHeight": 123.1875,
+      "scrollY": 0
+    },
+    "menu": {
+      "viewport": 1280,
+      "page": 1265,
+      "x": 182.5,
+      "width": 900,
+      "cardWidth": 88,
+      "cardHeight": 123.1875,
+      "scrollY": 0
+    },
+    "result": "PASS"
+  },
+  {
+    "width": 320,
+    "longDrag": "PASS",
+    "invalidDrop": "PASS",
+    "cancel": "PASS",
+    "geometry": {
+      "viewport": 320,
+      "page": 320,
+      "x": 0,
+      "width": 320,
+      "cardWidth": 41.359375,
+      "cardHeight": 57.921875,
+      "scrollY": 0
+    }
+  },
+  {
+    "width": 360,
+    "longDrag": "PASS",
+    "invalidDrop": "PASS",
+    "cancel": "PASS",
+    "geometry": {
+      "viewport": 360,
+      "page": 360,
+      "x": 0,
+      "width": 360,
+      "cardWidth": 47.078125,
+      "cardHeight": 65.921875,
+      "scrollY": 0
+    }
+  },
+  {
+    "width": 390,
+    "longDrag": "PASS",
+    "invalidDrop": "PASS",
+    "cancel": "PASS",
+    "geometry": {
+      "viewport": 390,
+      "page": 390,
+      "x": 0,
+      "width": 390,
+      "cardWidth": 51.296875,
+      "cardHeight": 71.8125,
+      "scrollY": 0
+    }
+  },
+  {
+    "width": 404,
+    "longDrag": "PASS",
+    "invalidDrop": "PASS",
+    "cancel": "PASS",
+    "geometry": {
+      "viewport": 404,
+      "page": 404,
+      "x": 0,
+      "width": 404,
+      "cardWidth": 53.234375,
+      "cardHeight": 74.53125,
+      "scrollY": 0
+    }
+  },
+  {
+    "width": 430,
+    "longDrag": "PASS",
+    "invalidDrop": "PASS",
+    "cancel": "PASS",
+    "geometry": {
+      "viewport": 430,
+      "page": 430,
+      "x": 0,
+      "width": 430,
+      "cardWidth": 56.71875,
+      "cardHeight": 79.40625,
+      "scrollY": 0
+    }
+  },
+  {
+    "win": "PASS",
+    "saveRestore": "PASS"
+  },
+  {
+    "settingsUIAndReload": "PASS",
+    "hint": "PASS",
+    "navigateAwayAndReturn": "PASS"
+  },
+  {
+    "desktopMouseDrag": "PASS"
+  }
+]
