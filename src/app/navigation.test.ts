@@ -2,9 +2,10 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { appPathForNavigation, createAppHistoryState, homeNavigation, notFoundNavigation, parseAppPath, readAppNavigation, resolveAppNavigation, shouldHandleLinkClick, solitaireNavigation, type AppNavigation } from './navigation.ts'
+import { gameCatalogue } from './gameCatalogue.ts'
 import { FLAGS_GAME } from '../games/flags/game.ts'
 
-const gameIds = new Set(['solitaire', 'mahjong'])
+const gameIds = new Set(gameCatalogue.map(game => game.id))
 
 test('reads only valid ZenPlay history screens and known games', () => {
   assert.deepEqual(readAppNavigation({ zenplayNavigation: { screen: 'home' } }, gameIds), { screen: 'home', gameId: null })
@@ -21,18 +22,18 @@ test('adds ZenPlay navigation without discarding other history state', () => {
   assert.deepEqual(createAppHistoryState({ otherFeature: 4 }, navigation), {
     otherFeature: 4,
     zenplayNavigation: navigation,
-    zenplayNavigationVersion: 1,
+    zenplayNavigationVersion: 2,
   })
 })
 
 test('public paths round-trip and aliases resolve without accepting unknown games', () => {
-  for (const navigation of [homeNavigation, solitaireNavigation]) {
+  for (const navigation of [homeNavigation, ...gameCatalogue.map(game => ({ screen: 'game' as const, gameId: game.id })), ...['settings', 'profile', 'support', 'install'].map(screen => ({ screen, gameId: null }) as AppNavigation)]) {
     assert.deepEqual(parseAppPath(appPathForNavigation(navigation)), navigation)
   }
   for (const path of ['/games/solitaire', '/games/solitaire/', '/games/solitaire/index.html']) {
     assert.deepEqual(parseAppPath(path), solitaireNavigation)
   }
-  for (const path of ['/games/missing/', '/games/sudoku/', '/games/Solitaire/', '/games/%73olitaire/', '//games/solitaire/', '/games/solitaire/extra', '/games/solitaire/?game=sudoku']) {
+  for (const path of ['/games/missing/', '/games/Solitaire/', '/games/%73olitaire/', '//games/solitaire/', '/games/solitaire/extra', '/games/solitaire/?game=sudoku']) {
     assert.equal(parseAppPath(path), null, path)
   }
 })
@@ -55,11 +56,12 @@ test('legacy root Solitaire entries upgrade once and fresh Home stays Home', () 
   assert.deepEqual(resolveAppNavigation('/', null, gameIds), homeNavigation)
 })
 
-test('unsliced games and utilities retain their existing root-history behavior', () => {
+test('version-1 partial-catalogue entries migrate while version-2 Home stays authoritative', () => {
   for (const navigation of [{ screen: 'game', gameId: 'mahjong' }, { screen: 'settings', gameId: null }, { screen: 'profile', gameId: null }] as const) {
     const state = createAppHistoryState(null, navigation)
-    assert.equal(appPathForNavigation(navigation), '/')
-    assert.deepEqual(resolveAppNavigation('/', state, gameIds), navigation)
+    assert.notEqual(appPathForNavigation(navigation), '/')
+    assert.deepEqual(resolveAppNavigation('/', { ...state, zenplayNavigationVersion: 1 }, gameIds), navigation)
+    assert.deepEqual(resolveAppNavigation('/', state, gameIds), homeNavigation)
   }
 })
 

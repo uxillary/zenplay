@@ -3,9 +3,7 @@ import { registerSW } from 'virtual:pwa-register'
 import { AccessibilityProvider } from './AccessibilityProvider'
 import { useAccessibility } from './accessibilityContext'
 import { games } from './gameRegistry'
-import { GameShell } from '../components/GameShell'
-import { AppFrame, HomePage, NotFoundPage, SolitairePage } from '../seo/PublicShell'
-import { metadataForNavigation } from '../seo/publicContent'
+import { AppFrame, HomePage, NotFoundPage, PublicGamePage } from '../seo/PublicShell'
 import { updatePageMetadata } from '../seo/metadata'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { ProfilePanel } from '../components/ProfilePanel'
@@ -40,9 +38,6 @@ class GameScreenErrorBoundary extends Component<{ children: ReactNode }, { faile
 }
 
 const knownGameIds = new Set(games.map((game) => game.id))
-
-const GamePage = ({ id, title, onBack, children }: { id: string; title: string; onBack: () => void; children: ReactNode }) =>
-  id === 'solitaire' ? <SolitairePage onBack={onBack}>{children}</SolitairePage> : <GameShell title={title} onBack={onBack}>{children}</GameShell>
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>
@@ -102,7 +97,7 @@ const Application = () => {
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
-  useEffect(() => { updatePageMetadata(metadataForNavigation(navigation)) }, [navigation])
+  useEffect(() => { updatePageMetadata(navigation) }, [navigation])
 
   const updateSolitaireSaveAvailability = useCallback((hasSave: boolean) => {
     setContinueAvailability((current) => ({ ...current, solitaire: hasSave }))
@@ -208,22 +203,20 @@ const Application = () => {
         </p> : null}
         {screen === 'not-found' ? <NotFoundPage /> : null}
         {screen === 'home' ? <HomePage continueAvailability={continueAvailability} onSelect={(game, event) => {
-          if (game.id === 'solitaire') {
-            if (!shouldHandleLinkClick(event)) return
-            event.preventDefault()
-          }
+          if (!shouldHandleLinkClick(event)) return
+          event.preventDefault()
           setSaveWarning(false)
           navigateTo('game', game.id)
         }} actions={<div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => navigateTo('profile')} className="zen-game-button">Profile</button>
-                <button type="button" onClick={() => navigateTo('settings')} className="zen-game-button">Settings</button>
-                {installExperience !== 'installed' ? <button type="button" onClick={() => navigateTo('install')} className="zen-game-button">Install ZenPlay</button> : null}
+                <a href="/profile/" onClick={event => { if (shouldHandleLinkClick(event)) { event.preventDefault(); navigateTo('profile') } }} className="zen-game-button">Profile</a>
+                <a href="/settings/" onClick={event => { if (shouldHandleLinkClick(event)) { event.preventDefault(); navigateTo('settings') } }} className="zen-game-button">Settings</a>
+                {installExperience !== 'installed' ? <a href="/install/" onClick={event => { if (shouldHandleLinkClick(event)) { event.preventDefault(); navigateTo('install') } }} className="zen-game-button">Install ZenPlay</a> : null}
               </div>} /> : null}
 
         {screen === 'game' && selectedGame ? (
-          <GamePage id={selectedGame.id} title={selectedGame.name} onBack={returnHome}>
+          <PublicGamePage gameId={selectedGame.id} onBack={returnHome} onGameNavigate={id => navigateTo('game', id)}>
             {saveWarning ? <p role="alert" className="my-3 rounded-lg border border-amber-700 p-3 text-base">Your progress could not be saved on this device. Keep this page open to avoid losing it. <button type="button" className="underline" onClick={() => setSaveWarning(false)}>Dismiss</button></p> : null}
-            <GameScreenErrorBoundary>
+            <GameScreenErrorBoundary key={selectedGame.id}>
               <Suspense fallback={<p className="my-3 text-lg" role="status" aria-live="polite">Loading game…</p>}>
                 {selectedGame.id === 'solitaire' ? <SolitaireScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSolitaireSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} onSettingChange={setSetting} /> : null}
                 {selectedGame.id === 'sudoku' ? <SudokuScreen settings={effectiveSettings} onBack={returnHome} onSaveAvailabilityChange={updateSudokuSaveAvailability} onSaveFailure={reportSaveFailure} onSaveRecovery={reportSaveRecovery} /> : null}
@@ -235,12 +228,12 @@ const Application = () => {
                 {selectedGame.id === 'flags' ? <FlagsScreen onBack={returnHome} /> : null}
               </Suspense>
             </GameScreenErrorBoundary>
-          </GamePage>
+          </PublicGamePage>
         ) : null}
 
         {screen === 'settings' ? (
           <section className="mx-auto max-w-2xl space-y-4">
-            <button type="button" onClick={returnHome} className="zen-game-button zen-game-button--back">Back to Games</button>
+            <a href="/" onClick={event => { if (shouldHandleLinkClick(event)) { event.preventDefault(); returnHome() } }} className="zen-game-button zen-game-button--back">Back to Games</a>
             <SettingsPanel settings={settings} onChange={setSetting} />
             <LocalDataPanel
               onSavedGamesCleared={() => {
@@ -257,18 +250,18 @@ const Application = () => {
 
         {screen === 'profile' ? (
           <section className="mx-auto max-w-2xl space-y-4">
-            <button type="button" onClick={returnHome} className="zen-game-button zen-game-button--back">Back to Games</button>
+            <a href="/" onClick={event => { if (shouldHandleLinkClick(event)) { event.preventDefault(); returnHome() } }} className="zen-game-button zen-game-button--back">Back to Games</a>
             <ProfilePanel games={availableGames} onOpenSupport={() => navigateTo('support')} />
           </section>
         ) : null}
 
         {screen === 'support' ? (
-          <SupportZenPlayPanel onBack={() => window.history.back()} />
+          <SupportZenPlayPanel onBack={() => navigateTo('profile')} />
         ) : null}
 
         {screen === 'install' ? (
           <section className="mx-auto max-w-2xl space-y-4 text-lg" aria-labelledby="install-title">
-            <button type="button" onClick={returnHome} className="zen-game-button zen-game-button--back">Back to Games</button>
+            <a href="/" onClick={event => { if (shouldHandleLinkClick(event)) { event.preventDefault(); returnHome() } }} className="zen-game-button zen-game-button--back">Back to Games</a>
             <h1 id="install-title" data-screen-heading tabIndex={-1} className="text-2xl font-semibold">Install ZenPlay</h1>
             <p>Keep ZenPlay with your other apps and play offline after it has loaded once.</p>
             {installExperience === 'installed' ? <p role="status">ZenPlay is already installed and ready to use.</p> : null}

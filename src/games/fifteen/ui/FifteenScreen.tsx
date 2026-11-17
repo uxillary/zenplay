@@ -1,3 +1,4 @@
+import { trackGameWrites } from '../../../persistence/pendingWrites'
 import { useEffect, useRef, useState } from 'react'
 import type { AppSettings } from '../../../lib/settings'
 import { createSessionId, deleteActiveSave, saveActiveGame } from '../../../persistence/gameSave'
@@ -69,6 +70,7 @@ export const FifteenScreen = ({ settings, onBack, onSaveAvailabilityChange, onSa
       if (await saveActiveGame('fifteen', snapshot, currentSession)) onSaveAvailabilityChange(true)
       else onSaveFailure()
     })
+    trackGameWrites('fifteen', persistenceQueue.current)
   }, [onSaveAvailabilityChange, onSaveFailure, ready, state])
 
   useEffect(() => {

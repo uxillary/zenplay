@@ -1,3 +1,4 @@
+import { trackGameWrites } from '../../../persistence/pendingWrites'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import type { AppSettings } from '../../../lib/settings'
@@ -124,6 +125,7 @@ export const SudokuScreen = ({ settings, onBack, onSaveAvailabilityChange, onSav
       if (await saveActiveGame('sudoku', snapshot, currentSession)) onSaveAvailabilityChange(true)
       else onSaveFailure()
     })
+    trackGameWrites('sudoku', persistenceQueue.current)
   }, [onSaveAvailabilityChange, onSaveFailure, puzzle, ready, state])
 
   useEffect(() => {

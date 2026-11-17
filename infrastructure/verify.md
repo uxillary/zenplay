@@ -10,6 +10,17 @@ Run only after a production change, against the intended production resources. C
 - [ ] Confirm Cloudflare production build settings use `npm run build` and `dist/` and both public Supabase values are set for the correct environment when accounts are enabled.
 - [ ] Install/open the PWA and verify the service worker can load the app offline after a successful initial load.
 
+## SEO catalogue and indexing (M20C)
+
+- [ ] Confirm the actual Pages production branch and `ZENPLAY_PRODUCTION_BRANCH` match. Check production public pages have indexable HTML/headers and robots permits crawling; do not publish a noindex build accidentally.
+- [ ] Confirm preview/staging HTML/headers are noindex and its robots policy matches the intended environment; use `ZENPLAY_NOINDEX=1` for other staging builds.
+- [ ] Request Home and all eight `/games/{id}/` paths without JavaScript/service workers: verify correct 200 HTML, unique metadata, self-canonicals under `https://playadfree.games`, social assets and honest structured data.
+- [ ] Check Settings/Profile/Support/Install refresh and return noindex,follow. Verify the sitemap has exactly Home plus the eight game URLs, excluding utilities/aliases/errors.
+- [ ] Check robots/sitemap MIME types, exact no-slash redirects, directory-index normalization, query preservation and unknown/case-mixed path 404s. Confirm no wildcard SPA rewrite overrides generated files.
+- [ ] Deploy only `dist/`, never `dist-ssr/`. Compare final HTML hashes/precache revisions and test Home-only readiness followed by offline direct entry to every game/utility.
+- [ ] On supported physical devices, verify waiting/Later/explicit update across two actual asset sets, retained saves/settings, installation identity, screen-reader/keyboard focus, large text/zoom and reduced motion.
+- [ ] After authorized release, inspect Search Console/Bing rendering/canonical selection and submit the nine-URL sitemap. Record results without asserting rankings or rich-result eligibility from JSON validity alone.
+
 ## Supabase and account flow
 
 - [ ] Confirm the deployed app uses the intended Supabase project URL and publishable key; do not expose a secret/service-role key in the built assets.

@@ -1,5 +1,5 @@
 # M20 — Search Discoverability Foundation
-Status: M20A APPROVED FOR SLICE / M20B.1 LOCAL ACCEPTANCE PASSED / M20B.2 AND RELEASE PENDING
+Status: M20B.2 COMPLETE LOCALLY / AUTOMATED ACCEPTANCE PASSED / M20C RELEASE REVIEW PENDING
 Date: 2026-11-17
 
 ## Goal
@@ -34,11 +34,11 @@ See [M20A SEO Architecture Decision](M20A_SEO_ARCHITECTURE_DECISION.md) for veri
 - **Verified baseline:** 213 tests pass; typecheck, lint and production build pass. Built HTML has an empty React root; the local Vite preview returned the same HTML for sampled game and missing paths, robots and sitemap. Main JS is 474.90 kB uncompressed / 138.34 kB gzip; Workbox reports 236 entries / 5,318.97 KiB. These are local build/probe results, not production or field performance evidence. Existing Browserslist age warning remains.
 - **Unverified:** actual Cloudflare project/build/branch/redirect/header state, live canonical/index status, Search Console/Bing data, physical-device offline/install/update acceptance and field Core Web Vitals. No production deployment or hosted change was performed.
 
-### Recommended implementation sequence
+### Current next steps
 
-1. The M20B.1 request approved the Home + Solitaire implementation below. Review its actual boundary, evidence and outstanding checks before expanding.
-2. M20B.2: extend the catalogue and route model to the remaining games/utility screens, then metadata/structured data/social assets and final discovery policy. Do not publish empty routes or an incomplete eight-game sitemap.
-3. Complete M20C real-device/accessibility checks and separately authorize any hosted preview or production release. Verify actual Pages deployment settings before any push/deploy that could publish changes. Search indexing is a later remote check, not inferred from build success.
+1. Review [M20B.2 catalogue evidence](M20B2_COMPLETE_SEO_CATALOGUE.md); the B.1 architecture has now been extended to the full catalogue without a framework migration.
+2. Complete M20C physical-device/accessibility and authorized hosted checks, including the confirmed production branch/indexing configuration.
+3. Separately authorize any merge/push/deployment. Search Console/Bing indexing and field performance remain later remote checks, not inferred from builds.
 
 ## M20B.1 — Home + Solitaire vertical slice (local acceptance passed)
 
@@ -53,7 +53,21 @@ See [M20B.1 implementation and evidence](M20B1_SEO_VERTICAL_SLICE.md).
 - Final Home/Solitaire HTML is 6,308/4,018 bytes. Bootstrap + App gzip is about 140.81 kB versus 138.34 kB baseline; precache is 239 entries / 5,336.44 KiB versus 236 / 5,318.97 KiB. No field/lab speed improvement is claimed from file sizes.
 - **Not verified:** real Cloudflare routing/headers, production indexing, live account lifecycle, physical installation/VoiceOver/NVDA/zoom acceptance or field CWV. No final sitemap/robots/social/structured-data release has been implemented.
 
-## M20B — Full foundation (in progress; B.1 complete locally)
+## M20B.2 — Complete catalogue (local acceptance passed)
+
+See [M20B.2 implementation and route matrix](M20B2_COMPLETE_SEO_CATALOGUE.md).
+
+- All eight `/games/{id}/` pages and Home have useful initial HTML, unique metadata, absolute canonicals, social tags, honest JSON-LD and relevant internal links. Settings/Profile/Support/Install have refreshable neutral shells with noindex,follow.
+- Exactly nine public canonical URLs appear in sitemap.xml. Robots, top-level 404, twelve exact slash redirects and indexing headers are generated before Workbox hashing. Unknown/mixed-case paths return actual local 404s; no SPA catch-all.
+- Progressive routing covers all screens, explicit Home and safe Support → Profile. Unversioned and partial B.1 root history entries migrate to canonical paths; new state is version 2.
+- B.1's pending-write barrier now protects all six resumable games. Browser fixtures retained schema-1 saves/session IDs/statistics/settings/profile across real moves, Continue, refresh and updates. No persistence formats/game rules changed, and no unfinished-game resume was added to Noughts & Crosses or Flags.
+- Local no-JS/HTTP/browser checks cover all thirteen pages. All game/utility documents load/reload offline after Home-only readiness; final HTML precache hashes and eight lazy game chunks pass validation. User-controlled updates and private-response cache exclusion were verified with local fixtures.
+- **Verification:** 229 tests, typecheck, lint, build, SEO verifier, headless browser acceptance and whitespace checks passed. Automated accessibility smoke covers H1/main, named controls, keyboard/skip focus and mobile widths; physical screen-reader/device acceptance remains M20C.
+- **Release configuration required:** Cloudflare builds stay noindex until `ZENPLAY_PRODUCTION_BRANCH` matches the actual `CF_PAGES_BRANCH`. `ZENPLAY_NOINDEX=1` forces noindex for other staging builds; local preview sends a noindex header. No hosted setting was changed. Confirm production/preview behavior before publishing.
+- Compared with B.1, bootstrap/App gzip is 144.37 kB versus 140.81 kB (+2.53%); Workbox reports 250 entries / 5,408.09 KiB versus 239 / 5,336.44 KiB (+1.34%). CSS is unchanged. These are build sizes, not measured CWV/speed improvements.
+- No new packages, games, payment changes, analytics, deployment, merge, commit or push. Live Cloudflare/indexing/Supabase acceptance and physical devices remain unverified.
+
+## M20B — Full foundation (implemented locally; release acceptance pending)
 - Introduce crawlable, direct game URLs and prerendered HTML using approved architecture.
 - Add sitemap, robots, canonical tags, page metadata, Open Graph assets and accessible internal links.
 - Keep the playable game near the top; instructional content below it.

@@ -24,9 +24,18 @@ This inventory describes repository evidence only. A checked-in setting does not
 | `STRIPE_PRICE_SUPPORT_2_GBP`, `STRIPE_PRICE_SUPPORT_5_GBP`, `STRIPE_PRICE_SUPPORT_10_GBP` | Server-side Stripe Price IDs; each is checked for active GBP amount before Checkout creation. | After test Prices are created and verified. | Not credentials, but server-side configuration only; never sent by browser. |
 | `STRIPE_CHECKOUT_SUCCESS_URL`, `STRIPE_CHECKOUT_CANCEL_URL` | Server-configured return destinations used by Checkout. | After owner confirms customer-facing destinations. | Server-side configuration only. |
 
-No other browser-build environment reads are present in application source, scripts, or Vite config. Stripe values are read only by the server-side Edge Functions and are listed in the table above. `VITE_` values are embedded in the browser build, so privileged credentials must never use that prefix. No `.env`/`.env.local` file is tracked; `.gitignore` ignores local env files while allowing `.env.example`.
+Only the two `VITE_SUPABASE_` values are browser-build application configuration. Stripe values are read only by the server-side Edge Functions. `VITE_` values are embedded in the browser build, so privileged credentials must never use that prefix. No `.env`/`.env.local` file is tracked; `.gitignore` allows only `.env.example`.
 
-M20B.1 retains `npm run build` / `dist` for Pages, adding isolated build-time rendering of Home/Solitaire before PWA generation. Its non-deployed renderer output is `dist-ssr/`; generated `dist/_redirects` contains only the exact Solitaire no-slash alias and `dist/404.html` disables a homepage catch-all on Pages. These generated outputs and local Vite HTTP behavior do not prove hosted settings match. No Cloudflare service configuration was changed. The optional `ZENPLAY_TEST_BROWSER` variable is read only by the local disposable-browser acceptance runner, not by the application or hosted build.
+### SEO build-only controls (not browser credentials)
+
+| Name | Use | Required when | Secret? |
+| --- | --- | --- | --- |
+| `CF_PAGES`, `CF_PAGES_BRANCH` | Platform-provided Pages build/branch identity. No hosted identity was read or changed in M20B.2. | Cloudflare Pages injects these; do not override to bypass preview safeguards. | No. |
+| `ZENPLAY_PRODUCTION_BRANCH` | Explicit branch allowed to generate indexable public pages when building on Pages. An unset/mismatched value fails closed to noindex. | Before an authorized hosted release, confirm/set to the actual Pages production branch. | No. |
+| `ZENPLAY_NOINDEX` | Value `1` forces noindex HTML/global headers and robots disallow, independent of production mode. | Public staging builds outside the normal Pages branch guard, or deliberate indexing suppression. | No. |
+| `ZENPLAY_TEST_BROWSER` | Optional Chromium/Edge executable path for the disposable local browser runner. | Only if its default executable is unavailable. Never consumed by the app or hosted build. | No. |
+
+M20B.2 retains `npm run build` / `dist` for Pages. Its isolated renderer output is non-deployed `dist-ssr/`. Generated output contains Home/eight game pages, four noindex utility shells, the nine-URL sitemap, robots, top-level 404, exact slash redirects and environment-appropriate `_headers`. Actual Pages production branch, deployment trigger, redirect/header precedence, canonical-domain setup and preview noindex still require hosted verification. Local Vite preview adds noindex independently of production artifact meta tags. No Cloudflare, Supabase or billing settings were changed. See [M20B.2 evidence](../context/M20B2_COMPLETE_SEO_CATALOGUE.md).
 
 ## Wrangler decision
 

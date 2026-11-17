@@ -1,3 +1,4 @@
+import { trackGameWrites } from '../../../persistence/pendingWrites'
 import { useEffect, useReducer, useRef, useState } from 'react'
 import type { AppSettings } from '../../../lib/settings'
 import { createSessionId, deleteActiveSave, saveActiveGame } from '../../../persistence/gameSave'
@@ -99,6 +100,7 @@ export const PairsScreen = ({ settings, onBack, onSaveAvailabilityChange, onSave
       if (await saveActiveGame('pairs', snapshot, currentSession)) onSaveAvailabilityChange(true)
       else onSaveFailure()
     })
+    trackGameWrites('pairs', persistenceQueue.current)
   }, [onSaveAvailabilityChange, onSaveFailure, ready, state])
 
   useEffect(() => {

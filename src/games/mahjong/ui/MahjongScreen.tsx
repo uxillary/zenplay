@@ -1,3 +1,4 @@
+import { trackGameWrites } from '../../../persistence/pendingWrites'
 import { useEffect, useRef, useState } from 'react'
 import type { AppSettings } from '../../../lib/settings'
 import { GameDialog } from '../../../components/GameDialog'
@@ -69,6 +70,7 @@ export const MahjongScreen = ({ settings, onSaveAvailabilityChange, onSaveFailur
       } else if (await saveActiveGame('mahjong', snapshot, current)) onSaveAvailabilityChange(true)
       else onSaveFailure()
     })
+    trackGameWrites('mahjong', queue.current)
   }, [onSaveAvailabilityChange, onSaveFailure, ready, state])
 
   useEffect(() => () => { if (hintTimer.current !== null) window.clearTimeout(hintTimer.current) }, [])

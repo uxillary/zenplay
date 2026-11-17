@@ -1,3 +1,4 @@
+import { trackGameWrites } from '../../../persistence/pendingWrites'
 import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { AppSettings } from '../../../lib/settings'
@@ -87,6 +88,7 @@ export const WordSearchScreen = ({ settings, onBack, onSaveAvailabilityChange, o
       if (await saveActiveGame('word-search', snapshot, currentSession)) onSaveAvailabilityChange(true)
       else onSaveFailure()
     })
+    trackGameWrites('word-search', persistenceQueue.current)
   }, [onSaveAvailabilityChange, onSaveFailure, puzzle, ready, state])
 
   useEffect(() => {

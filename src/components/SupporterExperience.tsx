@@ -1,3 +1,4 @@
+import { shouldHandleLinkClick } from '../app/navigation'
 import { games, type GameId } from '../app/gameRegistry'
 import { demoSupportAmounts, demoSupportMilestones, demoSupporters, type DemoSupporter } from '../lib/supporterDemo'
 
@@ -43,7 +44,7 @@ export const SupporterSpotlight = () => (
 
 export const SupportZenPlayPanel = ({ onBack }: { onBack: () => void }) => (
   <section className="mx-auto max-w-3xl space-y-6 p-4 md:p-6" aria-labelledby="support-zenplay-title">
-    <button type="button" onClick={onBack} className="zen-game-button zen-game-button--back">Back to Profile</button>
+    <a href="/profile/" onClick={event => { if (shouldHandleLinkClick(event)) { event.preventDefault(); onBack() } }} className="zen-game-button zen-game-button--back">Back to Profile</a>
     <header className="space-y-2">
       <h1 id="support-zenplay-title" data-screen-heading tabIndex={-1} className="text-2xl font-semibold">Support ZenPlay</h1>
       <p className="text-lg">ZenPlay is free and ad-free. Supporting is completely optional and could help keep it that way.</p>

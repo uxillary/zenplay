@@ -1,3 +1,4 @@
+import { trackGameWrites, waitForGameWrites } from '../../persistence/pendingWrites.ts'
 import { deleteActiveSave, loadActiveSave, type ActiveSaveLoadResult, type ContinueAvailability } from '../../persistence/gameSave.ts'
 import { recordGameCompleted } from '../../persistence/statistics.ts'
 import { isResumableSolitaireState, isSolitaireState } from './model/persistence.ts'
@@ -9,9 +10,8 @@ export type SolitaireSaveState = { gameState: SolitaireState; drawMode: DrawMode
 
 // The screen's queue can outlive its component during in-app navigation.
 // Readers must wait for every queued snapshot before offering/resuming Continue.
-let pendingWrites: Promise<void> = Promise.resolve()
 export const trackSolitaireWrites = (writes: Promise<void>): void => {
-  pendingWrites = writes.catch(() => undefined)
+  trackGameWrites('solitaire', writes)
 }
 
 export const isSolitaireSaveState = (value: unknown): value is SolitaireSaveState =>
@@ -23,7 +23,7 @@ export const isSolitaireSaveState = (value: unknown): value is SolitaireSaveStat
   && isSolitaireState(value.gameState)
 
 export const loadSolitaireSave = async (): Promise<ActiveSaveLoadResult<SolitaireSaveState>> => {
-  await pendingWrites
+  await waitForGameWrites('solitaire')
   const result = await loadActiveSave<SolitaireSaveState>('solitaire', isSolitaireSaveState)
   if (result.status !== 'loaded') return result
   const save = result.save

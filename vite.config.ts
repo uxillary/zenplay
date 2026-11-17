@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { pageRoutes } from './src/app/navigation'
 import { seoPrerender } from './scripts/seoPrerender'
 
 export default defineConfig(({ isSsrBuild }) => ({
@@ -60,12 +61,13 @@ export default defineConfig(({ isSsrBuild }) => ({
         // These precached files are public static resources and never vary by
         // query. This does not cache unrelated API/account requests.
         ignoreURLParametersMatching: [/.*/],
-        runtimeCaching: [{
-          urlPattern: ({ request, url }) => request.mode === 'navigate' && url.origin === self.location.origin
-            && (url.pathname === '/games/solitaire' || url.pathname === '/games/solitaire/index.html'),
-          handler: 'NetworkOnly',
-          options: { precacheFallback: { fallbackURL: 'games/solitaire/index.html' } },
-        }],
+        // Only exact static-page aliases use a network fallback. No API URL or
+        // wildcard navigation rule is cached; canonical pages use precache routing.
+        runtimeCaching: pageRoutes.filter(route => route.path !== '/').map(({ path }) => ({
+          urlPattern: new RegExp(`^https?://[^/]+${path.slice(0, -1)}(?:/index\\.html)?(?:\\?.*)?$`),
+          handler: 'NetworkOnly' as const,
+          options: { precacheFallback: { fallbackURL: `${path.slice(1)}index.html` } },
+        })),
         skipWaiting: false,
         clientsClaim: false,
         cleanupOutdatedCaches: true,

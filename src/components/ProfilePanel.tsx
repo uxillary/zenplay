@@ -1,3 +1,4 @@
+import { shouldHandleLinkClick } from '../app/navigation'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { GameDefinition } from '../app/gameRegistry'
 import { readStatistics } from '../persistence/statistics'
@@ -143,7 +144,7 @@ export const ProfilePanel = ({ games, onOpenSupport }: Props) => {
       {!editing ? <section className="space-y-3 border-t border-[var(--zp-border)] pt-4">
         <h2 className="text-xl font-semibold">Optional support</h2>
         <p>ZenPlay is free and ad-free. Read about a future supporter experience; nothing can be purchased here.</p>
-        <button type="button" onClick={onOpenSupport} className="zen-game-button">See the support experience preview</button>
+        <a href="/support/" onClick={event => { if (shouldHandleLinkClick(event)) { event.preventDefault(); onOpenSupport() } }} className="zen-game-button">See the support experience preview</a>
       </section> : null}
 
       {editing ? (

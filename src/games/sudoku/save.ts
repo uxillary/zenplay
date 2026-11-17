@@ -1,3 +1,4 @@
+import { waitForGameWrites } from '../../persistence/pendingWrites.ts'
 import { deleteActiveSave, loadActiveSave, type ActiveSaveLoadResult, type ContinueAvailability } from '../../persistence/gameSave.ts'
 import { recordGameCompleted } from '../../persistence/statistics.ts'
 import { findSudokuPuzzle } from './model/puzzles.ts'
@@ -6,6 +7,7 @@ import { isSudokuState } from './model/persistence.ts'
 import type { SudokuState } from './model/types.ts'
 
 export const loadSudokuSave = async (): Promise<ActiveSaveLoadResult<SudokuState>> => {
+  await waitForGameWrites('sudoku')
   const result = await loadActiveSave<SudokuState>('sudoku', isSudokuState)
   if (result.status !== 'loaded') return result
   const save = result.save

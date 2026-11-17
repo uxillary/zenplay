@@ -1,3 +1,4 @@
+import { waitForGameWrites } from '../../persistence/pendingWrites.ts'
 import { deleteActiveSave, loadActiveSave, type ActiveSaveLoadResult, type ContinueAvailability } from '../../persistence/gameSave.ts'
 import { recordGameCompleted } from '../../persistence/statistics.ts'
 import { isPairsComplete } from './model/engine.ts'
@@ -5,6 +6,7 @@ import { isPairsState } from './model/persistence.ts'
 import type { PairsState } from './model/types.ts'
 
 export const loadPairsSave = async (): Promise<ActiveSaveLoadResult<PairsState>> => {
+  await waitForGameWrites('pairs')
   const result = await loadActiveSave<PairsState>('pairs', isPairsState)
   if (result.status !== 'loaded') return result
   const save = result.save
