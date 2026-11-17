@@ -7,7 +7,7 @@ import type { GameStatistics } from '../../../persistence/types'
 import { applyMove, dealFromStock, undo } from '../model/engine'
 import { createInitialState } from '../model/deal'
 import { serializeSolitaireState } from '../model/persistence'
-import { loadSolitaireSave, type SolitaireSaveState } from '../save'
+import { loadSolitaireSave, trackSolitaireWrites, type SolitaireSaveState } from '../save'
 import { findFoundationMove, findHint, getAutoFinishPlan, getTopCard, isValidMove, isWin, sameLocation, type SolitaireHint } from '../model/rules'
 import type { Card, Location, Move, SolitaireState, StockDrawCount } from '../model/types'
 import { CardView } from './CardView'
@@ -156,6 +156,7 @@ export const SolitaireScreen = ({ settings, onBack, onSaveAvailabilityChange, on
       if (await saveActiveGame('solitaire', savedState, currentSession)) onSaveAvailabilityChange(true)
       else onSaveFailure()
     })
+    trackSolitaireWrites(persistenceQueue.current)
   }, [gameDrawMode, onSaveAvailabilityChange, onSaveFailure, ready, state])
 
   useEffect(() => {

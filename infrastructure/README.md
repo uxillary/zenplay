@@ -6,6 +6,14 @@ Application build and PWA behavior live in `package.json` and `vite.config.ts`. 
 
 There is no tracked Cloudflare deployment manifest, deployment script, or GitHub Actions workflow. The documented hosting provider is Cloudflare Pages, but its deployment mechanism (for example, dashboard-connected Git deployment or a CLI workflow) is not verifiable here. The Supabase local config identifies project `zenplay`; whether it maps to the live project is not verified by that value alone. See [services.md](services.md) for evidence and unknowns and [verify.md](verify.md) for production checks.
 
+## M20B.1 build and local acceptance
+
+`npm run build` now typechecks, compiles a pure React public-shell renderer into ignored `dist-ssr/`, then builds the browser assets into `dist/`. A Vite write hook emits final Home/Solitaire HTML and `404.html` before the existing PWA plugin generates its Workbox revisions. `dist-ssr/` is build-only and must never be published; there is no runtime SSR service. The deploy command/output remain `npm run build` / `dist`.
+
+Only `/` and `/games/solitaire/` are implemented as public pages in this slice. The build emits an exact no-slash Solitaire 301 in `_redirects`; the top-level 404 opts out of Pages' default SPA fallback. Vite dev/preview use multipage mode with explicit slice aliases, not a homepage catch-all. The remaining games/utility panels keep their existing root history-state navigation. Final robots/sitemap and broader SEO release handling remain future work.
+
+After building, `npm run verify:seo` checks final HTML, Workbox hashes and localhost HTTP behavior. `npm run test:seo-browser` exercises a disposable headless Edge/Chromium profile, including offline and explicit worker updates; `ZENPLAY_TEST_BROWSER` optionally selects its executable and is not a deployment variable. See [M20B.1 evidence](../context/M20B1_SEO_VERTICAL_SLICE.md). Local Vite checks do not certify Cloudflare redirect/header/404 settings. No hosting or account settings were changed or deployed in M20B.1.
+
 ## Instructions for agents
 
 1. Read `infrastructure/README.md` and `infrastructure/services.md` before infrastructure work.

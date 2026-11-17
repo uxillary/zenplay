@@ -7,6 +7,13 @@ import type { DrawMode } from '../../lib/settings.ts'
 
 export type SolitaireSaveState = { gameState: SolitaireState; drawMode: DrawMode }
 
+// The screen's queue can outlive its component during in-app navigation.
+// Readers must wait for every queued snapshot before offering/resuming Continue.
+let pendingWrites: Promise<void> = Promise.resolve()
+export const trackSolitaireWrites = (writes: Promise<void>): void => {
+  pendingWrites = writes.catch(() => undefined)
+}
+
 export const isSolitaireSaveState = (value: unknown): value is SolitaireSaveState =>
   typeof value === 'object'
   && value !== null
@@ -16,6 +23,7 @@ export const isSolitaireSaveState = (value: unknown): value is SolitaireSaveStat
   && isSolitaireState(value.gameState)
 
 export const loadSolitaireSave = async (): Promise<ActiveSaveLoadResult<SolitaireSaveState>> => {
+  await pendingWrites
   const result = await loadActiveSave<SolitaireSaveState>('solitaire', isSolitaireSaveState)
   if (result.status !== 'loaded') return result
   const save = result.save

@@ -1,11 +1,11 @@
 # M20 — Search Discoverability Foundation
-Status: M20A COMPLETE / ARCHITECTURE RECOMMENDED FOR REVIEW / M20B NOT STARTED
+Status: M20A APPROVED FOR SLICE / M20B.1 LOCAL ACCEPTANCE PASSED / M20B.2 AND RELEASE PENDING
 Date: 2026-11-17
 
 ## Goal
 Make ZenPlay's eight games discoverable via individual, crawlable, high-quality pages without sacrificing the React game experience, local persistence, accessibility, installability or offline play.
 
-## Evidence from current main
+## M20A baseline evidence (before implementation)
 - `index.html` uses a generic `ZenPlay` title and generic description, with React content mounted under `#root`.
 - `src/app/App.tsx` navigates via `history.pushState` while retaining the current URL, rather than navigating to game-specific paths.
 - `src/app/gameRegistry.ts` already defines `/games/{id}` targets, but these are not currently used as the main app's game URLs.
@@ -13,7 +13,7 @@ Make ZenPlay's eight games discoverable via individual, crawlable, high-quality 
 - `vite.config.ts` uses Workbox navigateFallback `index.html`. Deep-link and offline behavior require deliberate review.
 - Cloudflare Pages production configuration and actual Google index status were not verified in this planning pass. Do not claim either as audited.
 
-## M20A — Architecture audit (complete; decision awaiting review)
+## M20A — Architecture audit (complete; approved for M20B.1)
 1. Inspect all navigation, GameCard, game registry, state restoration, history/popstate, install/start URLs and Workbox behavior.
 2. Verify Cloudflare Pages routing and redirects from repository evidence; list remote settings requiring owner confirmation.
 3. Compare (a) minimal Vite static prerender / multipage strategy, (b) Astro static shell embedding React game islands, (c) another justified minimal option. Score build complexity, SEO HTML, PWA integration, deployment, bundle cost and migration risk.
@@ -34,14 +34,26 @@ See [M20A SEO Architecture Decision](M20A_SEO_ARCHITECTURE_DECISION.md) for veri
 - **Verified baseline:** 213 tests pass; typecheck, lint and production build pass. Built HTML has an empty React root; the local Vite preview returned the same HTML for sampled game and missing paths, robots and sitemap. Main JS is 474.90 kB uncompressed / 138.34 kB gzip; Workbox reports 236 entries / 5,318.97 KiB. These are local build/probe results, not production or field performance evidence. Existing Browserslist age warning remains.
 - **Unverified:** actual Cloudflare project/build/branch/redirect/header state, live canonical/index status, Search Console/Bing data, physical-device offline/install/update acceptance and field Core Web Vitals. No production deployment or hosted change was performed.
 
-### Recommended next steps
+### Recommended implementation sequence
 
-1. Review the Vite public-shell recommendation, canonical origin/URL policy and utility noindex policy before starting M20B.
-2. Implement/test the shared path model and legacy-state compatibility, then prove Home + Solitaire rendering/hydration and PWA build ordering as a narrow vertical slice.
-3. Extend to eight games, utility shells, metadata/structured data, crawlable links and discovery/redirect/404 files; run the decision document's regression matrix.
-4. Complete M20C real-device/accessibility checks and separately authorize any hosted preview or production release. Verify actual Pages deployment settings before any push/deploy that could publish changes. Search indexing is a later remote check, not inferred from build success.
+1. The M20B.1 request approved the Home + Solitaire implementation below. Review its actual boundary, evidence and outstanding checks before expanding.
+2. M20B.2: extend the catalogue and route model to the remaining games/utility screens, then metadata/structured data/social assets and final discovery policy. Do not publish empty routes or an incomplete eight-game sitemap.
+3. Complete M20C real-device/accessibility checks and separately authorize any hosted preview or production release. Verify actual Pages deployment settings before any push/deploy that could publish changes. Search indexing is a later remote check, not inferred from build success.
 
-## M20B — Implementation (after M20A review)
+## M20B.1 — Home + Solitaire vertical slice (local acceptance passed)
+
+See [M20B.1 implementation and evidence](M20B1_SEO_VERTICAL_SLICE.md).
+
+- Dedicated branch: `codex/m20b1-seo-vertical-slice`, based on fetched/current main at `abd855d`. No merge, push or deployment.
+- `/` and `/games/solitaire/` now have distinct deterministic initial HTML, unique title/description/canonical/H1, shared accessible content and a client-only game boundary. Solitaire remains lazy and begins automatically after hydration.
+- Typed path/history foundation, real Solitaire/Continue/Home links, direct entry/refresh/Back/Forward and narrowly upgraded legacy root entries are implemented. Other games/utility panels retain their root history-state flows; no further game routes were added.
+- Final HTML is emitted before Workbox hashing. Homepage catch-all navigation is removed; exact page precaching, top-level 404 and Solitaire alias handling are implemented. Manifest identity and prompt-controlled updates remain intact.
+- Delayed-write browser testing exposed a stale-Continue race. Solitaire restoration now waits for its existing pending queue, without changing save formats, rules or card/gesture components.
+- **Verified:** 224 tests, typecheck, lint, build, final output/HTTP/precache verifier, headless Edge acceptance and diff/whitespace checks pass. Browser coverage includes JS-disabled text, hydration with no console warnings, navigation, old saves/settings/profile/statistics, queued writes, emulated touch drag, Home-only offline setup and user-controlled worker updates.
+- Final Home/Solitaire HTML is 6,308/4,018 bytes. Bootstrap + App gzip is about 140.81 kB versus 138.34 kB baseline; precache is 239 entries / 5,336.44 KiB versus 236 / 5,318.97 KiB. No field/lab speed improvement is claimed from file sizes.
+- **Not verified:** real Cloudflare routing/headers, production indexing, live account lifecycle, physical installation/VoiceOver/NVDA/zoom acceptance or field CWV. No final sitemap/robots/social/structured-data release has been implemented.
+
+## M20B — Full foundation (in progress; B.1 complete locally)
 - Introduce crawlable, direct game URLs and prerendered HTML using approved architecture.
 - Add sitemap, robots, canonical tags, page metadata, Open Graph assets and accessible internal links.
 - Keep the playable game near the top; instructional content below it.

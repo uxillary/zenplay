@@ -2,12 +2,17 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { seoPrerender } from './scripts/seoPrerender'
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
+  appType: 'mpa',
+  build: isSsrBuild ? { copyPublicDir: false } : undefined,
   plugins: [
     react(),
     tailwindcss(),
+    ...(isSsrBuild ? [] : [seoPrerender()]),
     VitePWA({
+      disable: isSsrBuild,
       registerType: 'prompt',
       includeAssets: [
         'icons/icon-192.svg',
@@ -51,11 +56,20 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
-        navigateFallback: 'index.html',
+        navigateFallback: null,
+        // These precached files are public static resources and never vary by
+        // query. This does not cache unrelated API/account requests.
+        ignoreURLParametersMatching: [/.*/],
+        runtimeCaching: [{
+          urlPattern: ({ request, url }) => request.mode === 'navigate' && url.origin === self.location.origin
+            && (url.pathname === '/games/solitaire' || url.pathname === '/games/solitaire/index.html'),
+          handler: 'NetworkOnly',
+          options: { precacheFallback: { fallbackURL: 'games/solitaire/index.html' } },
+        }],
         skipWaiting: false,
         clientsClaim: false,
         cleanupOutdatedCaches: true,
       },
     }),
   ],
-})
+}))

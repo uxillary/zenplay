@@ -26,6 +26,8 @@ This inventory describes repository evidence only. A checked-in setting does not
 
 No other browser-build environment reads are present in application source, scripts, or Vite config. Stripe values are read only by the server-side Edge Functions and are listed in the table above. `VITE_` values are embedded in the browser build, so privileged credentials must never use that prefix. No `.env`/`.env.local` file is tracked; `.gitignore` ignores local env files while allowing `.env.example`.
 
+M20B.1 retains `npm run build` / `dist` for Pages, adding isolated build-time rendering of Home/Solitaire before PWA generation. Its non-deployed renderer output is `dist-ssr/`; generated `dist/_redirects` contains only the exact Solitaire no-slash alias and `dist/404.html` disables a homepage catch-all on Pages. These generated outputs and local Vite HTTP behavior do not prove hosted settings match. No Cloudflare service configuration was changed. The optional `ZENPLAY_TEST_BROWSER` variable is read only by the local disposable-browser acceptance runner, not by the application or hosted build.
+
 ## Wrangler decision
 
 No Wrangler configuration was added. The repository describes a static Cloudflare Pages site, and its existing Vite/PWA build already defines the tracked output. No Worker bindings, runtime entrypoint, Pages Functions, or CLI deployment process are evidenced. Adding a speculative `wrangler.jsonc` could change or misstate the working production deployment. Reconsider only after the owner confirms the Pages project/build/deploy arrangement and a concrete reproducibility gap.

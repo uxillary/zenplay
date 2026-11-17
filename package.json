@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build --ssr src/seo/render.tsx --outDir dist-ssr && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --test --experimental-strip-types \"src/**/*.test.ts\" \"supabase/functions/**/*.test.ts\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:seo": "node scripts/verify-seo-build.mjs",
+    "test:seo-browser": "node scripts/verify-seo-browser.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.100.0",

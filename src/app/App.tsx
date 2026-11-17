@@ -3,14 +3,16 @@ import { registerSW } from 'virtual:pwa-register'
 import { AccessibilityProvider } from './AccessibilityProvider'
 import { useAccessibility } from './accessibilityContext'
 import { games } from './gameRegistry'
-import { GameCard } from '../components/GameCard'
 import { GameShell } from '../components/GameShell'
+import { AppFrame, HomePage, NotFoundPage, SolitairePage } from '../seo/PublicShell'
+import { metadataForNavigation } from '../seo/publicContent'
+import { updatePageMetadata } from '../seo/metadata'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { ProfilePanel } from '../components/ProfilePanel'
 import { LocalDataPanel } from '../components/LocalDataPanel'
 import { SupportZenPlayPanel } from '../components/SupporterExperience'
 import { getInstallExperience, isStandaloneMode } from '../lib/pwa'
-import { createAppHistoryState, readAppNavigation, type AppNavigation, type AppScreen } from './navigation'
+import { appPathForNavigation, createAppHistoryState, resolveAppNavigation, shouldHandleLinkClick, type AppNavigation, type AppScreen } from './navigation'
 
 const SolitaireScreen = lazy(() => import('../games/solitaire/ui/SolitaireScreen').then(({ SolitaireScreen }) => ({ default: SolitaireScreen })))
 const SudokuScreen = lazy(() => import('../games/sudoku/ui/SudokuScreen').then(({ SudokuScreen }) => ({ default: SudokuScreen })))
@@ -38,7 +40,9 @@ class GameScreenErrorBoundary extends Component<{ children: ReactNode }, { faile
 }
 
 const knownGameIds = new Set(games.map((game) => game.id))
-const homeNavigation: AppNavigation = { screen: 'home', gameId: null }
+
+const GamePage = ({ id, title, onBack, children }: { id: string; title: string; onBack: () => void; children: ReactNode }) =>
+  id === 'solitaire' ? <SolitairePage onBack={onBack}>{children}</SolitairePage> : <GameShell title={title} onBack={onBack}>{children}</GameShell>
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>
@@ -56,8 +60,7 @@ const detectIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent)
 const availableGames = games.filter((game) => game.status === 'available')
 
 const Application = () => {
-  const initialNavigation = readAppNavigation(window.history.state, knownGameIds) ?? homeNavigation
-  const [navigation, setNavigation] = useState<AppNavigation>(initialNavigation)
+  const [navigation, setNavigation] = useState<AppNavigation>(() => resolveAppNavigation(window.location.pathname, window.history.state, knownGameIds))
   const { screen, gameId } = navigation
   const previousNavigation = useRef(navigation)
   const [continueAvailability, setContinueAvailability] = useState<Record<string, boolean>>({})
@@ -77,23 +80,29 @@ const Application = () => {
   useEffect(() => {
     if (previousNavigation.current.screen === screen && previousNavigation.current.gameId === gameId) return
     previousNavigation.current = navigation
-    window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-screen-heading]')?.focus())
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>('[data-screen-heading]')?.focus()
+      window.scrollTo(0, 0)
+    })
   }, [gameId, navigation, screen])
 
   useEffect(() => {
-    if (!readAppNavigation(window.history.state, knownGameIds)) {
-      window.history.replaceState(createAppHistoryState(window.history.state, homeNavigation), '', window.location.href)
+    const restoreNavigation = (state: unknown) => {
+      const next = resolveAppNavigation(window.location.pathname, state, knownGameIds)
+      const url = next.screen === 'not-found' ? window.location.href
+        : `${appPathForNavigation(next)}${window.location.search}${window.location.hash}`
+      window.history.replaceState(createAppHistoryState(state, next), '', url)
+      return next
     }
+    restoreNavigation(window.history.state)
     const onPopState = (event: PopStateEvent) => {
-      const next = readAppNavigation(event.state, knownGameIds) ?? homeNavigation
-      if (!readAppNavigation(event.state, knownGameIds)) {
-        window.history.replaceState(createAppHistoryState(event.state, next), '', window.location.href)
-      }
-      setNavigation(next)
+      setNavigation(restoreNavigation(event.state))
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
+
+  useEffect(() => { updatePageMetadata(metadataForNavigation(navigation)) }, [navigation])
 
   const updateSolitaireSaveAvailability = useCallback((hasSave: boolean) => {
     setContinueAvailability((current) => ({ ...current, solitaire: hasSave }))
@@ -119,10 +128,11 @@ const Application = () => {
   const selectedGame = games.find((game) => game.id === gameId)
   const navigateTo = (nextScreen: AppScreen, nextGameId: string | null = null) => {
     const next = { screen: nextScreen, gameId: nextGameId }
-    window.history.pushState(createAppHistoryState(window.history.state, next), '', window.location.href)
+    if (next.screen === screen && next.gameId === gameId) return
+    window.history.pushState(createAppHistoryState(window.history.state, next), '', appPathForNavigation(next))
     setNavigation(next)
   }
-  const returnHome = () => window.history.back()
+  const returnHome = () => navigateTo('home')
 
   useEffect(() => {
     if (screen !== 'home' && screen !== 'settings') return
@@ -184,8 +194,7 @@ const Application = () => {
   }
 
   return (
-    <main className={`zen-app-frame min-h-[100dvh] overflow-x-hidden p-3 md:p-6 ${screen === 'game' && gameId === 'solitaire' ? 'zen-app-frame--solitaire' : ''}`}>
-      <div className={`zen-app-panel mx-auto min-h-[calc(100dvh-1.5rem)] max-w-7xl p-4 md:min-h-[calc(100dvh-3rem)] md:p-8 ${screen === 'game' && gameId === 'solitaire' ? 'zen-app-panel--solitaire' : ''}`}>
+    <AppFrame solitaire={screen === 'game' && gameId === 'solitaire'}>
         {updateReady && screen !== 'game' ? <div className="zen-pwa-notice" role="region" aria-label="ZenPlay update">
           <span role="status" aria-live="polite">A ZenPlay update is ready.</span>
           <button type="button" onClick={() => void updateServiceWorker.current?.(true)} className="zen-game-button zen-game-button--small">Update now</button>
@@ -197,36 +206,22 @@ const Application = () => {
         {saveRecoveryWarning ? <p role="alert" className="my-3 rounded-lg border border-amber-700 p-3 text-base">
           A saved game couldn’t be restored. You can start a new game. <button type="button" className="underline" onClick={() => setSaveRecoveryWarning(false)}>Dismiss</button>
         </p> : null}
-        {screen === 'home' ? (
-          <>
-            <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="zen-wordmark">ZenPlay</p>
-                <h1 data-screen-heading tabIndex={-1} className="zen-home-title mt-2">Choose a game</h1>
-                <p className="mt-2 text-lg">Classic games. Easy to see. Easy to understand. No adverts. No online account needed.</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
+        {screen === 'not-found' ? <NotFoundPage /> : null}
+        {screen === 'home' ? <HomePage continueAvailability={continueAvailability} onSelect={(game, event) => {
+          if (game.id === 'solitaire') {
+            if (!shouldHandleLinkClick(event)) return
+            event.preventDefault()
+          }
+          setSaveWarning(false)
+          navigateTo('game', game.id)
+        }} actions={<div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => navigateTo('profile')} className="zen-game-button">Profile</button>
                 <button type="button" onClick={() => navigateTo('settings')} className="zen-game-button">Settings</button>
                 {installExperience !== 'installed' ? <button type="button" onClick={() => navigateTo('install')} className="zen-game-button">Install ZenPlay</button> : null}
-              </div>
-            </header>
-            <div className="zen-game-library grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {availableGames.map((game) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  canContinue={continueAvailability[game.id] ?? false}
-                  onSelect={() => { setSaveWarning(false); navigateTo('game', game.id) }}
-                  onContinue={() => { setSaveWarning(false); navigateTo('game', game.id) }}
-                />
-              ))}
-            </div>
-          </>
-        ) : null}
+              </div>} /> : null}
 
         {screen === 'game' && selectedGame ? (
-          <GameShell title={selectedGame.name} onBack={returnHome} compactBack={selectedGame.id === 'solitaire'}>
+          <GamePage id={selectedGame.id} title={selectedGame.name} onBack={returnHome}>
             {saveWarning ? <p role="alert" className="my-3 rounded-lg border border-amber-700 p-3 text-base">Your progress could not be saved on this device. Keep this page open to avoid losing it. <button type="button" className="underline" onClick={() => setSaveWarning(false)}>Dismiss</button></p> : null}
             <GameScreenErrorBoundary>
               <Suspense fallback={<p className="my-3 text-lg" role="status" aria-live="polite">Loading game…</p>}>
@@ -240,7 +235,7 @@ const Application = () => {
                 {selectedGame.id === 'flags' ? <FlagsScreen onBack={returnHome} /> : null}
               </Suspense>
             </GameScreenErrorBoundary>
-          </GameShell>
+          </GamePage>
         ) : null}
 
         {screen === 'settings' ? (
@@ -283,8 +278,7 @@ const Application = () => {
             {installMessage && installExperience !== 'installed' ? <p role="status" aria-live="polite">{installMessage}</p> : null}
           </section>
         ) : null}
-      </div>
-    </main>
+    </AppFrame>
   )
 }
 
