@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-18",
+  "conceptChecks": [
+    {
+      "width": 320,
+      "scrollWidth": 305
+    },
+    {
+      "width": 360,
+      "scrollWidth": 345
+    },
+    {
+      "width": 390,
+      "scrollWidth": 375
+    },
+    {
+      "width": 430,
+      "scrollWidth": 415
+    },
+    {
+      "width": 768,
+      "scrollWidth": 753
+    },
+    {
+      "width": 1024,
+      "scrollWidth": 1009
+    },
+    {
+      "width": 1440,
+      "scrollWidth": 1425
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}
